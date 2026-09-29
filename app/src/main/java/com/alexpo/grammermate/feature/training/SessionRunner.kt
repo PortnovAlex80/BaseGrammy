@@ -67,7 +67,8 @@ class SessionRunner(
      * every character). The ViewModel passes its own flow so UI and runner
      * share one value; the default keeps tests standalone.
      */
-    private val inputTextFlow: MutableStateFlow<String> = MutableStateFlow("")
+    private val inputTextFlow: MutableStateFlow<String> = MutableStateFlow(""),
+    submitClockMs: () -> Long = SystemClock::elapsedRealtime
 ) : CardSessionStateModel {
     private val logTag = "SessionRunner"
     private val audit get() = AuditLogger.getInstanceOrNull()
@@ -87,7 +88,12 @@ class SessionRunner(
 
     // ── Private mutable state ───────────────────────────────────────────
 
+    private val submitGuard = SubmissionDedupGuard(submitClockMs)
     private var sessionCards: List<SessionCard> = emptyList()
+    private fun assignSessionCards(cards: List<SessionCard>) {
+        sessionCards = cards
+        submitGuard.onDeckReplaced()
+    }
     private var bossCards: List<SessionCard> = emptyList()
     private var eliteCards: List<SessionCard> = emptyList()
     private val activeTimer = SessionActiveTimer(
@@ -367,23 +373,19 @@ class SessionRunner(
      * Submit the current answer. Orchestrates validation, state updates,
      * and signals the ViewModel for cross-module actions via [SubmitResult].
      */
-    /** Dedup guard: prevents double-submit within short time window (race from two speech launchers). */
-    private var lastSubmitInputText = ""
-    private var lastSubmitTimeMs = 0L
-
     fun submitAnswer(): Pair<SubmitResult, List<SessionEvent>> {
         val state = stateAccess.uiState.value
         val inputText = inputTextFlow.value
-        // Dedup: skip if same text submitted within 300ms (two speech launchers race)
-        val now = SystemClock.elapsedRealtime()
-        if (inputText == lastSubmitInputText && now - lastSubmitTimeMs < 300) {
-            Log.w(logTag, "submitAnswer() DEDUP skipped: same text='$inputText' within ${now - lastSubmitTimeMs}ms")
+        // VOICE keeps cross-card duplicate suppression for the two speech launchers.
+        if (submitGuard.shouldSuppress(
+                inputText, state.cardSession.inputMode,
+                state.cardSession.currentIndex, currentCard()?.id
+            )) {
+            Log.w(logTag, "submitAnswer() DEDUP skipped: same text='$inputText' within 300ms")
             // Audit: dedup guard triggered
             currentCard()?.let { audit?.answerDedup(it.id) }
             return SubmitResult(false, false, needsSaveProgress = false) to emptyList()
         }
-        lastSubmitInputText = inputText
-        lastSubmitTimeMs = now
         if (inputText.isBlank() && !state.cardSession.testMode) return SubmitResult(false, false, needsSaveProgress = false) to emptyList()
         val card = currentCard() ?: return SubmitResult(false, false, needsSaveProgress = false) to emptyList()
         val validationResult = answerValidator.validate(inputText, card.acceptedAnswers, state.cardSession.testMode, state.cardSession.inputMode)
@@ -1005,7 +1007,7 @@ class SessionRunner(
         val stepIndex = index.coerceIn(0, eliteStepCount - 1)
         val cards = buildEliteCards()
         eliteCards = cards
-        sessionCards = cards
+        assignSessionCards(cards)
         val firstCard = cards.firstOrNull()
         updateStateAndClearInput {
             it.copy(elite = it.elite.copy(eliteActive = true, eliteStepIndex = stepIndex), cardSession = it.cardSession.copy(currentIndex = 0, currentCard = firstCard, lastResult = null, answerText = null, incorrectAttemptsForCard = 0, correctCount = 0, incorrectCount = 0, activeTimeMs = 0L, voiceActiveMs = 0L, voiceWordCount = 0, hintCount = 0, voicePromptStartMs = null, sessionState = SessionState.PAUSED, subLessonTotal = cards.size, subLessonCount = eliteStepCount, activeSubLessonIndex = stepIndex, completedSubLessonCount = 0))
@@ -1062,7 +1064,7 @@ class SessionRunner(
     fun startCardSession(cards: List<SessionCard>, mode: TrainingScreenMode): List<SessionEvent> {
         pauseTimer()
         stateMachine.reset()
-        sessionCards = cards
+        assignSessionCards(cards)
         val firstCard = cards.firstOrNull()
         if (stateAccess.uiState.value.cardSession.inputMode == InputMode.VOICE) {
             stateMachine.triggerVoice()
@@ -1090,7 +1092,7 @@ class SessionRunner(
     fun exitCardSession(): List<SessionEvent> {
         pauseTimer()
         stateMachine.reset()
-        sessionCards = emptyList()
+        assignSessionCards(emptyList())
         updateStateAndClearInput {
             LinearSessionTransitions.exit(it)
         }
@@ -1120,7 +1122,7 @@ class SessionRunner(
     fun startReview(cards: List<SessionCard>, hintLevel: HintLevel): List<SessionEvent> {
         pauseTimer()
         stateMachine.reset()
-        sessionCards = cards
+        assignSessionCards(cards)
         val firstCard = cards.firstOrNull()
         // Audit: review started
         audit?.reviewStart(
@@ -1191,7 +1193,7 @@ class SessionRunner(
     fun replaceCards(cards: List<SessionCard>): List<SessionEvent> {
         pauseTimer()
         stateMachine.reset()
-        sessionCards = cards
+        assignSessionCards(cards)
         val firstCard = cards.firstOrNull()
         if (stateAccess.uiState.value.cardSession.inputMode == InputMode.VOICE) {
             stateMachine.triggerVoice()
@@ -1220,27 +1222,27 @@ class SessionRunner(
      * Set the session cards list. Called by ViewModel after CardProvider builds them.
      */
     fun setSessionCards(cards: List<SentenceCard>) {
-        sessionCards = cards
+        assignSessionCards(cards)
     }
 
     fun setSessionCardsGeneric(cards: List<SessionCard>) {
-        sessionCards = cards
+        assignSessionCards(cards)
     }
 
     fun setBossCards(cards: List<SentenceCard>) {
         bossCards = cards
-        sessionCards = cards
+        assignSessionCards(cards)
     }
 
     fun setEliteCards(cards: List<SentenceCard>) {
         eliteCards = cards
-        sessionCards = cards
+        assignSessionCards(cards)
     }
 
     fun getSessionCards(): List<SessionCard> = sessionCards
 
     fun clearAllCards() {
-        sessionCards = emptyList()
+        assignSessionCards(emptyList())
         bossCards = emptyList()
         eliteCards = emptyList()
     }

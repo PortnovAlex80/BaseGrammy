@@ -10,3 +10,4 @@
 8. [008. Bounded architecture closure for the shipping app](008-bounded-architecture-closure.md)
 9. [009. Decompose large owners as part of architecture closure](009-decompose-large-owners.md)
 10. [010. Keep linear session effects in SessionRunner and extract state rules](010-linear-session-state-rules.md)
+11. [011. Scope answer de-duplication to the active card, except for voice races](011-scope-submit-deduplication.md)

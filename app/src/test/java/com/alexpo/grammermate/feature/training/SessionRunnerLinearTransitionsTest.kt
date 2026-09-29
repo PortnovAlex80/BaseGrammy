@@ -53,7 +53,9 @@ class SessionRunnerLinearTransitionsTest {
     private fun harness(
         mode: TrainingScreenMode,
         index: Int = 0,
-        inputMode: InputMode = InputMode.KEYBOARD
+        inputMode: InputMode = InputMode.KEYBOARD,
+        cards: List<SentenceCard> = this.cards,
+        submitClockMs: () -> Long = { 1_000L }
     ): Harness {
         val state = RecordingStateAccess(
             TrainingUiState().copy(
@@ -81,7 +83,8 @@ class SessionRunnerLinearTransitionsTest {
             getHiddenCardIds = { emptySet() },
             calculateCompletedSubLessons = { _, _, _, _ -> 0 },
             onTimerSaveProgress = {},
-            inputTextFlow = input
+            inputTextFlow = input,
+            submitClockMs = submitClockMs
         )
         runner.setSessionCardsGeneric(cards)
         return Harness(runner, state, input)
@@ -213,6 +216,72 @@ class SessionRunnerLinearTransitionsTest {
         assertEquals(0L, current.activeTimeMs)
         assertEquals(1, current.subLessonTotal)
         assertEquals("", h.input.value)
+        h.runner.pauseTimer()
+    }
+
+    @Test
+    fun `same correct text on a new card is accepted inside dedup window`() {
+        val repeatedAnswerCards = listOf(
+            SentenceCard("repeat-1", "first", listOf("alpha")),
+            SentenceCard("repeat-2", "second", listOf("alpha"))
+        )
+        val h = harness(TrainingScreenMode.VERB_DRILL, cards = repeatedAnswerCards)
+        h.input.value = "alpha"
+        assertTrue(h.runner.submitAnswer().first.accepted)
+        h.input.value = "alpha"
+
+        val second = h.runner.submitAnswer()
+
+        assertTrue("a new card must allow the same answer text", second.first.accepted)
+        assertEquals(2, h.state.uiState.value.cardSession.correctCount)
+        assertEquals(null, h.state.uiState.value.cardSession.currentCard)
+    }
+
+    @Test
+    fun `duplicate submission on the same card is still suppressed`() {
+        val h = harness(TrainingScreenMode.VERB_DRILL)
+        h.input.value = "wrong"
+        assertFalse(h.runner.submitAnswer().first.accepted)
+
+        val duplicate = h.runner.submitAnswer()
+
+        assertFalse(duplicate.first.accepted)
+        assertTrue(duplicate.second.isEmpty())
+        assertEquals(1, h.state.uiState.value.cardSession.incorrectCount)
+    }
+
+    @Test
+    fun `voice duplicate remains suppressed after advancing to a new card`() {
+        val repeatedAnswerCards = listOf(
+            SentenceCard("voice-1", "first", listOf("alpha")),
+            SentenceCard("voice-2", "second", listOf("alpha"))
+        )
+        val h = harness(TrainingScreenMode.DAILY_TRANSLATE, inputMode = InputMode.VOICE, cards = repeatedAnswerCards)
+        h.input.value = "alpha"
+        assertTrue(h.runner.submitAnswer().first.accepted)
+        h.input.value = "alpha"
+
+        val duplicate = h.runner.submitAnswer()
+
+        assertFalse(duplicate.first.accepted)
+        assertTrue(duplicate.second.isEmpty())
+        assertEquals(1, h.state.uiState.value.cardSession.correctCount)
+        assertEquals(repeatedAnswerCards[1], h.state.uiState.value.cardSession.currentCard)
+    }
+
+    @Test
+    fun `same keyboard answer is accepted after replacing a deck with the same card id`() {
+        val original = listOf(SentenceCard("reused-id", "first", listOf("alpha")))
+        val h = harness(TrainingScreenMode.VERB_DRILL, cards = original)
+        h.input.value = "alpha"
+        assertTrue(h.runner.submitAnswer().first.accepted)
+        h.runner.replaceCards(listOf(SentenceCard("reused-id", "new batch", listOf("alpha"))))
+        h.input.value = "alpha"
+
+        val newBatchAnswer = h.runner.submitAnswer()
+
+        assertTrue(newBatchAnswer.first.accepted)
+        assertEquals(1, h.state.uiState.value.cardSession.correctCount)
         h.runner.pauseTimer()
     }
 }
