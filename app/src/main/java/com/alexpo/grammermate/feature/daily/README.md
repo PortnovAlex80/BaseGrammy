@@ -26,10 +26,11 @@ Each block has 10 tasks. Replaces former Elite mode and Vocab Sprint.
 - **DailyPracticeCoordinator** -- Stateful orchestrator owning
   `StateFlow<DailyPracticeState>`. Manages full session lifecycle:
   - `startDailyPractice(resolveProgressLessonInfo, onStoreFirstSessionCardIds): Boolean`
+    -- the callback receives the actual pack-cursor lesson ID with the card IDs
   - `repeatDailyPractice(lessonLevel, resolveProgressLessonInfo): Boolean`
   - `advanceDailyTask(onPersistVerbProgress): Boolean`
   - `recordDailyCardPracticed(blockType, sentenceCard, resolveCardLessonId)`
-  - `advanceDailyBlock(): Boolean` / `repeatDailyBlock(...): Boolean`
+  - `advanceDailyBlock(): Boolean` / `repeatDailyBlock(): Boolean`
   - `cancelDailySession(): Int?` -- returns sentence count for cursor advancement
   - `rateVocabCard(rating: SrsRating)` -- Anki-style AGAIN/HARD/GOOD/EASY
   - `submitDailySentenceAnswer(input): Boolean` / `submitDailyVerbAnswer(input): Boolean`
@@ -42,7 +43,10 @@ Each block has 10 tasks. Replaces former Elite mode and Vocab Sprint.
 `DailyPracticeState` via internal MutableStateFlow:
 - `dailySession: DailySessionState` (active, tasks, taskIndex, blockIndex, level, finishedToken)
 - `dailyCursor: DailyCursorState` (sentenceOffset, currentLessonIndex, firstSessionDate, firstSessionCardIds)
-Private mutable: `prebuiltDailyBlocks`, `lastDailyBlocks`, `dailyPracticeAnsweredCounts`.
+Private mutable: `dailyPracticeAnsweredCounts`. `DailySessionPlanCache` owns
+prebuilt and first-session block snapshots under exact pack/lesson/date/input keys.
+`DailySessionIdentityResolver` selects the pack-cursor lesson for start and
+recovers the saved lesson for same-day sentence/verb replay after a restart.
 
 `DailyCursorController` owns pack-specific cursor persistence and advancement.
 `DailyTaskProgressRecorder` writes sentence, verb, and vocab progress for the answered card.
@@ -55,8 +59,8 @@ Private mutable: `prebuiltDailyBlocks`, `lastDailyBlocks`, `dailyPracticeAnswere
 - `data.DailyTask` sealed class (TranslateSentence, VocabFlashcard, ConjugateVerb)
 
 ## Edit scope warnings
-- DailyPracticeCoordinator holds significant private mutable state for cursor
-  rollback and block tracking. Reset logic must clear all of it.
+- DailyPracticeCoordinator owns block tracking and answered-card counts. Reset
+  clears those counts and the plan cache; the cursor controller owns persistence.
 - DailySessionComposer builds blocks in parallel (coroutineScope + async).
   Block builders are suspend functions but internally synchronous -- do not
   add shared mutable state to the composer.

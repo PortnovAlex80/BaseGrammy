@@ -322,7 +322,7 @@ class DailySessionComposer(
 
         return cardIds.mapNotNull { id ->
             cardMap[id]
-        }.take(sessionSize).mapIndexed { index, card ->
+        }.mapIndexed { index, card ->
             val mode = when (index % 3) {
                 0 -> InputMode.VOICE
                 1 -> InputMode.KEYBOARD
@@ -523,7 +523,7 @@ class DailySessionComposer(
 
         return cardIds.mapNotNull { id ->
             cardMap[id]
-        }.take(sessionSize).mapIndexed { index, card ->
+        }.mapIndexed { index, card ->
             val mode = if (index % 2 == 0) InputMode.KEYBOARD else InputMode.WORD_BANK
             DailyTask.ConjugateVerb(
                 id = "verb_${card.id}",

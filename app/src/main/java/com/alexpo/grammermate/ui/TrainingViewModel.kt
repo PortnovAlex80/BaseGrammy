@@ -1675,8 +1675,8 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         )
         val started = dailyPracticeCoordinator.startDailyPractice(
             resolveProgressLessonInfo = { resolveProgressLessonInfo() },
-            onStoreFirstSessionCardIds = { sentenceIds, verbIds ->
-                storeFirstSessionCardIds(sentenceIds, verbIds)
+            onStoreFirstSessionCardIds = { lessonId, sentenceIds, verbIds ->
+                storeFirstSessionCardIds(lessonId, sentenceIds, verbIds)
             }
         )
         Log.d(logTag, "DailyPractice: VM.startDailyPractice result=$started")
@@ -1687,8 +1687,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
      * Store the first session of the day's card IDs in the cursor state.
      * This allows Repeat to reconstruct the exact same cards even after restart.
      */
-    private fun storeFirstSessionCardIds(sentenceIds: List<String>, verbIds: List<String>) {
-        val lessonId = _coreState.value.navigation.selectedLessonId?.value ?: ""
+    private fun storeFirstSessionCardIds(lessonId: String, sentenceIds: List<String>, verbIds: List<String>) {
         val updatedCursor = progressTracker.storeFirstSessionCardIds(
             currentCursor = dailyPracticeCoordinator.getCursor(),
             sentenceIds = sentenceIds,
@@ -1768,9 +1767,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun repeatDailyBlock(): Boolean {
-        return dailyPracticeCoordinator.repeatDailyBlock(
-            resolveProgressLessonInfo = { resolveProgressLessonInfo() }
-        )
+        return dailyPracticeCoordinator.repeatDailyBlock()
     }
 
     fun cancelDailySession() {
