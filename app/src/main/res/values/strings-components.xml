@@ -36,7 +36,7 @@
     <string name="qr_open_translate">Open in Google Translate</string>
     <string name="qr_close">Close</string>
 
-    <!-- DailyPracticeComponents -->
+    <!-- Training answer controls -->
     <string name="word_bank_tap_order">Tap words in correct order:</string>
     <string name="word_bank_undo">Undo</string>
     <string name="content_desc_voice_mode">Voice mode</string>

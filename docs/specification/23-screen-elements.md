@@ -6,7 +6,7 @@
 |--------|--------|---------------|
 | HomeScreen | HS | 22 |
 | TrainingScreen | TS | 37 |
-| TrainingCardSession | TCS | 29 |
+| TrainingCardSession (retired; historical catalog below) | TCS | 29 historical |
 | DailyPracticeScreen | DP | 30 |
 | VerbDrillScreen | VD | 42 |
 | VocabDrillScreen | VOC | 48 |
@@ -18,7 +18,7 @@
 | [UI-CONSISTENCY-2025] Shared Components | SH | 8 |
 | Pomodoro | PM | 9 |
 | Pomodoro Summary | PS | 7 |
-| **Total** | | **339** |
+| **Historical catalog total (includes retired elements; not a live count)** | | **339** |
 
 ---
 
@@ -54,18 +54,20 @@
 
 ## 2. TrainingScreen (ui/screens/TrainingScreen.kt)
 
-**Unified Training Architecture (TASK-055).** All 6 training modes (normal, boss, daily, drill, vocab, verb-drill-in-daily) now use ONE TrainingScreen with shared SessionRunner logic. Behavior is IDENTICAL across modes — not just shared UI components, but shared behavior logic via `UnifiedInputControlsBar` and `UnifiedNavigationRow`. TrainingScreen delegates rendering to `TrainingCardSession` via `TrainingCardSessionProvider`. Elements TS-01 through TS-37 are provided by:
-- TS-01: Kept in TrainingScreen Scaffold topBar (back arrow replaces settings gear)
-- TS-02: REMOVED — settings gear no longer present on training screens
-- TS-03 through TS-07: Custom `header` slot (TrainingHeaderSlot)
-- TS-08, TS-09: Custom `cardContent` slot (TrainingCardContentSlot)
-- TS-10 through TS-25, TS-33, TS-34, TS-35: Custom `inputControls` slot (TrainingInputControlsSlot) delegating to UnifiedInputControlsBar
-- TS-26 through TS-28: Custom `resultContent` slot (TrainingResultContentSlot)
-- TS-29 through TS-32: Default `navigationControls` slot from TrainingCardSession (TCS-* elements). Navigation behavior is IDENTICAL across all 6 modes — same `SessionRunner` logic drives prev/next/pause/exit for every mode.
+**Current ownership correction (2026-09-29).** The production path is `GrammarMateApp` → `TrainingScreenContent` → `TrainingScreen`. It does not use `TrainingCardSession` or a `TrainingCardSessionProvider`; the unused former component is retired. Lesson/boss/verb/aux/daily card blocks use this route with mode-specific presentation and completion branches. Standalone vocabulary and the daily VOCAB block retain separate flip/rating flows.
+
+- TS-01/02: `TrainingScreen` owns its lesson/fallback title and Settings button.
+- TS-03 through TS-09: screen-local mode composition, `SessionProgressIndicator`, and the `CardPrompt` boundary rendering `TrainingPromptCard`; verb/daily-verbs suppress that normal prompt card.
+- TS-10 through TS-25: `AnswerBox` / `UnifiedInputControlsBar` map state and effects to `TrainingAnswerPanel`; word-bank display is `ui/features/training/components/WordBankSection.kt`.
+- TS-26: `TrainingResultBlock`, called directly; accepted-answer hints and speaker controls have separate owners.
+- TS-29 through TS-32: `UnifiedNavigationRow` adapts state to `TrainingNavigationRow`.
+- Report/export/voice effects retain their integration owners; no slot template is inserted.
+
+The granular legacy catalog below is not a fresh audit of every element. The corrected ownership and word-bank rows supersede retired slot/provider references; see [spec 12's current implementation](12-training-card-session.md#current-implementation-2026-09-29) for current completion/state boundaries.
 
 | Element | ID | Type | Visible when | Behavior / Invariant | Related UC |
 |---------|----|------|-------------|----------------------|------------|
-| Scaffold TopBar title | TS-01 | text | Always | "GrammarMate" in titleLarge, Bold. | ? |
+| Scaffold TopBar title | TS-01 | text | Active card layout | Supplied lesson title, otherwise localized `training_grammarmate`, in titleLarge, Bold. | ? |
 | Settings gear (top bar) | TS-02 | button | Always | IconButton with Settings icon. Calls `onOpenSettings()` + `onShowSettings()`. | ? |
 | Session header label | TS-03 | text | Conditionally | "Review Session" when `bossActive`, "Refresh Session" when `eliteActive`. | ? |
 | Tense label | TS-04 | text | `card.tense` is not null/blank | 13sp SemiBold, primary color (or blue Surface for Mix Challenge). In drill mode: green (0xFF388E3C). | ? |
@@ -79,10 +81,10 @@
 | "No cards" error text | TS-12 | text | `hasCards == false` | Red error text. | ? |
 | Voice mode hint | TS-13 | text | `inputMode == VOICE` and `sessionState == ACTIVE` | Muted text "Say translation: {promptRu}". | ? |
 | ASR status indicator | TS-14 | text | `useOfflineAsr == true` | AsrStatusIndicator showing offline ASR state. | ? |
-| Word bank instruction | TS-15 | text | `inputMode == WORD_BANK` and `wordBankWords.isNotEmpty()` | "Tap words in correct order:" label text. | ? |
-| Word bank chips | TS-16 | chip | `inputMode == WORD_BANK` and `wordBankWords.isNotEmpty()` | FlowRow of FilterChips. Tracks duplicate counts per word. Fully-used words disabled. Calls `onSelectWordFromBank(word)`. | ? |
-| Word bank "Selected" counter | TS-17 | text | `inputMode == WORD_BANK` and `selectedWords.isNotEmpty()` | "Selected: N / M" in primary color. | ? |
-| Word bank "Undo" button | TS-18 | button | `inputMode == WORD_BANK` and `selectedWords.isNotEmpty()` | TextButton "Undo". Calls `onRemoveLastWord()`. | ? |
+| Word bank instruction | TS-15 | text | `inputMode == WORD_BANK && supportsWordBank && hintLevel == EASY && wordBankWords.isNotEmpty()` | Localized "Tap words in correct order:" label from training `WordBankSection`. | ? |
+| Word bank chips | TS-16 | chip | Same gate as TS-15 | FlowRow of FilterChips. Tracks duplicate counts per word. Fully-used words disabled. Calls `onSelectWordFromBank(word)`. Tags: `word_bank_container`, `word_bank_chip_<word>`. | ? |
+| Word bank "Selected" counter | TS-17 | text | TS-15 gate and `selectedWords.isNotEmpty()` | "Selected: N / M" in primary color. | ? |
+| Word bank "Undo" button | TS-18 | button | TS-15 gate and `selectedWords.isNotEmpty()` | TextButton "Undo". Calls `onRemoveLastWord()`. Tag: `word_bank_undo`. | ? |
 | Voice mode selector | TS-19 | button | `canLaunchVoice` | FilledTonalIconButton with Mic icon. Switches to VOICE mode. | ? |
 | Keyboard mode selector | TS-20 | button | `canSelectInputMode` | FilledTonalIconButton with Keyboard icon. Switches to KEYBOARD mode. | ? |
 | Word bank mode selector | TS-21 | button | `canSelectInputMode` | FilledTonalIconButton with LibraryBooks icon. Switches to WORD_BANK mode. | ? |
@@ -91,7 +93,7 @@
 | Current mode label | TS-24 | text | Always | "Voice" / "Keyboard" / "Word Bank" label text. | ? |
 | Check button | TS-25 | button | `hasCards && inputText.isNotBlank() && currentCard != null` (no sessionState gate) | Full-width Button "Check". Calls `onSubmit()`. Enabled when `inputText.isNotBlank() && currentCard != null` — works during PAUSED and HINT_SHOWN states (no `sessionState == ACTIVE` gate). | ? |
 | Result label | TS-26 | text | `lastResult != null` | "Correct" (green #2E7D32) or "Incorrect" (red #C62828), Bold. **Dark Mode:** Must use lighter variants for contrast: correct = 0xFF66BB6A, incorrect = 0xFFEF5350 (>=4.5:1 against dark backgrounds). [UC-68 AC8] | UC-68 |
-| Result TTS replay | TS-27 | button | `lastResult != null` and `answerText` not blank | REMOVED from HintAnswerCard. TTS replay is now handled solely by the result row TcsSpeakerButton (TCS-28). | ? |
+| Result TTS replay (historical element) | TS-27 | button | No separate result-row speaker in current `TrainingResultBlock` | TCS-28 belongs to the retired component. The current prompt speaker and hint presentation retain separate owners; this row does not imply a live result speaker. | ? |
 | Answer text | TS-28 | text | `answerText` not blank | "Answer: {answerText}" text. | ? |
 | Navigation Prev button | TS-29 | button | `hasCards` | NavIconButton with ArrowBack. Calls `onPrev()`. **Behavior is IDENTICAL across all 7 modes** — unified via `UnifiedNavigationRow` / `SessionRunner` logic. | UC-69, UC-70 |
 | Navigation Pause/Play | TS-30 | button | `hasCards` | NavIconButton: Pause icon when ACTIVE, Play icon otherwise. Calls `onTogglePause()`. **Cascade behavior:** After Check during pause (manual, hint, pomodoro), Play resumes session on same card — preserves inputText, no auto-advance. **Behavior is IDENTICAL across all 7 modes** — unified via `UnifiedNavigationRow` / `SessionRunner` logic. | UC-69, UC-70 |
@@ -104,11 +106,11 @@
 
 ---
 
-## 3. TrainingCardSession (ui/TrainingCardSession.kt) -- Reusable Component
+## 3. TrainingCardSession -- Historical Component (retired 2026-09-29)
 
-These elements are the default slot implementations. Screens that use TrainingCardSession with custom slots override specific elements.
+**Historical reference only:** `ui/TrainingCardSession.kt` had no production callers and was removed in the bounded P6 cleanup. TCS-01 through TCS-29 below describe its former default slots, not additional live UI elements. Retain their useful behavior requirements, but use the current TS/component ownership above when locating executable code. Do not recreate the retired composable to satisfy a catalog row.
 
-**Note (TASK-055):** `UnifiedInputControlsBar` and `UnifiedNavigationRow` provide shared behavior logic (not just shared UI) across all 7 training modes. The `SessionRunner` drives identical input, navigation, and validation behavior regardless of mode.
+**Historical note (TASK-055):** The earlier proposal described identical input/navigation behavior across all modes through shared controls. Current mode-specific composition and completion branches are described in spec 12; the retired TCS table below is not a current runtime map.
 
 | Element | ID | Type | Visible when | Behavior / Invariant | Related UC |
 |---------|----|------|-------------|----------------------|------------|
@@ -146,6 +148,8 @@ These elements are the default slot implementations. Screens that use TrainingCa
 
 ## 4. DailyPracticeScreen (ui/DailyPracticeScreen.kt)
 
+**Current routing correction (2026-09-29):** TRANSLATE/VERBS navigate through `DailyPracticeScreenContent` to the shared `TrainingScreen`; the VOCAB block renders inline using daily feature components. `DailyPracticeSessionProvider`, `DailyInputModeBar`, and `DailyWordBankSection` are not active implementations. DP-07 and DP-15 below are updated source mappings. Other provider-specific fields and timing/layout descriptions in this legacy table, including DP-16/17, are historical requirements/reference and must be reconciled with the current TS controls rather than interpreted as extra daily controls. In particular, current Check supports paused/hint states; the old `sessionActive` gate in DP-17 is superseded by the shared TS-25 behavior.
+
 | Element | ID | Type | Visible when | Behavior / Invariant | Related UC |
 |---------|----|------|-------------|----------------------|------------|
 | Loading spinner | DP-01 | card | `!state.active \|\| currentTask == null` | CircularProgressIndicator + "Loading session..." text. | ? |
@@ -154,7 +158,7 @@ These elements are the default slot implementations. Screens that use TrainingCa
 | Block type badge chip | DP-04 | card | Always | primaryContainer Card showing "Translation" / "Vocabulary" / "Verbs". | ? |
 | Block progress bar | DP-05 | progress-bar | `totalTasks > 0` | LinearProgressIndicator (8dp height, rounded) + "N/M" label. Shows overall session position. | ? |
 | Block sparkle overlay | DP-06 | card | `showBlockTransition == true` or session complete | Semi-transparent black overlay + sparkle emoji + "Next: {BlockType}" or "Daily practice complete!". Auto-dismisses after 800ms. | ? |
-| TRANSLATE/VERBS card session | DP-07 | card | `currentTask.blockType == TRANSLATE \|\| VERBS` | Wraps TrainingCardSession via DailyPracticeSessionProvider. Includes card content, input controls, navigation. **Daily Block 3 = VerbDrill:** uses the same verb/tense/group chips as VerbDrillScreen (VD-15, VD-16). Card session behavior is IDENTICAL across all blocks — unified via `SessionRunner`. | ? |
+| TRANSLATE/VERBS card session | DP-07 | card | Current block type is TRANSLATE or VERBS and block is not complete | `DailyPracticeScreen` invokes `onStartCardBlock`; `DailyPracticeScreenContent` starts the corresponding session and navigates to `TRAINING`. No TrainingCardSession/provider wrapper. Daily VERBS uses TrainingScreen's verb/tense chips. | ? |
 | Card prompt (translate/verbs) | DP-08 | card | Card session active | Card with "RU" label + prompt (`(20f * ruTextScale).sp` SemiBold) + TTS button. | UC-56 |
 | Verb/tense/group chips (verbs) | DP-09 | chip | `verbText` not blank | SuggestionChips for verb (with rank), tense (abbreviated), group. All chips are ALWAYS visible regardless of HintLevel -- they are reference data, not hints. Verb chip tap opens VerbReferenceBottomSheet with conjugation table. Tense chip tap opens TenseInfoBottomSheet with formula/usage/examples. Group chip is non-interactive (display only). | UC-58 |
 | Card TTS button (translate/verbs) | DP-10 | button | Card session active | Inline TTS button (not TtsSpeakerButton): 4 states (SPEAKING/INITIALIZING/ERROR/IDLE). | ? |
@@ -162,7 +166,7 @@ These elements are the default slot implementations. Screens that use TrainingCa
 | Incorrect feedback (translate/verbs) | DP-12 | text | `provider.showIncorrectFeedback` | Red "Incorrect" + "N attempts left" text. | ? |
 | Answer text field (translate/verbs) | DP-13 | input-field | Card session active | OutlinedTextField "Your translation". Auto-submits on exact match. | ? |
 | Mic trailing icon (translate/verbs) | DP-14 | button | `canLaunchVoice` | Switches to VOICE mode. | ? |
-| Word bank section (translate/verbs) | DP-15 | chip | `WORD_BANK mode` | DailyWordBankSection: chips + counter + Undo. | ? |
+| Word bank section (translate/verbs) | DP-15 | chip | Shared TrainingScreen gate in TS-15; counter/undo additionally require selected words | `TrainingAnswerPanel` renders training `WordBankSection`: chips + counter + Undo. The unused `DailyWordBankSection` alias is retired. | ? |
 | Input mode bar (translate/verbs) | DP-16 | button | Card session active | DailyInputModeBar: Voice/Keyboard/WordBank buttons + Show answer + Report. Keyboard button is ALWAYS visible (not gated by HintLevel). | ? |
 | Check button (translate/verbs) | DP-17 | button | `hasCards && inputText.isNotBlank() && sessionActive` | "Check" button. Submits via `provider.submitAnswerWithInput()`. | ? |
 | Report sheet (translate/verbs) | DP-18 | bottom-sheet | `showReportSheet == true` | Uses SharedReportSheet (SH-01): flag/unflag + hide card (calls HiddenCardStore.hideCard) + export (unified) + copy + share via QR (when shareText != null). | UC-73 |
@@ -201,13 +205,13 @@ These elements are the default slot implementations. Screens that use TrainingCa
 
 ### 5b. Active Session
 
-**Note (TASK-055):** VerbDrill card session now goes through TrainingScreen with shared `SessionRunner` logic. The card-level behavior (input, navigation, validation) is identical to all other training modes. Elements VD-11 through VD-35 describe VerbDrill-specific visual elements and VerbDrillViewModel state; the card session itself reuses the unified TrainingCardSession architecture.
+**Current routing correction (2026-09-29):** VerbDrill card sessions run through `TrainingScreen` and `SessionRunner`, using the active training components above. The retired TrainingCardSession/provider architecture is not involved. The older VD-11 through VD-35 descriptions retain historical behavior references; provider fields, header/card layouts, and timing claims must be checked against the current shared route before use.
 
 | Element | ID | Type | Visible when | Behavior / Invariant | Related UC |
 |---------|----|------|-------------|----------------------|------------|
 | Back button (session) | VD-11 | button | Session active | IconButton ArrowBack. Calls `viewModel.exitSession()` + `onBack()` (navigates to HOME, not selection screen). | UC-64 |
 | "Verb Drill" title (session) | VD-12 | text | Session active | SemiBold weight. | ? |
-| Progress bar + speedometer | VD-13 | progress-bar | Session active | Reuses DefaultProgressIndicator from TrainingCardSession. | ? |
+| Progress bar + speedometer | VD-13 | progress-bar | Session active | Uses `ui/features/training/components/SessionProgressIndicator.kt` from TrainingScreen. | ? |
 | Card prompt | VD-14 | card | `currentCard != null` | Card: "RU" label + prompt text (`(20f * ruTextScale).sp` SemiBold) + TTS button. Uses TtsSpeakerButton with 4 states: SPEAKING (StopCircle red), INITIALIZING (spinner), ERROR (ReportProblem/Warning), IDLE (VolumeUp). | UC-56 |
 | Verb SuggestionChip | VD-15 | chip | `verbText` not blank | Shows verb infinitive + "#rank". ChevronRight icon. Tap opens VerbReferenceBottomSheet. Always visible regardless of HintLevel. | UC-58 |
 | Tense SuggestionChip | VD-16 | chip | `tense` not blank | Shows abbreviated tense name (e.g. "Pres."). Tap opens TenseInfoBottomSheet. Always visible regardless of HintLevel. | UC-58 |

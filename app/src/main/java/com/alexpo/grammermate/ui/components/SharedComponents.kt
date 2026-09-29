@@ -39,13 +39,10 @@ import com.alexpo.grammermate.data.AsrState
 import com.alexpo.grammermate.data.DownloadState
 import com.alexpo.grammermate.data.InitPhase
 import com.alexpo.grammermate.data.TtsModelRegistry
-import com.alexpo.grammermate.data.TtsState
-import com.alexpo.grammermate.ui.designsystem.atoms.TtsButtonState
-import com.alexpo.grammermate.ui.designsystem.atoms.TtsSpeakerButton as TtsSpeakerButtonAtom
 
 /**
  * Navigation icon button with surfaceVariant background and primary accent bottom bar.
- * Used by GrammarMateApp and TrainingCardSession.
+ * Used by the training navigation row.
  */
 @Composable
 fun NavIconButton(
@@ -77,31 +74,6 @@ fun NavIconButton(
             content()
         }
     }
-}
-
-/**
- * Legacy `data.TtsState`-typed TTS speaker button, kept only so the dead
- * `ui/TrainingCardSession.kt` call sites keep compiling (P0 inventory §2.1).
- * Delegates to the designsystem atom [TtsSpeakerButtonAtom], where the rendering
- * implementation moved in the P2 prompt pilot (re-typed to the UI-owned
- * [TtsButtonState]). Removed together with TrainingCardSession's retirement (P6).
- */
-@Composable
-fun TtsSpeakerButton(
-    ttsState: TtsState,
-    enabled: Boolean,
-    onClick: () -> Unit
-) {
-    TtsSpeakerButtonAtom(
-        state = when (ttsState) {
-            is TtsState.Speaking -> TtsButtonState.Speaking
-            is TtsState.Initializing -> TtsButtonState.Initializing
-            is TtsState.Error -> TtsButtonState.Error(ttsState.reason)
-            else -> TtsButtonState.Idle
-        },
-        enabled = enabled,
-        onClick = onClick
-    )
 }
 
 /**

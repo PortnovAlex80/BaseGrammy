@@ -394,7 +394,7 @@ fun TrainingScreen(
                 onBluetoothSetup,
                 onBluetoothCleanup
             )
-            ResultBlock(state)
+            TrainingResultBlock(isCorrect = state.cardSession.lastResult)
             UnifiedNavigationRow(
                 stateModel = remember(
                     state.cardSession.sessionState,
@@ -714,22 +714,6 @@ fun AnswerBox(
         AsrStatusIndicator(state.audio.asrState)
     }
 }
-
-/**
- * Integration boundary adapter for the extracted [TrainingResultBlock] organism
- * (P3a feedback slice). Keeps at this boundary the only state interpretation the
- * display needs: reading `TrainingUiState.cardSession.lastResult` (authoritative
- * owner: SessionRunner — inventory effect ledger rows 11/21; the same state the
- * onNext advance decision reads at the GrammarMateApp boundary). The organism
- * renders the correctness label only: the accepted answer is shown by the input
- * bar's hint card (P3b scope) and answer replay lives in the prompt card's TTS
- * button (P2 boundary) — both intentionally outside this slice.
- */
-@Composable
-fun ResultBlock(state: TrainingUiState) {
-    TrainingResultBlock(isCorrect = state.cardSession.lastResult)
-}
-
 
 private fun formatTime(activeMs: Long): String {
     val totalSeconds = activeMs / 1000

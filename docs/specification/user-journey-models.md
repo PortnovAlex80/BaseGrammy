@@ -3,6 +3,8 @@
 > Version: 1.1 | Date: 2026-05-16 | Branch: main
 > Purpose: Model each user journey from app launch to feature completion. Compare spec expectations with actual code behavior. Discrepancies are flagged for correction.
 
+> **Current routing correction — 2026-09-29:** The journey steps and discrepancy tables below retain their May 2026 historical context; their provider names, timing, header policy, and bug status are not a fresh audit. Current lesson/boss/verb/aux/daily card sessions run through `GrammarMateApp → TrainingScreenContent → TrainingScreen`. Daily TRANSLATE/VERBS are started by `DailyPracticeScreenContent` via `startDailyTranslateSession` / `startDailyVerbsSession`; the daily VOCAB block stays inline and standalone vocabulary has its own flip/rating screen. `TrainingCardSession` was unused and is retired; `DailyPracticeSessionProvider` and `VerbDrillCardSessionProvider` are not production classes. The active training header has a lesson/fallback title and Settings button, superseding the historical DP-05 header proposal. See [spec 12's current implementation](12-training-card-session.md#current-implementation-2026-09-29). The quick-reference source mapping at the end is updated; historical journey requirements remain for comparison.
+
 ---
 
 ## Design Principles
@@ -78,8 +80,8 @@ Many screens share the same foundational mechanics. Patterns are extracted to el
 |---------|---------------|---------------------------|
 | Journey 4: Sub-lesson | SessionState enum | Base implementation. All 3 input modes (VOICE/KEYBOARD/WORD_BANK). Mastery is recorded |
 | Journey 5: Boss | SessionState enum | No time limit (timing only). BRONZE/SILVER/GOLD rewards. Unlimited attempts. BUG: records mastery |
-| Journey 6 Block 1: Daily Translate | DailyPracticeSessionProvider | 10 cards. Auto-advance 400ms. VOICE/KEYBOARD/WORD_BANK modes rotate |
-| Journey 6 Block 3: Daily Verbs | DailyPracticeSessionProvider | 10 cards. No VOICE (KEYBOARD/WORD_BANK only). Same chips and logic as VerbDrill mode |
+| Journey 6 Block 1: Daily Translate | Historical: DailyPracticeSessionProvider; current: DailyPracticeScreenContent → TrainingScreen/SessionRunner | Historical description: 10 cards, auto-advance 400ms, rotating input modes; verify current behavior before relying on these details |
+| Journey 6 Block 3: Daily Verbs | Historical: DailyPracticeSessionProvider; current: DailyPracticeScreenContent → TrainingScreen/SessionRunner | Historical description: 10 cards, KEYBOARD/WORD_BANK rotation; current TrainingScreen owns mode-specific chips and controls |
 | Journey 7: Verb Drill | CardSessionStateMachine | No VOICE. Shows verb infinitive, rank, tense on card. Auto-advance 500ms (race BUG-NAV-012) |
 
 ### Pattern B: Flashcard Rating
@@ -312,11 +314,11 @@ Many screens share the same foundational mechanics. Patterns are extracted to el
 
 ### Step 6.2: Block 1 — Translation (10 cards)
 
-> Pattern A with variation: DailyPracticeSessionProvider, auto-selected input mode (VOICE/KEYBOARD/WORD_BANK rotation), auto-advance 400ms.
+> Historical Pattern A variant: DailyPracticeSessionProvider, rotating input mode, auto-advance 400ms. Current routing uses DailyPracticeScreenContent → TrainingScreen/SessionRunner; the details below are retained for historical comparison.
 
 | Difference from base Pattern A | Details |
 |-------------------------------|---------|
-| Card source | DailyPracticeSessionProvider |
+| Card source | Historical provider model; current block cards are passed by DailyPracticeScreenContent to `startDailyTranslateSession` |
 | Input modes | Rotation between VOICE/KEYBOARD/WORD_BANK |
 | Auto-advance on correct voice | 400ms delay |
 | Hint behavior | 3 incorrect → shows answer. Play → advance to next (BUG-NAV-003) |
@@ -670,19 +672,22 @@ User journeys MUST be verified after any code change that touches:
 
 ### Quick reference — which journeys to check per file:
 
+Current ownership correction: 2026-09-29. Journey numbers refer to the historical scenarios above; verify their detailed expectations against the current source/tests.
+
 | File changed | Journeys to verify |
 |---|---|
 | GrammarMateApp.kt | 2, 6, 7, 8 |
-| TrainingScreen.kt | 4, 5 |
-| SessionRunner.kt | 4, 5 |
+| ui/screens/TrainingScreen.kt / TrainingScreenContent.kt | 4, 5, 6, 7 |
+| feature/training/SessionRunner.kt | 4, 5, 6, 7 |
 | TrainingViewModel.kt | 4, 5, 6 |
 | BossOrchestrator.kt | 5 |
 | DailyPracticeCoordinator.kt | 6 |
 | DailyPracticeScreen.kt | 6 |
-| DailyPracticeSessionProvider.kt | 6 |
+| ui/screens/DailyPracticeScreenContent.kt | 6 |
 | VerbDrillScreen.kt | 7 |
-| VerbDrillCardSessionProvider.kt | 7 |
+| ui/VerbDrillViewModel.kt | 7 |
 | VocabDrillScreen.kt | 8 |
 | VocabDrillViewModel.kt | 8 |
 | Models.kt | 4, 5, 6, 7, 8 |
-| TrainingCardSession.kt | 4, 6, 7 |
+| ui/features/training/components/ (including TrainingAnswerPanel and WordBankSection) | 4, 5, 6, 7 |
+| ui/components/UnifiedInputControlsBar.kt / UnifiedNavigationRow.kt | 4, 5, 6, 7 |

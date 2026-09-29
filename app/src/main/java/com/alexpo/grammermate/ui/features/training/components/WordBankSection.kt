@@ -1,4 +1,4 @@
-package com.alexpo.grammermate.ui.components
+package com.alexpo.grammermate.ui.features.training.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.width
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -19,26 +18,10 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.stringResource
 import com.alexpo.grammermate.R
-import com.alexpo.grammermate.data.CardSessionContract
 
 /**
- * Word bank chip grid with undo control.
- * Shared across TrainingScreen, TrainingCardSession, DailyPracticeScreen, and VerbDrillScreen.
- */
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-fun WordBankSection(contract: CardSessionContract) {
-    WordBankSection(
-        wordBankWords = contract.getWordBankWords(),
-        selectedWords = contract.getSelectedWords(),
-        onSelectWord = { contract.selectWordFromBank(it) },
-        onRemoveLastWord = { contract.removeLastSelectedWord() }
-    )
-}
-
-/**
- * Word bank chip grid with undo control — raw parameter overload.
- * Use this when the caller does not have a [CardSessionContract] instance.
+ * Training word-bank chip grid with undo control.
+ * Receives display data and callbacks from [TrainingAnswerPanel].
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -92,10 +75,4 @@ fun WordBankSection(
             ) { Text(stringResource(R.string.word_bank_undo)) }
         }
     }
-}
-
-/** Backward-compatible alias. Prefer [WordBankSection]. */
-@Composable
-fun DailyWordBankSection(contract: CardSessionContract) {
-    WordBankSection(contract)
 }

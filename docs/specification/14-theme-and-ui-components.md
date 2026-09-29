@@ -1,5 +1,82 @@
 # 14. Theme & UI Components -- Specification
 
+## Current implementation (2026-09-29)
+
+This section supersedes the historical theme/component inventory retained below. It reflects the existing Atomic Design foundations and the bounded P6 cleanup; it is not a claim that all screens have been migrated or visually revalidated. P5 and the remaining P6 work are open.
+
+### Theme foundations and application facade
+
+Source paths in this section are relative to `app/src/main/java/com/alexpo/grammermate/`.
+
+| Concern | Current source / ownership |
+|---|---|
+| Material light/dark schemes, semantic `GrammarMateColors`, `LocalGrammarMateColors` | `ui/designsystem/foundation/GrammarMateColors.kt` |
+| Custom `GrammarMateTypography` declarations | `ui/designsystem/foundation/Type.kt` |
+| `GrammarMateShapes` and named radii | `ui/designsystem/foundation/Shapes.kt` |
+| `scaledSp` and training prompt size anchors | `ui/designsystem/foundation/TextScale.kt` |
+| Public `GrammarMateTheme`, active scheme selection, compatibility color getters | `ui/Theme.kt` |
+| Background drawing and safe-drawing inset wrapper | `ui/components/Glass.kt::AppBackground` |
+| Foundation preview fixtures | `ui/designsystem/preview/FoundationPreviews.kt` |
+
+`GrammarMateTheme(themeMode, content)` selects LIGHT, DARK, or the system setting. It provides the corresponding semantic palette via `LocalGrammarMateColors`, calls `MaterialTheme` with the selected `colorScheme`, `GrammarMateShapes`, and `GrammarMateTypography`, then wraps content in `AppBackground(useDarkTheme)`. `AppBackground` draws the background across the full area and applies `WindowInsets.safeDrawing` to its inner content. Keep this application-level wrapper behavior when moving foundation declarations; foundations themselves must not import components.
+
+Custom typography and shapes already exist. Creating a second theme/token hierarchy would duplicate them. The compatibility color properties still exposed by `ui/Theme.kt` are composable getters reading the active semantic palette, not static light-only constants. Their broader caller migration is separate from this cleanup.
+
+### Representative Material color values
+
+These values are verified against `GrammarMateColors.kt`; unlisted roles should be read there rather than inferred from an old seed-color table.
+
+| Role | Light | Dark |
+|---|---|---|
+| `primary` | `#0F7C66` | `#34D6B4` |
+| `onPrimary` | `#FFFFFF` | `#042822` |
+| `primaryContainer` | `#CFEFE5` | `#0B4A3C` |
+| `secondary` | `#5E8B7E` | `#5E8B7E` |
+| `background` | `#F4F1EC` | `#0E1512` |
+| `surface` | `#FFFFFF` | `#15201B` |
+| `onSurface` | `#1B2420` | `#E8EFEB` |
+| `surfaceVariant` | `#E8E4DD` | `#1E2B25` |
+| `error` | `#B3261E` | `#EF5350` |
+
+Semantic correctness, mastery, progress, speed, SRS-rating, vocabulary-feedback, and other product colors have explicit light/dark values in the same foundation file. Screens/components can read `LocalGrammarMateColors.current` or existing compatibility getters. The historical table below assigning BROKEN/PARTIAL/OK per screen is not a current dark-mode audit; source adoption alone also does not establish contrast or visual parity.
+
+### Typography, shapes, and scaling
+
+- `Type.kt` customizes headline/title/body/label weights and letter spacing. Components obtain those styles through `MaterialTheme.typography`; the exact `TextStyle` declarations are the source of truth, including fields left unspecified and screen-local font-size overrides.
+- `GrammarMateShapes` uses 8/12/16/20/28 dp for extraSmall/small/medium/large/extraLarge. `GrammarMateRadii.extraSmall` and `.small` own the first two values. Inline feature-specific shapes still exist.
+- `scaledSp(baseSp, textScale)` is exactly `(baseSp * textScale).sp`. `PromptTextScale` defines the training prompt/context/drill bases as 20/13/18. Daily and vocabulary components also apply this helper to their own existing sizes.
+- The app's `ruTextScale` setting and Android system font scaling are distinct. Text without the app-specific multiplier still uses `sp`/Compose typography and may scale with the system setting; it is incorrect to describe it as universally unscaled.
+- This structural cleanup does not change color values, dimensions, font policy, inset ownership, or animation timing.
+
+### Component and screen ownership
+
+The UI is distributed across `ui/screens/`, `ui/dialogs/`, `ui/components/`, feature-owned presentation under `ui/features/`, and generic foundations/controls under `ui/designsystem/`. `GrammarMateApp.kt` remains a route/orchestration entry point; it does not contain the whole UI.
+
+| Area | Current examples |
+|---|---|
+| Generic control | `ui/designsystem/atoms/TtsSpeakerButton.kt` uses UI-owned `TtsButtonState`; the former `data.TtsState` compatibility overload was removed with its dead callers |
+| Training display | `ui/features/training/components/TrainingPromptCard.kt`, `TrainingAnswerPanel.kt`, `TrainingResultBlock.kt`, `TrainingNavigationRow.kt`, `SessionProgressIndicator.kt`, `WordBankSection.kt` |
+| Training integration | `ui/screens/TrainingScreen.kt`, `TrainingScreenContent.kt`, `ui/components/UnifiedInputControlsBar.kt`, `UnifiedNavigationRow.kt` |
+| Daily flashcard display | `ui/features/daily/components/DailyVocabCard.kt`, `SrsRatingRow.kt` |
+| Verb selection saved-session display | `ui/features/verbdrill/components/VerbDrillSessionCard.kt` |
+| Vocabulary display | `ui/features/vocab/components/VocabDrillCardFront.kt`, `VocabRatingLadder.kt`, `VocabBadges.kt` |
+| Existing shared UI, not globally relocated by this slice | `ui/components/SharedComponents.kt` (`NavIconButton`, audio/download UI), hint/report/info components, and `ui/dialogs/AppDialogs.kt` |
+
+`TrainingCardSession`, `DifficultyRatingRow`, and `VoiceAutoLauncher` were unused and are removed. `WordBankSection` now lives with its training consumer; the dead contract overload and `DailyWordBankSection` alias were removed. `TrainingScreen` directly renders `TrainingResultBlock`; the trivial `ResultBlock` wrapper is removed. Live contracts, scoring logic, audio engines, and route behavior remain with their existing owners.
+
+Sharing follows compatible behavior rather than appearance alone. The training speaker's Speaking state is a stop affordance; daily/vocabulary speaker controls retain their existing replay semantics. Daily one-shot SRS rating and vocabulary's interval-ladder rating remain separate feature components. No universal training layout template was introduced in P4.
+
+### Ongoing verification
+
+Preview fixtures and Compose test dependencies exist. Previews use display values and explicit themes; they do not require a ViewModel, installed content pack, filesystem, or live speech engine. A preview declaration is not proof that it was rendered. See the [migration plan](../plans/2026-09-26-atomic-design-migration.md) and [dated inventory/evidence](../atomic-design/P0-baseline-inventory.md) for remaining work and actual validation status. Preserve the existing strings, accessibility semantics, tags, and mode-specific behavior while migrating additional surfaces.
+
+## Historical theme and UI reference
+
+**Scope of this archive:** the earlier numbered sections §14.1–§14.8 below retain previous inventories, behavior requirements, and design proposals. Their old palette, claims that custom typography/shapes or component directories are absent, proposed semantic-color migration, and per-screen compliance status are superseded by the current section above. Other detailed tables have not been fully re-audited in this narrow cleanup; retain their useful requirements, but verify current implementation details against source. They are not a completion report or instructions to restore retired components.
+
+<details>
+<summary>Earlier specification (historical; retained for requirements and design history)</summary>
+
 ## 14.1 Theme System
 
 ### 14.1.1 Material 3 Dual Theme (Light + Dark)
@@ -782,3 +859,5 @@ UI language and learning content language are fully independent:
 - Interface language selector controls UI strings only
 - Changing UI language does NOT change active lesson packs or learning content
 - Changing learning content language does NOT change UI language
+
+</details>

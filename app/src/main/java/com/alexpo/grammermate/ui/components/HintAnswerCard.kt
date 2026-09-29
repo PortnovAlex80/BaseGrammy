@@ -17,8 +17,7 @@ import com.alexpo.grammermate.R
 
 /**
  * Pink card showing the answer text in red.
- * Used by VerbDrillScreen (hint on EASY level), TrainingScreen (word bank hints),
- * TrainingCardSession, and DailyPracticeScreen.
+ * Used by training answer input and verb drill hints.
  *
  * @param answerText the answer string to display
  */

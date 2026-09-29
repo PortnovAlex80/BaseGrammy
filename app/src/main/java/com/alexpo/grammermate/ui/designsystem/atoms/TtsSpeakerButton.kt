@@ -53,9 +53,7 @@ sealed class TtsButtonState {
  * Moved verbatim from `ui/components/SharedComponents.kt` in the P2 prompt pilot
  * (P0 inventory §2 proposed destination: `designsystem/atoms`) and re-typed from
  * `data.TtsState` to [TtsButtonState] so UI layers can render audio without a
- * data-layer dependency. The legacy `TtsState`-typed overload remains in
- * SharedComponents.kt solely for the dead `ui/TrainingCardSession.kt` call sites
- * and is removed together with that file's retirement (P6).
+ * data-layer dependency.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

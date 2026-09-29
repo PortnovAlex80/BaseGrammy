@@ -840,3 +840,15 @@ Coverage: of the 14 routes in §1, 10 exercised end-to-end (HOME both variants, 
 - **Input persistence (16.3-C) code-verified:** `_inputText` written only at init + 3 settings-reset handlers (TrainingViewModel.kt:200/:2588/:2592/:2599); `submitAnswer`/`navigateNext` never clear it — the stale tail is structural. Fix is a product decision (clear-on-advance), queued for owner.
 - **i18n typo bonus:** values-ru/strings-screens.xml:184 "Выберите пак" (truncated). One-line fix, queued with B.
 
+---
+
+## 17. Bounded P6 cleanup (partial; 2026-09-29)
+
+- Baseline: `2ef5bc969`, branch `feature/atomic-design`. This is a small source-ownership cleanup after P4; **P5 and P6 are not complete**, and the overall migration remains open. Earlier sections retain their dated evidence and are not rewritten as current findings.
+- Retired source with no production/test callers: `ui/TrainingCardSession.kt` (including its scope/default slots), `ui/components/DifficultyRatingRow.kt`, and `ui/components/VoiceAutoLauncher.kt`. Removed the legacy `TtsSpeakerButton(ttsState: TtsState, ...)` adapter in `SharedComponents.kt` whose only callers were the retired session component. The live UI-owned speaker atom, session contracts, difficulty data/actions, and existing inline voice effects remain.
+- Moved the sole live raw `WordBankSection` implementation into `ui/features/training/components/WordBankSection.kt`, consumed by `TrainingAnswerPanel`. Removed its unused contract overload, `DailyWordBankSection` alias, and the emptied `DailyPracticeComponents.kt`. The component keeps its sibling layout nodes, duplicate-word gating, callbacks, strings, and tags.
+- Inlined the trivial `ResultBlock(TrainingUiState)` adapter at its one production call: `TrainingScreen` now calls `TrainingResultBlock(isCorrect = state.cardSession.lastResult)` directly. The display component and its previews remain.
+- Documentation: specs 12 and 14 now lead with verified current routing/foundation/component ownership; their earlier numbered bodies are explicitly historical reference. Updated the specification index, retired TCS element status, live word-bank source/visibility rows, affected use-case source references, and the journey quick-reference mapping. Behavioral requirements remain; source-map corrections are not a fresh audit of every historical acceptance criterion.
+- **Fresh validation reported by the integrating agent:** `:app:assembleDebug :app:testDebugUnitTest --no-parallel --max-workers=1` → **BUILD SUCCESSFUL in 5m44s**. JUnit XML: **68 suites, 551 tests, 0 failures, 0 errors, 0 skipped**. After the XML comment edit, `:app:compileDebugAndroidTestKotlin` → **BUILD SUCCESSFUL in 7s**. `git diff --check` passed. Instrumented-test compilation is not device execution; this entry does not claim a new instrumented or visual-parity run. §16 remains the dated emulator evidence for its own baseline.
+- Remaining scope: P5 surfaces and their known UI issues, other P6 consolidation/cleanup decisions, and migration-wide acceptance. This slice does not claim to fix the input, voice, Home scrolling, or localization issues in the earlier ledger.
+

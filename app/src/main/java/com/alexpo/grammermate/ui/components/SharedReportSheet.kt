@@ -33,8 +33,7 @@ import com.alexpo.grammermate.shared.AuditLogger
 
 /**
  * Shared 4-option report bottom sheet: flag/unflag bad sentence, hide card,
- * export bad sentences, copy text. Used by TrainingScreen, VerbDrillScreen,
- * DailyPracticeScreen, and TrainingCardSession.
+ * export bad sentences, copy text. Used by training and daily practice.
  *
  * @param onDismiss Called when the sheet should be dismissed.
  * @param cardPromptText Optional subtitle text shown below the title (e.g. card prompt).

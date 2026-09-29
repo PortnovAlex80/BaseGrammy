@@ -1,5 +1,86 @@
 # 12. Training Card Session -- Specification
 
+## Current implementation (2026-09-29)
+
+This section describes the production architecture after the bounded P6 cleanup. The older numbered sections below are retained as historical design and behavior reference; their slot/provider APIs and migration instructions are not the current implementation. The cleanup preserves session behavior and does not complete P5, P6, or the Atomic Design migration.
+
+### Runtime and ownership
+
+The active route is `GrammarMateApp` → `TrainingScreenContent` → `TrainingScreen`. `TrainingScreen` composes feature-owned presentation with existing integration adapters. It does **not** call `TrainingCardSession`; that unused composable and `TrainingCardSessionScope` have been removed. The previously described `TrainingCardSessionProvider`, `VerbDrillCardSessionProvider`, and `DailyPracticeSessionProvider` are not production classes.
+
+| Responsibility | Current owner / source path under `app/src/main/java/com/alexpo/grammermate/` |
+|---|---|
+| Route callbacks, exit destinations, orchestration | `ui/GrammarMateApp.kt` |
+| Training ViewModel connection, separate lifecycle-aware typed-input and Pomodoro collections | `ui/screens/TrainingScreenContent.kt` |
+| Mode-specific screen composition, prompt mapping, sheets, completion branches | `ui/screens/TrainingScreen.kt` |
+| Authoritative training/session logic | `ui/TrainingViewModel.kt` and helpers in `feature/training/`, including `SessionRunner` |
+| Input contract/platform adapter | `ui/components/UnifiedInputControlsBar.kt`, called by `TrainingScreen.AnswerBox` |
+| Navigation state adapter | `ui/components/UnifiedNavigationRow.kt` |
+| Pure training presentation | `ui/features/training/components/`: `TrainingPromptCard`, `TrainingAnswerPanel`, `WordBankSection`, `TrainingResultBlock`, `TrainingNavigationRow`, `SessionProgressIndicator` |
+| Generic training speaker visual control | `ui/designsystem/atoms/TtsSpeakerButton.kt`, receiving UI-owned `TtsButtonState` |
+| Still-live session/card interfaces | `data/CardSessionContract.kt`: `SessionCard`, `CardSessionContract`, `CardSessionStateModel`, capabilities and supporting values |
+
+`CardSessionContract` remains used by the anonymous adapter in `TrainingScreen.AnswerBox` and by `UnifiedInputControlsBar`. Removing the unused full-session composable does not remove the contract, the session engine, or the active voice paths. The `data.TtsState`-accepting compatibility overload of `TtsSpeakerButton` in `SharedComponents.kt` was removed with its only callers. The UI-owned speaker atom remains active through `TrainingPromptCard`.
+
+`TrainingResultBlock` now receives `state.cardSession.lastResult` directly at the screen call site; the one-line `ResultBlock(TrainingUiState)` adapter was removed. `WordBankSection` has a single presentation implementation under the training feature, used by `TrainingAnswerPanel`. Its unused contract overload and `DailyWordBankSection` alias were removed with `DailyPracticeComponents.kt`. Unused `DifficultyRatingRow` and `VoiceAutoLauncher` UI helpers were also removed; this does not remove difficulty state or inline voice effects elsewhere.
+
+### Mode integration
+
+| Entry / mode | Production integration |
+|---|---|
+| Lesson, boss, mega-boss, elite, lesson drill | Existing `TRAINING` route and `TrainingScreen`; business differences stay with the current session machinery |
+| Verb selection | `VerbDrillScreen` selects/resumes a batch; `GrammarMateApp` calls `startVerbDrillSession` and navigates to `TRAINING` |
+| Auxiliary drill selection | `AuxDrillScreen` supplies its deck through `startVerbDrillSession` to the same training route |
+| Daily TRANSLATE / VERBS | `DailyPracticeScreen` requests a card block; `DailyPracticeScreenContent` calls `startDailyTranslateSession` / `startDailyVerbsSession`, sets the return route, and navigates to `TRAINING` |
+| Daily VOCAB | Inline flashcard flow in `DailyPracticeScreen`, using `DailyVocabCard` and `SrsRatingRow` |
+| Standalone vocabulary | `VocabDrillScreen` owns flip/rating flow, using its vocabulary presentation components |
+
+Shared training controls do not imply identical layouts or identical completion behavior in every mode. `VERB_DRILL` and `DAILY_VERBS` render a separate cleaned prompt line and verb/tense chips; they suppress the normal RU-labeled prompt card. Other modes use the `CardPrompt` integration boundary and `TrainingPromptCard`. The active training header shows the lesson title when supplied, otherwise `training_grammarmate`, plus a Settings button. Historical diagrams below showing a universal back-arrow header are superseded.
+
+Daily card-block routing exists in code; its presence does not imply a currently enabled Home entry. The September 27 walkthrough recorded the daily entry controls as disabled. See the dated evidence in [the migration inventory](../atomic-design/P0-baseline-inventory.md).
+
+### Presentation and state boundaries
+
+- `CardPrompt` computes effective hints, extracts `SentenceCard.contextRu`, maps audio state, and preserves audit/callback behavior. `TrainingPromptCard` renders supplied values. Situation context remains visible independently of graded hints.
+- `TrainingScreenContent` collects typed input and the Pomodoro countdown separately. Keep those sources authoritative; do not mirror flows into new mutable adapter stores or fold high-frequency values back into the large combined state merely to simplify a signature.
+- `AnswerBox` and `UnifiedInputControlsBar` retain their existing contract mapping, recognizer effects, callback capture, cache/report integration, and Bluetooth hooks. `TrainingAnswerPanel` renders mapped display values and callbacks. Deleting `VoiceAutoLauncher` does not consolidate or change these effects.
+- `UnifiedNavigationRow` derives display state for `TrainingNavigationRow`; the latter owns its transient exit-dialog state. Preserve confirmation ownership and callback order during extraction.
+- `TrainingResultBlock` renders correctness only. Accepted-answer hints and audio replay have separate owners; it is not the historical full result slot with an answer and speaker button.
+- App text scaling remains `(baseSp * textScale).sp`, now named `scaledSp`. Training prompt/context/drill bases are 20/13/18 respectively. System font scaling still applies through `sp`.
+- The word-bank component preserves duplicate-word counts, selected/disabled behavior, undo, and its existing sibling layout nodes. Its package move does not introduce a new layout container.
+
+### Behavioral requirements retained by this cleanup
+
+1. Preserve pack/language scoping, persistent progress, session restoration, and the existing input-mode grading rules. WORD_BANK must not grow mastery flowers.
+2. Preserve the distinction between card completion and navigation-only visits. Verb Repeat replays the full saved batch in order; Continue excludes shown/completed cards, not merely visited ones; Reset clears saved session context while retaining learning progress.
+3. Preserve pause/hint/retry behavior: paused input and Check remain usable; Play resumes the same card after a hint rather than silently substituting Next. Keep the actual current effect keys and callback ordering.
+4. Preserve the normal-versus-drill prompt distinction, optional situation context, localized labels, audio state/error information, focus/IME behavior, and current app/system text scaling.
+5. Preserve rendered semantics and tags, including `card_prompt_text`, `input_field`, `check_button`, `show_answer_button`, navigation/exit tags, `word_bank_container`, `word_bank_chip_<word>`, and `word_bank_undo`.
+
+These requirements constrain refactoring; they do not claim that all older proposed behavior is implemented or that all existing defects are fixed. Known issues and verification gaps remain in the dated inventory.
+
+### Completion rendering: current branch order
+
+`TrainingScreen` currently checks these branches in order:
+
+1. An attempted `VERB_DRILL` session with no current card shows `VerbDrillCompletionContent` (More/Exit).
+2. Otherwise a completed Pomodoro shows `PomodoroSummaryScreen` outside the scrolling training column.
+3. Otherwise no current card shows `SessionCompletionContent` only if at least one answer/skip was recorded; an unattempted empty session returns without a congratulations screen.
+4. Otherwise the active card layout is rendered.
+
+Route callbacks still determine subsequent navigation and daily-block progression. The older eligible-mode/token recipe in §12.6 is historical; do not implement it in place of these current branches during cleanup.
+
+### Verification and migration status
+
+Use the [migration plan](../plans/2026-09-26-atomic-design-migration.md), current source, and relevant executable UI tests when changing these boundaries. The [inventory](../atomic-design/P0-baseline-inventory.md) contains dated P0–P4 evidence, the emulator walkthrough, and the bounded P6 cleanup status. Historical test runs do not verify new edits. P5 surface migration and the remaining P6 consolidation/acceptance work stay open.
+
+## Historical design and behavior reference
+
+**Scope of this archive:** all numbered sections §12.1–§12.10 below preserve the earlier specification. They mix still-useful behavior requirements with abandoned provider/slot architecture and outdated screen details. They are not a current API inventory or authorization to recreate removed code. When they conflict with the current implementation section above, the current section and source take precedence; intentional behavior changes require their own scope. In particular, the old `mutableStateOf`-mirror guidance must not override lifecycle-aware flow collection, and the old TrainingCardSession migration target is retired.
+
+<details>
+<summary>Earlier specification (historical; retained for requirements and design history)</summary>
+
 ## 12.1 Overview
 
 TrainingCardSession is a reusable Compose composable that provides the entire card-based training UI for GrammarMate. It abstracts card presentation, answer input, validation, feedback display, navigation, and session completion into a single parameterized component driven by the `CardSessionContract` interface.
@@ -1173,3 +1254,5 @@ Full-screen overlay replacing training content (same style as existing PomodoroS
 - Chart reads from `PomodoroHistory` loaded at summary screen creation
 - History write uses `AtomicFileWriter` (temp -> fsync -> rename) per project file I/O rules
 - Existing PM elements (PM-05 through PM-08) are enhanced; no new overlay is created -- the summary screen gains the 7-day chart section below existing stats
+
+</details>

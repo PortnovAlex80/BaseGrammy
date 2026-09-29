@@ -1,6 +1,6 @@
 # GrammarMate — Specification Index
 
-Source of truth for all project specs. Numbered specs (01–23) are current; scenario traces verify spec-code alignment.
+Index of project specifications and requirements. Documents have different verification dates; numbered status alone does not guarantee alignment with current code. Scenario traces are point-in-time evidence. Specs 12 and 14 have a current architecture section dated 2026-09-29 and explicitly retain earlier sections as historical reference during the Atomic Design migration.
 
 ---
 
@@ -24,16 +24,16 @@ Source of truth for all project specs. Numbered specs (01–23) are current; sce
 | 07 | [App Router](07-app-router.md) | GrammarMateApp screen routing, navigation graph, dialog orchestration |
 | 08 | [TrainingViewModel](08-training-viewmodel.md) | ViewModel business logic, session management, answer validation |
 | 09 | [Daily Practice](09-daily-practice.md) | 3-block session: translations, vocab flashcards, verb conjugations |
-| 10 | [Verb Drill](10-verb-drill.md) | Conjugation practice system with CardSessionProvider |
+| 10 | [Verb Drill](10-verb-drill.md) | Conjugation practice requirements; current shared training routing is described in spec 12 |
 | 11 | [Vocab Drill](11-vocab-drill.md) | Anki-style flashcard system with SRS scheduling |
-| 12 | [Training Card Session](12-training-card-session.md) | Reusable card presentation component with slots |
+| 12 | [Training Card Session](12-training-card-session.md) | Current training route, feature presentation and live adapters; archived provider/slot design |
 
 ### Cross-Cutting
 
 | # | Document | Description |
 |---|----------|-------------|
 | 13 | [App Entry & Navigation](13-app-entry-and-navigation.md) | MainActivity, AppRoot, initialization sequence, state restoration |
-| 14 | [Theme & UI Components](14-theme-and-ui-components.md) | Material 3 theme, shared components, sounds, strings |
+| 14 | [Theme & UI Components](14-theme-and-ui-components.md) | Current Compose foundations/theme facade and component ownership; historical UI reference |
 | 15 | [Lesson Content & Packs](15-lesson-content-and-packs.md) | ZIP pack format, import flow, CSV specs, pack validator |
 | 16 | [Existing Specs Consolidation](16-existing-specs-consolidation.md) | All prior specs consolidated: evolution, gaps, conflicts |
 

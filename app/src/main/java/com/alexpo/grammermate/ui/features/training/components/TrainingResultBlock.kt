@@ -26,8 +26,7 @@ import com.alexpo.grammermate.ui.GrammarMateTheme
  * rendered under the answer input after a submit (`TrainingScreen.kt` column).
  *
  * Display-only by contract (plan §4): it renders pre-computed values and never
- * imports ViewModels, session contracts, or business state beyond nothing —
- * the integration boundary `TrainingScreen.kt::ResultBlock` reads
+ * imports ViewModels or session contracts. TrainingScreen reads
  * `TrainingUiState.cardSession.lastResult` and passes it as [isCorrect].
  *
  * Parity anchors preserved verbatim from the pre-extraction inline `ResultBlock`:

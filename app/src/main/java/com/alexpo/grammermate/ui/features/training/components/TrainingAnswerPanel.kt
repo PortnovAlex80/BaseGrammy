@@ -41,7 +41,6 @@ import com.alexpo.grammermate.data.ThemeMode
 import com.alexpo.grammermate.ui.GrammarMateTheme
 import com.alexpo.grammermate.ui.components.ClickableHintAnswerCard
 import com.alexpo.grammermate.ui.components.HintAnswerCard
-import com.alexpo.grammermate.ui.components.WordBankSection
 import com.alexpo.grammermate.ui.components.WordHint
 import com.alexpo.grammermate.ui.components.WordInfoPopup
 
@@ -59,7 +58,7 @@ import com.alexpo.grammermate.ui.components.WordInfoPopup
  * state — the word-info popup remembers (inventory effect ledger row 25; plain
  * remember, no keys, same composition position as before extraction). The
  * word-bank chip grid is the existing display-only
- * [WordBankSection] raw-parameter overload (tags `word_bank_container`,
+ * [WordBankSection] (tags `word_bank_container`,
  * `word_bank_chip_*`, `word_bank_undo` unchanged).
  *
  * Stays at the boundary adapter (NOT here), per the P3b effect ledger:
