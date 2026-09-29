@@ -5,6 +5,7 @@
 - **Baseline:** `c18bbacbd`
 - **Supersedes:** No dependency rule in ADR-007; narrows the finish line for the user's architecture-hardening goal
 - **Decision-maker:** architecture review using `autonomous-decision`
+- **Amended by:** [ADR-009](009-decompose-large-owners.md) — the user's large-file/god-object scope correction adds G6; its exclusion and five-gate stop rule below are historical.
 
 ## Context
 

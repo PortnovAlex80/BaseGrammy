@@ -25,18 +25,16 @@ import com.alexpo.grammermate.feature.daily.TrainingStateAccess
 import com.alexpo.grammermate.feature.progress.StreakManager
 import com.alexpo.grammermate.shared.AuditLogger
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.launch
 
 /**
  * Session management module extracted from TrainingViewModel.
  *
  * Owns the training session lifecycle: card navigation, answer submission,
- * timer, word bank interaction, and elite sub-mode.
+ * timer entrypoints, word bank interaction, and elite sub-mode.
+ * [SessionActiveTimer] owns the running clock and checkpoint cadence.
  *
  * Query-style operations (getMastery, getSchedule, calculateCompletedSubLessons)
  * are injected as constructor function parameters.
@@ -92,10 +90,17 @@ class SessionRunner(
     private var sessionCards: List<SessionCard> = emptyList()
     private var bossCards: List<SessionCard> = emptyList()
     private var eliteCards: List<SessionCard> = emptyList()
-    private var timerJob: Job? = null
-    private var activeStartMs: Long? = null
-    private var timerTickCounter = 0
-    private var lastSaveActiveTimeMs: Long = 0L
+    private val activeTimer = SessionActiveTimer(
+        scope = coroutineScope,
+        readPersistedMs = { stateAccess.uiState.value.cardSession.activeTimeMs },
+        writePersistedMs = { activeTimeMs ->
+            stateAccess.updateState {
+                it.copy(cardSession = it.cardSession.copy(activeTimeMs = activeTimeMs))
+            }
+        },
+        onDisplayTick = sessionTimerMsSink,
+        onCheckpoint = onTimerSaveProgress
+    )
 
     private var subLessonSize = TrainingConfig.SUB_LESSON_SIZE_DEFAULT
     private val eliteStepCount = TrainingConfig.ELITE_STEP_COUNT
@@ -1351,50 +1356,14 @@ class SessionRunner(
         subLessonSize = size
     }
 
-    // ── Timer (private) ─────────────────────────────────────────────────
+    // ── Timer entrypoints ─────────────────────────────────────────────────
 
     fun resumeTimer() {
-        if (timerJob?.isActive == true) return
-        activeStartMs = SystemClock.elapsedRealtime()
-        timerTickCounter = 0
-        lastSaveActiveTimeMs = stateAccess.uiState.value.cardSession.activeTimeMs
-        timerJob = coroutineScope.launch {
-            while (true) {
-                delay(500)
-                val start = activeStartMs ?: continue
-                val elapsed = SystemClock.elapsedRealtime() - start
-                activeStartMs = SystemClock.elapsedRealtime()
-
-                // Accumulate total active time internally
-                lastSaveActiveTimeMs += elapsed
-
-                // Push high-frequency timer value to separate flow (for UI display)
-                sessionTimerMsSink?.invoke(lastSaveActiveTimeMs)
-
-                // Push activeTimeMs to main state and save progress only every ~10s (20 ticks)
-                timerTickCounter++
-                if (timerTickCounter >= 20) {
-                    timerTickCounter = 0
-                    stateAccess.updateState {
-                        it.copy(cardSession = it.cardSession.copy(activeTimeMs = lastSaveActiveTimeMs))
-                    }
-                    onTimerSaveProgress()
-                }
-            }
-        }
+        activeTimer.resume()
     }
 
     fun pauseTimer() {
-        // Flush accumulated time to main state before stopping
-        if (lastSaveActiveTimeMs > 0 && timerJob?.isActive == true) {
-            stateAccess.updateState {
-                it.copy(cardSession = it.cardSession.copy(activeTimeMs = lastSaveActiveTimeMs))
-            }
-        }
-        timerJob?.cancel()
-        timerJob = null
-        activeStartMs = null
-        timerTickCounter = 0
+        activeTimer.pause()
     }
 
     // ── Internal helpers ────────────────────────────────────────────────
