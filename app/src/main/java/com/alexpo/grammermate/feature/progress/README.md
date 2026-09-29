@@ -33,7 +33,7 @@ bad-sentence flagging, and backup restore pipelines.
   Key methods: `flagBadSentence()`, `hideCurrentCard()`, `exportBadSentences()`
 
 - **ProgressResult** — Sealed class: `RebuildSchedules`, `BuildSessionCards`,
-  `RefreshFlowerStates`, `NormalizeEliteSpeeds(callback)`, `ResolveEliteUnlocked(callback)`,
+  `HydrateBossRewards`, `RefreshFlowerStates`, `NormalizeEliteSpeeds(callback)`, `ResolveEliteUnlocked(callback)`,
   `ParseBossRewards(callback)`
 
 - **BadSentenceResult** — Sealed class: `AdvanceDrillCard`, `SkipToNextCard`, `None`
@@ -41,7 +41,8 @@ bad-sentence flagging, and backup restore pipelines.
 ## State owned
 - FlowerRefresher owns `StateFlow<FlowerDisplayState>` (lesson flower visuals)
 - BadSentenceHelper owns in-memory `dailyBadCardIds` set (daily session scope)
-- All other state is written through `TrainingStateAccess` into core TrainingUiState
+- Core training state is written through `TrainingStateAccess`; restored boss rewards
+  are returned to the ViewModel for the authoritative `BossOrchestrator` flow.
 
 ## Dependencies
 - Data stores: MasteryStore, ProgressStore, LessonStore, StreakStore,

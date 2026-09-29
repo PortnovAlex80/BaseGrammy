@@ -90,10 +90,6 @@ class ProgressRestorer(
                     currentStreak = streak.currentStreak,
                     longestStreak = streak.longestStreak
                 ),
-                boss = it.boss.copy(
-                    bossLessonRewards = bossLessonRewards,
-                    bossMegaRewards = bossMegaRewards
-                ),
                 elite = it.elite.copy(
                     eliteStepIndex = progress.eliteStepIndex.coerceIn(0, eliteStepCount - 1),
                     eliteBestSpeeds = normalizedEliteSpeeds
@@ -114,6 +110,7 @@ class ProgressRestorer(
             }
         }
         return listOf(
+            ProgressResult.HydrateBossRewards(bossLessonRewards, bossMegaRewards),
             ProgressResult.RebuildSchedules(lessons),
             ProgressResult.BuildSessionCards,
             ProgressResult.RefreshFlowerStates

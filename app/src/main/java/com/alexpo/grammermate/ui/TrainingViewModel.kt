@@ -907,7 +907,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             )
         }
         // Reset feature-owned state for session change
-        bossOrchestrator.resetState()
+        bossOrchestrator.resetStateKeepRewards()
         storyRunner.resetState()
         vocabSprintRunner.resetState()
         vocabSprintRunner.updateMasteredCount(wordMasteryStore.getMasteredCount())
@@ -1036,7 +1036,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             it.resetSessionState().copy(navigation = it.navigation.copy(mode = mode))
         }
         // Reset feature-owned state for session change
-        bossOrchestrator.resetState()
+        bossOrchestrator.resetStateKeepRewards()
         storyRunner.resetState()
         vocabSprintRunner.resetState()
         buildSessionCards()
@@ -1688,7 +1688,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
 
     fun openVocabSprint(resume: Boolean = false) {
         when (val result = vocabSprintRunner.openSprint(resume)) {
-            is VocabResult.ResetBoss -> bossOrchestrator.resetState()
+            is VocabResult.ResetBoss -> bossOrchestrator.resetStateKeepRewards()
             is VocabResult.SaveAndBackup -> { /* handled in submitVocabAnswer */ }
             is VocabResult.None -> {}
         }
@@ -1716,7 +1716,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 progressWriter.requestBackup()
                 saveProgress()
             }
-            is VocabResult.ResetBoss -> bossOrchestrator.resetState()
+            is VocabResult.ResetBoss -> bossOrchestrator.resetStateKeepRewards()
             is VocabResult.None -> {}
         }
     }
@@ -1747,7 +1747,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun finishBoss() {
-        val bossState = _coreState.value.boss
+        val bossState = bossOrchestrator.stateFlow.value
         val bossType = bossState.bossType?.name ?: bossState.bossLastType?.name ?: ""
         val reward = bossState.bossReward?.name ?: "NONE"
         AuditLogger.getInstanceOrNull()?.bossFinish(
@@ -2040,11 +2040,6 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                     val (advanceResult, bossCommands) = bossOrchestrator.advanceBossProgressOnNextCard(event.nextIndex, event.totalCards)
                     handleBossCommands(bossCommands)
 
-                    // Sync bossState from BossOrchestrator to _coreState.boss
-                    // This ensures UI sees updated bossProgress, bossReward, bossRewardMessage
-                    val bossState = bossOrchestrator.stateFlow.value
-                    _coreState.update { it.copy(boss = bossState) }
-
                     // Apply boss pause if reward threshold was crossed
                     if (advanceResult.rewardMessageChanged) {
                         _coreState.update { it.copy(cardSession = it.cardSession.copy(sessionState = SessionState.PAUSED)) }
@@ -2251,7 +2246,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 is BossCommand.SaveProgress -> saveProgress()
                 is BossCommand.BuildSessionCards -> buildSessionCards()
                 is BossCommand.RefreshFlowerStates -> refreshFlowerStates()
-                is BossCommand.ResetBoss -> bossOrchestrator.resetState()
+                is BossCommand.ResetBoss -> bossOrchestrator.resetStateKeepRewards()
                 is BossCommand.ResetDailySession -> {
                     dailyPracticeCoordinator.resetState()
                 }
@@ -2279,7 +2274,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             )
         }
         // Reset feature-owned state for session change
-        bossOrchestrator.resetState()
+        bossOrchestrator.resetStateKeepRewards()
         storyRunner.resetState()
         vocabSprintRunner.resetState()
         dailyPracticeCoordinator.resetState()
@@ -2363,10 +2358,12 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                     // answer together with the session; the input flow needs
                     // the same wipe.
                     _inputText.value = ""
+                    bossOrchestrator.resetState()
                     resetStores(result.app)
                 }
                 is SettingsResult.ResetStoresForLanguage -> {
                     _inputText.value = ""
+                    bossOrchestrator.resetState()
                     resetStoresForLanguage(result.app, result.languageId)
                 }
                 is SettingsResult.ResetDrillFiles -> resetDrillFiles(result.app)
@@ -2426,6 +2423,9 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     private fun handleProgressResults(results: List<ProgressResult>) {
         for (result in results) {
             when (result) {
+                is ProgressResult.HydrateBossRewards -> bossOrchestrator.initRewards(
+                    result.lessonRewards, result.megaRewards
+                )
                 // Restore may resolve a saved pack to its manifest language after
                 // ProgressRestorer loaded the legacy language field. Build from
                 // the published context, which is also what the deck reads.

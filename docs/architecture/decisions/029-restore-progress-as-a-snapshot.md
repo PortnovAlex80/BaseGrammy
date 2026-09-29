@@ -24,6 +24,8 @@ This could lose custom content if restore deleted the entire app directory, lose
 
 The Red Team challenged treating a successful copy as a complete restore. The application must also publish the restored pack identity, select a valid lesson, rebind pack-scoped stores and refresh derived state. The ViewModel performs those effects after the data layer reports success. Device route evidence remains a separate G5 requirement.
 
+A later owner audit found that live restore and disk reload wrote restored boss rewards into the ViewModel's core projection, while `BossOrchestrator.stateFlow` remained the authoritative renderer and save source. `ProgressRestorer` now returns a reward-hydration result and the ViewModel applies it to `BossOrchestrator` before rebuilding cards. Redundant boss writes during start, finish and progress advancement were removed from core state; session and navigation writes remain there. Ordinary lesson, pack and mode transitions retain earned rewards; only an explicit progress reset clears them. A regression loads distinct A and B maps, checks the live owner after B, then switches packs and verifies the next save still contains B.
+
 ## Consequences and decision journal
 
 Restore is a replacement for managed learning progress, not a merge. New persisted progress files must be added to the managed-file list and tested on create and restore. Installed packs, imported lesson content and app configuration remain outside this snapshot by design. Recheck when introducing another progress store, asynchronous save lane or startup read.

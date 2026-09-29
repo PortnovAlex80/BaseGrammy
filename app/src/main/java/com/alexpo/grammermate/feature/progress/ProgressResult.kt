@@ -16,6 +16,10 @@ import com.alexpo.grammermate.data.ScheduledSubLesson
  */
 sealed class ProgressResult {
     object None : ProgressResult()
+    data class HydrateBossRewards(
+        val lessonRewards: Map<String, BossReward>,
+        val megaRewards: Map<String, BossReward>
+    ) : ProgressResult()
     data class RebuildSchedules(val lessons: List<Lesson>) : ProgressResult()
     object BuildSessionCards : ProgressResult()
     object RefreshFlowerStates : ProgressResult()
