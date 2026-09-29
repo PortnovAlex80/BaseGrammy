@@ -16,16 +16,11 @@ import com.alexpo.grammermate.data.PackDailyCursorState
 import com.alexpo.grammermate.data.PackDailyCursorStore
 import com.alexpo.grammermate.data.PackId
 import com.alexpo.grammermate.data.SrsRating
-import com.alexpo.grammermate.data.SpacedRepetitionConfig
-import com.alexpo.grammermate.data.TrainingConfig
+import com.alexpo.grammermate.data.SentenceCard
 import com.alexpo.grammermate.data.VerbDrillCard
-import com.alexpo.grammermate.data.VerbDrillComboProgress
 import com.alexpo.grammermate.data.VerbDrillStore
-import com.alexpo.grammermate.data.WordMasteryState
 import com.alexpo.grammermate.data.WordMasteryStore
 import com.alexpo.grammermate.data.TrainingUiState
-import com.alexpo.grammermate.data.PracticeType
-import com.alexpo.grammermate.data.StreakData
 import com.alexpo.grammermate.data.StreakStore
 import com.alexpo.grammermate.feature.progress.StreakManager
 import com.alexpo.grammermate.feature.training.AnswerValidator
@@ -80,6 +75,8 @@ class DailyPracticeCoordinator(
 
     private val logTag = "GrammarMate"
     private val cursorController = DailyCursorController(packDailyCursorStore, lessonStore)
+    private val taskProgress = DailyTaskProgressRecorder(masteryStore, verbDrillStoreFactory, wordMasteryStoreFactory)
+    private val streakCompletion = DailyStreakCompletion(stateAccess, streakStore, streakManager)
 
     // ── Owned state flow ─────────────────────────────────────────────────
     private val _state = MutableStateFlow(DailyPracticeState())
@@ -145,41 +142,8 @@ class DailyPracticeCoordinator(
         val ds = _state.value.dailySession
         val languageId = stateAccess.uiState.value.navigation.selectedLanguageId?.value ?: return
         val blockTypes = ds.blocks.map { it.type }.toSet()
-        val blockTypeToPracticeType = mapOf(
-            DailyBlockType.TRANSLATE to PracticeType.TRANSLATION,
-            DailyBlockType.VOCAB to PracticeType.VOCAB,
-            DailyBlockType.VERBS to PracticeType.VERB
-        )
-        var lastStreakData: StreakData? = null
-        var anyNewFire = false
-        for (blockType in blockTypes) {
-            val practiceType = blockTypeToPracticeType[blockType] ?: continue
-            val (updated, isNewFire) = streakStore.recordPracticeTypeCompletion(languageId, practiceType)
-            lastStreakData = updated
-            if (isNewFire) anyNewFire = true
-        }
-        Log.d(logTag, "DailyPractice: endSession, blockTypes=$blockTypes, streakFires=$anyNewFire, currentStreak=${lastStreakData?.currentStreak}")
-
-        // Update in-memory core state so HomeScreen shows the new streak immediately
-        // without requiring an app restart. The store already persists to disk,
-        // but the UI reads from _coreState which was not being updated here.
-        // Also generate a celebration message when a new fire is earned, so the
-        // streak celebration dialog appears after daily practice (same as regular training).
-        val streakSnapshot = lastStreakData
-        if (streakSnapshot != null) {
-            val message = if (anyNewFire && streakSnapshot.currentStreak > 0) {
-                streakManager.getCelebrationMessage(streakSnapshot.currentStreak, streakSnapshot.todayFireCount)
-            } else null
-            stateAccess.updateState { state ->
-                state.copy(cardSession = state.cardSession.copy(
-                    currentStreak = streakSnapshot.currentStreak,
-                    longestStreak = streakSnapshot.longestStreak,
-                    todayFireCount = streakSnapshot.todayFireCount,
-                    streakMessage = message,
-                    streakCelebrationToken = if (message != null) state.cardSession.streakCelebrationToken + 1 else state.cardSession.streakCelebrationToken
-                ))
-            }
-        }
+        val anyNewFire = streakCompletion.record(languageId, blockTypes)
+        Log.d(logTag, "DailyPractice: endSession, blockTypes=$blockTypes, streakFires=$anyNewFire")
 
         _state.update { state ->
             state.copy(dailySession = state.dailySession.copy(
@@ -508,39 +472,22 @@ class DailyPracticeCoordinator(
 
     fun recordDailyCardPracticed(
         blockType: DailyBlockType,
-        resolveCardLessonId: (card: com.alexpo.grammermate.data.SentenceCard) -> String,
+        sentenceCard: SentenceCard?,
+        resolveCardLessonId: (card: SentenceCard) -> String,
         accepted: Boolean = true
     ) {
         val count = dailyPracticeAnsweredCounts[blockType] ?: 0
         dailyPracticeAnsweredCounts[blockType] = count + 1
 
-        if (blockType == DailyBlockType.TRANSLATE && accepted) {
-            val block = getCurrentBlock() ?: return
-            val task = block.tasks.firstOrNull() as? DailyTask.TranslateSentence ?: return
-            val card = task.card
-            val lessonId = resolveCardLessonId(card)
-            val nav = stateAccess.uiState.value.navigation
-            val packIdStr = nav.activePackId?.value ?: return
-            masteryStore.recordCardShowForPack(packIdStr, lessonId, card.id)
+        if (blockType == DailyBlockType.TRANSLATE && accepted && sentenceCard != null) {
+            val packId = stateAccess.uiState.value.navigation.activePackId?.value ?: return
+            taskProgress.recordSentenceShow(packId, resolveCardLessonId(sentenceCard), sentenceCard.id)
         }
     }
 
     fun persistDailyVerbProgress(card: VerbDrillCard) {
-        val packId = stateAccess.uiState.value.navigation.activePackId ?: return
-        val store = getVerbDrillStore(packId.value)
-        val comboKey = "${card.group ?: ""}|${card.tense ?: ""}"
-        val existing = store.loadProgress()[comboKey]
-        val everShown = (existing?.everShownCardIds ?: emptySet()) + card.id
-        val todayShown = (existing?.todayShownCardIds ?: emptySet()) + card.id
-        val updated = VerbDrillComboProgress(
-            group = card.group ?: "",
-            tense = card.tense ?: "",
-            totalCards = existing?.totalCards ?: 0,
-            everShownCardIds = everShown,
-            todayShownCardIds = todayShown,
-            lastDate = java.time.LocalDate.now().toString()
-        )
-        store.upsertComboProgress(comboKey, updated)
+        val packId = stateAccess.uiState.value.navigation.activePackId?.value ?: return
+        taskProgress.recordVerbShow(packId, card)
     }
 
     // ── Repeat / rebuild ─────────────────────────────────────────────────
@@ -625,20 +572,7 @@ class DailyPracticeCoordinator(
         val wordId = task.word.id
         val state = stateAccess.uiState.value
         val packId = state.navigation.activePackId ?: return
-        val store = getWordMasteryStore(packId.value)
-        val current = store.getMastery(wordId) ?: WordMasteryState.new(wordId)
-        val now = System.currentTimeMillis()
-        val maxStep = SpacedRepetitionConfig.INTERVAL_LADDER_DAYS.size - 1
-        val newStepIndex = when (rating) {
-            SrsRating.AGAIN -> 0  // reset
-            SrsRating.HARD -> current.intervalStepIndex  // stay
-            SrsRating.GOOD -> (current.intervalStepIndex + 1).coerceIn(0, maxStep)  // +1
-            SrsRating.EASY -> (current.intervalStepIndex + 2).coerceIn(0, maxStep)  // +2
-        }
-        val newNextReview = WordMasteryState.computeNextReview(now, newStepIndex)
-        val isLearned = newStepIndex >= TrainingConfig.LEARNED_THRESHOLD
-        val updated = current.copy(correctCount = current.correctCount + (if (rating != SrsRating.AGAIN) 1 else 0), incorrectCount = current.incorrectCount + (if (rating == SrsRating.AGAIN) 1 else 0), intervalStepIndex = newStepIndex, lastReviewDateMs = now, nextReviewDateMs = newNextReview, isLearned = isLearned)
-        store.upsertMastery(updated)
+        val newStepIndex = taskProgress.rateVocab(packId.value, wordId, rating)
         Log.d(logTag, "DailyPractice: rateVocabCard wordId=$wordId, rating=$rating, newStepIndex=$newStepIndex, taskIndex=${block.taskIndex}/${block.tasks.size}")
 
         // Advance task index within the VOCAB block

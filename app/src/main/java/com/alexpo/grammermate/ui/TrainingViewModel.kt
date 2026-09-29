@@ -1241,7 +1241,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                     com.alexpo.grammermate.data.TrainingScreenMode.DAILY_VERBS -> DailyBlockType.VERBS
                     else -> return SubmitResult(result.accepted, result.hintShown)
                 }
-                recordDailyCardPracticed(blockType)
+                recordDailyCardPracticed(blockType, beforeCard as? SentenceCard)
                 // Persist verb card progress so buildVerbBlock doesn't repeat the same cards
                 if (blockType == DailyBlockType.VERBS) {
                     if (beforeCard is com.alexpo.grammermate.data.VerbDrillCard) {
@@ -1755,10 +1755,11 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
      * Called from DailyPracticeScreen's onCardAdvanced callback (which the provider only fires
      * for non-WORD_BANK modes). Used to track per-block completion for cursor advancement.
      */
-    fun recordDailyCardPracticed(blockType: DailyBlockType) {
+    fun recordDailyCardPracticed(blockType: DailyBlockType, sentenceCard: SentenceCard? = null) {
         // Caller already guards on result.accepted, so accepted=true here.
         dailyPracticeCoordinator.recordDailyCardPracticed(
             blockType = blockType,
+            sentenceCard = sentenceCard,
             resolveCardLessonId = { card -> resolveCardLessonId(card) },
             accepted = true
         )

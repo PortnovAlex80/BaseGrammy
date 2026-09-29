@@ -28,7 +28,7 @@ Each block has 10 tasks. Replaces former Elite mode and Vocab Sprint.
   - `startDailyPractice(resolveProgressLessonInfo, onStoreFirstSessionCardIds): Boolean`
   - `repeatDailyPractice(lessonLevel, resolveProgressLessonInfo): Boolean`
   - `advanceDailyTask(onPersistVerbProgress): Boolean`
-  - `recordDailyCardPracticed(blockType, resolveCardLessonId)`
+  - `recordDailyCardPracticed(blockType, sentenceCard, resolveCardLessonId)`
   - `advanceDailyBlock(): Boolean` / `repeatDailyBlock(...): Boolean`
   - `cancelDailySession(): Int?` -- returns sentence count for cursor advancement
   - `rateVocabCard(rating: SrsRating)` -- Anki-style AGAIN/HARD/GOOD/EASY
@@ -42,7 +42,11 @@ Each block has 10 tasks. Replaces former Elite mode and Vocab Sprint.
 `DailyPracticeState` via internal MutableStateFlow:
 - `dailySession: DailySessionState` (active, tasks, taskIndex, blockIndex, level, finishedToken)
 - `dailyCursor: DailyCursorState` (sentenceOffset, currentLessonIndex, firstSessionDate, firstSessionCardIds)
-Private mutable: `prebuiltDailySession`, `lastDailyTasks`, `dailyPracticeAnsweredCounts`, `dailyCursorAtSessionStart`
+Private mutable: `prebuiltDailyBlocks`, `lastDailyBlocks`, `dailyPracticeAnsweredCounts`.
+
+`DailyCursorController` owns pack-specific cursor persistence and advancement.
+`DailyTaskProgressRecorder` writes sentence, verb, and vocab progress for the answered card.
+`DailyStreakCompletion` records completed block fires and updates the shared streak snapshot.
 
 ## Dependencies
 - `feature.training.AnswerValidator`, `feature.training.CardSessionStateMachine`
