@@ -85,10 +85,9 @@ import com.alexpo.grammermate.shared.SettingsActionHandler
 import com.alexpo.grammermate.shared.SettingsResult
 import com.alexpo.grammermate.shared.audio.AudioCoordinator
 import com.alexpo.grammermate.feature.pomodoro.PomodoroHelper
-import com.alexpo.grammermate.data.PomodoroHistoryEntry
 import com.alexpo.grammermate.data.PomodoroHistoryStore
-import com.alexpo.grammermate.data.PomodoroSessionStats
 import com.alexpo.grammermate.data.PomodoroSettingsStore
+import com.alexpo.grammermate.feature.pomodoro.PomodoroRecords
 import com.alexpo.grammermate.data.CardDifficultyRating
 import com.alexpo.grammermate.data.PackLessonProgressStore
 import com.alexpo.grammermate.data.Chapter
@@ -290,14 +289,8 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     private val _profileStats = MutableStateFlow(ProfileStats(0, 0, ""))
     val profileStats: StateFlow<ProfileStats> = _profileStats.asStateFlow()
 
-    private val _pomodoroHistory = MutableStateFlow<List<PomodoroHistoryEntry>>(emptyList())
-    val pomodoroHistory: StateFlow<List<PomodoroHistoryEntry>> = _pomodoroHistory.asStateFlow()
-
-    // Last chosen pomodoro duration (pomodoro_settings.yaml read was the last
-    // per-composition disk hit on HOME). Seeded off-main at init, republished
-    // on startPomodoro.
-    private val _pomodoroLastDuration = MutableStateFlow(20)
-    val pomodoroLastDuration: StateFlow<Int> = _pomodoroLastDuration.asStateFlow()
+    val pomodoroHistory get() = pomodoroRecords.history
+    val pomodoroLastDuration get() = pomodoroRecords.lastDuration
 
     private fun refreshPackTiles() {
         val tiles = getPackTiles()
@@ -320,9 +313,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     }
 
     private fun refreshPomodoroHistory() {
-        val entries = _coreState.value.navigation.selectedLanguageId
-            ?.let { pomodoroHistoryStore.loadAll(it.value) } ?: emptyList()
-        if (_pomodoroHistory.value != entries) _pomodoroHistory.value = entries
+        pomodoroRecords.refreshHistory(_coreState.value.navigation.selectedLanguageId?.value)
     }
 
     /** Session resets zero cardSession.badSentenceCount — re-seed it for the
@@ -481,8 +472,10 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         )
     }
 
-    private val pomodoroSettingsStore = PomodoroSettingsStore(getApplication<Application>())
-    private val pomodoroHistoryStore = PomodoroHistoryStore(getApplication<Application>())
+    private val pomodoroRecords = PomodoroRecords(
+        PomodoroSettingsStore(getApplication<Application>()),
+        PomodoroHistoryStore(getApplication<Application>())
+    )
     private val pomodoroHelper = PomodoroHelper(
         stateProvider = { _coreState.value },
         onUpdateState = { newState -> _coreState.update { newState } },
@@ -498,7 +491,13 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             } catch (_: Exception) {}
         },
         onPomodoroCompleted = { stats, remainingSeconds, totalSeconds ->
-            savePomodoroHistory(stats, remainingSeconds, totalSeconds)
+            val navigation = _coreState.value.navigation
+            pomodoroRecords.appendCompleted(
+                stats, remainingSeconds, totalSeconds,
+                navigation.selectedLanguageId?.value,
+                navigation.activePackId?.value,
+                navigation.selectedLessonId?.value
+            )
         }
     )
 
@@ -560,8 +559,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     // ── Pomodoro operations ─────────────────────────────────────────────────
 
     fun startPomodoro(durationMinutes: Int) {
-        pomodoroSettingsStore.save(durationMinutes)
-        _pomodoroLastDuration.value = durationMinutes
+        pomodoroRecords.saveDuration(durationMinutes)
         _pomodoroRemainingSeconds.value = durationMinutes * 60
         pomodoroHelper.startPomodoro(durationMinutes)
         AuditLogger.getInstanceOrNull()?.pomodoroStart(
@@ -629,11 +627,11 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun getPomodoroLastDuration(): Int {
-        return _pomodoroLastDuration.value
+        return pomodoroRecords.lastDuration.value
     }
 
     fun getPomodoroHistoryForSelectedLanguage() =
-        _coreState.value.navigation.selectedLanguageId?.let { pomodoroHistoryStore.loadAll(it.value) } ?: emptyList()
+        pomodoroRecords.loadHistory(_coreState.value.navigation.selectedLanguageId?.value)
 
     // ── TTS playback for story narration ───────────────────────────────────────
 
@@ -730,32 +728,6 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
-    private fun savePomodoroHistory(
-        stats: PomodoroSessionStats,
-        remainingSeconds: Int,
-        totalSeconds: Int
-    ) {
-        val state = _coreState.value
-        val languageId = state.navigation.selectedLanguageId?.value ?: return
-        pomodoroHistoryStore.append(
-            PomodoroHistoryEntry(
-                id = "${languageId}_${stats.completedAtMs}",
-                languageId = languageId,
-                packId = state.navigation.activePackId?.value,
-                lessonId = state.navigation.selectedLessonId?.value,
-                completedAtMs = stats.completedAtMs,
-                durationMinutes = stats.durationMinutes,
-                totalSeconds = totalSeconds,
-                remainingSeconds = remainingSeconds,
-                cardsShown = stats.cardsShown,
-                cardsCorrect = stats.cardsCorrect,
-                cardsIncorrect = stats.cardsIncorrect,
-                wordsPerMinute = stats.wordsPerMinute
-            )
-        )
-        refreshPomodoroHistory()
-    }
-
     init {
         AuditLogger.getInstanceOrNull()?.startWriter(viewModelScope)
         Log.d(logTag, "Update: duolingo sfx, prompt in speech UI, voice loop rules, stop resets progress")
@@ -780,7 +752,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             // Warm the mastery cache off-main: later main-thread reads
             // (getForPack during composition-derived refreshes) hit memory only.
             masteryStore.loadAll()
-            _pomodoroLastDuration.value = pomodoroSettingsStore.load()
+            pomodoroRecords.loadDuration()
             eliteSizeMultiplier = config.eliteSizeMultiplier
             sessionSize = config.sessionSize
             cardProvider.setSubLessonSize(sessionSize)
