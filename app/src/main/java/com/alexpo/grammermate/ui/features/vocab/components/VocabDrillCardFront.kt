@@ -246,6 +246,18 @@ fun VocabDrillCardFront(
                 )
                 Spacer(modifier = Modifier.height(12.dp))
 
+                // Wrong attempts 1–2 keep the mic active, so their feedback
+                // must not be hidden behind the completed-only branch.
+                if (voiceOutcome == VocabVoiceOutcome.Wrong) {
+                    VoiceResultFeedback(
+                        voiceOutcome = voiceOutcome,
+                        voiceAttempts = voiceAttempts,
+                        voiceRecognizedText = voiceRecognizedText,
+                        voiceCompleted = false
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                }
+
                 FilledTonalIconButton(
                     onClick = onStartVoice,
                     modifier = Modifier.size(72.dp)

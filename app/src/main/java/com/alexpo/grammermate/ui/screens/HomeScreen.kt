@@ -2,6 +2,7 @@ package com.alexpo.grammermate.ui.screens
 
 import androidx.compose.ui.draw.alpha
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -12,9 +13,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.itemsIndexed
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
@@ -139,6 +139,7 @@ fun HomeScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .verticalScroll(rememberScrollState())
             .padding(16.dp)
     ) {
         Row(
@@ -241,34 +242,40 @@ fun HomeScreen(
         }
         Spacer(modifier = Modifier.height(8.dp))
         if (state.navigation.activePackId != null) {
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(4),
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                userScrollEnabled = false
-            ) {
-                itemsIndexed(tiles) { _, tile ->
-                    val flower = tile.lessonId?.let { state.flowerDisplay.lessonFlowers[it] }
-                    LessonTile(
-                        tile = tile,
-                        flower = flower,
-                        onSelect = {
-                            val lessonId = tile.lessonId ?: return@LessonTile
-                            ScreenLogger.tap("lesson_tap", details = "lesson=$lessonId")
-                            AuditLogger.getInstanceOrNull()?.lessonSelect(lessonId, "")
-                            onSelectLesson(lessonId)
-                        },
-                        onLockedClick = {
-                            // For locked tiles with a lesson, offer early start
-                            if (tile.lessonId != null) {
-                                earlyStartLessonId = tile.lessonId
-                            } else {
-                                showLockedLessonHint = true
-                            }
+            // There are exactly twelve lesson slots. Use one screen scroll owner;
+            // a nested lazy grid would receive unbounded height here.
+            tiles.chunked(4).forEach { rowTiles ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    rowTiles.forEach { tile ->
+                        Box(modifier = Modifier.weight(1f)) {
+                            val flower = tile.lessonId?.let { state.flowerDisplay.lessonFlowers[it] }
+                            LessonTile(
+                                tile = tile,
+                                flower = flower,
+                                onSelect = {
+                                    val lessonId = tile.lessonId ?: return@LessonTile
+                                    ScreenLogger.tap("lesson_tap", details = "lesson=$lessonId")
+                                    AuditLogger.getInstanceOrNull()?.lessonSelect(lessonId, "")
+                                    onSelectLesson(lessonId)
+                                },
+                                onLockedClick = {
+                                    if (tile.lessonId != null) {
+                                        earlyStartLessonId = tile.lessonId
+                                    } else {
+                                        showLockedLessonHint = true
+                                    }
+                                }
+                            )
                         }
-                    )
+                    }
+                    repeat(4 - rowTiles.size) {
+                        Spacer(modifier = Modifier.weight(1f))
+                    }
                 }
+                Spacer(modifier = Modifier.height(8.dp))
             }
         }
         Spacer(modifier = Modifier.height(12.dp))

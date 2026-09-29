@@ -328,12 +328,8 @@ class VocabDrillClickUiTest {
     // Test 5: Voice feedback — WRONG outcome after 3 attempts
     // ========================================
     // LIMITATION: same as test 4 (production callback driven directly).
-    // Also documents a reachable/unreachable display pair: below 3 attempts
-    // the wrong outcome keeps voiceCompleted=false, so the front face keeps
-    // the mic section ("Try again (n/3)" is only renderable inside the
-    // feedback card, which requires voiceCompleted=true — i.e. the
-    // "Try again" branch is unreachable with the current wiring; recorded as
-    // a finding, NOT worked around here).
+    // The first two wrong attempts must leave the mic available and show the
+    // live retry count; only the third attempt completes voice input.
 
     @Test
     fun voiceResultWrong_threeAttempts_rendersMovingOnFeedback() {
@@ -346,9 +342,15 @@ class VocabDrillClickUiTest {
         repeat(2) {
             composeRule.runOnUiThread { vm.handleVoiceResult("cane") }
             composeRule.mainClock.advanceTimeBy(16)
+            assertEquals(it + 1, session().voiceAttempts)
+            assertFalse(session().voiceCompleted)
             assertTrue(
                 "Below 3 attempts the mic section must stay visible",
                 textExists(application.getString(R.string.vocab_tap_to_speak))
+            )
+            assertTrue(
+                "Wrong attempt ${it + 1} must display the retry count",
+                textExists(application.getString(R.string.vocab_voice_try_again, it + 1))
             )
             assertTrue(
                 "Feedback card must not render below 3 attempts",
