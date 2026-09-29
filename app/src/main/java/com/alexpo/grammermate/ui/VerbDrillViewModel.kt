@@ -74,6 +74,7 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
     private val lessonStore = container.lessonStore
     private val progressStore = container.progressStore
     private val badSentenceStore = container.badSentenceStore
+    private val badSentences = VerbDrillBadSentences(badSentenceStore)
     private val ttsEngine = container.ttsEngine
     private val streakStore = container.streakStore
     private val cardCatalogLoader by lazy {
@@ -95,39 +96,22 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
     /** Flag to track if reloadForPack() has been called. Used to defer last session check. */
     private var reloadForPackCalled = false
 
-    /** Maps card ID to pack ID for bad sentence scoping */
-    private var packIdForCardId: Map<String, String> = emptyMap()
-
     /** Session size from config, replaces hardcoded take(10). */
     private var sessionSize: Int = 10
 
     // ── Speed tracking ──────────────────────────────────────────────────
-    private var cardShownTimestamp: Long = 0L
-    private var totalAnswerTimeMs: Long = 0L
-    private var totalAnswersForSpeed: Int = 0
-    val currentSpeedWpm: Int
-        get() {
-            val minutes = totalAnswerTimeMs / 60000.0
-            if (minutes <= 0.0) return 0
-            return (totalAnswersForSpeed / minutes).toInt()
-        }
+    private val speedTracker = VerbDrillSpeedTracker()
+    val currentSpeedWpm: Int get() = speedTracker.wordsPerMinute
 
     /** Called when a new card is displayed to start timing. */
     fun markCardShown() {
-        cardShownTimestamp = System.currentTimeMillis()
+        speedTracker.markCardShown()
     }
 
     /** Called when an answer is submitted to record elapsed time. */
     fun recordAnswerTime() {
-        if (cardShownTimestamp > 0) {
-            totalAnswerTimeMs += System.currentTimeMillis() - cardShownTimestamp
-            totalAnswersForSpeed++
-            cardShownTimestamp = 0L
-        }
+        speedTracker.recordAnswer()
     }
-
-    /** Tracks pack IDs that have verb drill cards, for counting bad sentences */
-    private var activePackIds: Set<String> = emptySet()
 
     /** Tense reference info keyed by full tense name (e.g. "Passato Prossimo") */
     private var tenseInfoMap: Map<String, TenseInfo> = emptyMap()
@@ -282,8 +266,7 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
 
         // State updates on main thread (viewModelScope.launch default dispatcher)
         allCards = ioResult.cards
-        packIdForCardId = ioResult.cardToPack
-        activePackIds = ioResult.packIds
+        badSentences.useCatalog(ioResult.cardToPack, ioResult.packIds)
         progressMap = ioResult.progress
         tenseInfoMap = ioResult.tenseInfo
 
@@ -306,25 +289,19 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
 
     private fun loadValidLastSession(): com.alexpo.grammermate.data.VerbDrillLastSessionState? {
         val lastSession = verbDrillStore.loadLastSession() ?: return null
-        val currentPack = currentPackId
-        if (currentPack != null && lastSession.packId != null && lastSession.packId != currentPack) {
-            Log.i(logTag, "Discarding verb drill last session for pack ${lastSession.packId}; current pack is $currentPack")
-            verbDrillStore.deleteLastSession()
-            return null
-        }
-        if (lastSession.sessionCardIds.isNotEmpty() && allCards.isNotEmpty()) {
-            // Validate only when cards are LOADED — a fresh ViewModel (allCards
-            // empty until reloadForPack completes) must not discard the saved
-            // session just because availability is not known yet.
-            val availableIds = allCards.asSequence().map { it.id }.toSet()
-            val allSessionCardsAvailable = lastSession.sessionCardIds.all { it in availableIds }
-            if (!allSessionCardsAvailable) {
+        when (VerbDrillSessionCheckpoint.validity(lastSession, currentPackId, allCards)) {
+            VerbDrillSessionCheckpoint.Validity.PACK_MISMATCH -> {
+                Log.i(logTag, "Discarding verb drill last session for pack ${lastSession.packId}; current pack is $currentPackId")
+                verbDrillStore.deleteLastSession()
+                return null
+            }
+            VerbDrillSessionCheckpoint.Validity.MISSING_CARDS -> {
                 Log.i(logTag, "Discarding verb drill last session with card IDs outside current pack")
                 verbDrillStore.deleteLastSession()
                 return null
             }
+            VerbDrillSessionCheckpoint.Validity.VALID -> return lastSession
         }
-        return lastSession
     }
 
     fun getTenseInfo(tenseName: String?): TenseInfo? {
@@ -399,23 +376,12 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
         }
 
         // Save last session for resume (VD-51) - save immediately when starting
-        val lastSessionState = com.alexpo.grammermate.data.VerbDrillLastSessionState(
-            selectedTense = state.selectedTense,
-            selectedGroup = state.selectedGroup,
-            selectedPerson = state.selectedPerson,
-            sortByFrequency = state.sortByFrequency,
-            todayShownCardIds = batch.excludedCardIds,
-            sessionCardIds = selected.map { it.id },
-            currentIndex = 0,
-            packId = currentPackId
-        )
+        val lastSessionState = VerbDrillSessionCheckpoint.snapshot(state, session, batch.excludedCardIds, currentPackId)
         verbDrillStore.saveLastSession(lastSessionState)
         Log.d(logTag, "startSession: saved lastSession with ${batch.excludedCardIds.size} shown cards and ${selected.size} session cards")
 
         // Reset speed tracking for new session
-        totalAnswerTimeMs = 0L
-        totalAnswersForSpeed = 0
-        cardShownTimestamp = System.currentTimeMillis()
+        speedTracker.startBatch()
     }
 
     /**
@@ -453,7 +419,7 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
         if (isComplete) {
             recordFireStreakIfCompleted(updatedCorrect)
         } else {
-            cardShownTimestamp = System.currentTimeMillis()
+            speedTracker.markCardShown()
         }
 
         updateProgressDisplay()
@@ -493,7 +459,7 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
         saveLastSessionState(_uiState.value.session ?: session)
 
         if (!isComplete) {
-            cardShownTimestamp = System.currentTimeMillis()
+            speedTracker.markCardShown()
         }
 
         updateProgressDisplay()
@@ -529,7 +495,7 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
      * A session counts when correctCount >= (sessionSize - badSentenceCount).
      */
     private fun recordFireStreakIfCompleted(correctCount: Int) {
-        val badCount = activePackIds.sumOf { badSentenceStore.getBadSentenceCount(it) }
+        val badCount = badSentences.count()
         val required = (sessionSize - badCount).coerceAtLeast(1)
         if (correctCount >= required) {
             val languageId = _uiState.value.loadedLanguageId ?: return
@@ -577,7 +543,7 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
                     session = session.copy(currentIndex = nextIndex)
                 )
             }
-            cardShownTimestamp = System.currentTimeMillis()
+            speedTracker.markCardShown()
         } else {
             saveLastSessionState(session)
             startSession(emptySet())
@@ -606,16 +572,7 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
         val progress = progressMap[comboKey]
         val todayShownCardIds = progress?.todayShownCardIds ?: emptySet()
 
-        val lastSessionState = com.alexpo.grammermate.data.VerbDrillLastSessionState(
-            selectedTense = state.selectedTense,
-            selectedGroup = state.selectedGroup,
-            selectedPerson = state.selectedPerson,
-            sortByFrequency = state.sortByFrequency,
-            todayShownCardIds = todayShownCardIds,
-            sessionCardIds = session.cards.map { it.id },
-            currentIndex = session.currentIndex.coerceIn(0, session.cards.size),
-            packId = currentPackId
-        )
+        val lastSessionState = VerbDrillSessionCheckpoint.snapshot(state, session, todayShownCardIds, currentPackId)
         verbDrillStore.saveLastSession(lastSessionState)
         Log.d(logTag, "saveLastSessionState: saved filters with ${todayShownCardIds.size} shown cards, packId=$currentPackId")
     }
@@ -692,9 +649,7 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
                     currentIndex = 0
                 )
             )
-            totalAnswerTimeMs = 0L
-            totalAnswersForSpeed = 0
-            cardShownTimestamp = System.currentTimeMillis()
+            speedTracker.startBatch()
         } else {
             // Legacy saved sessions may not have card IDs. In that case repeat
             // starts from the full filtered pool instead of today's remaining pool.
@@ -742,63 +697,7 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
      */
     fun showDebugDialog() {
         viewModelScope.launch {
-            // Build debug info string
-            val debugInfo = buildString {
-                appendLine("=== Verb Drill Debug Info ===")
-                appendLine()
-
-                // Pack ID
-                appendLine("Pack ID: ${currentPackId ?: "null (legacy mode)"}")
-                appendLine()
-
-                // Progress file path (we need to get this from the store)
-                appendLine("Progress Map Size: ${progressMap.size} entries")
-                if (progressMap.isNotEmpty()) {
-                    appendLine("Progress Keys:")
-                    progressMap.keys.forEach { key ->
-                        val progress = progressMap[key]
-                        appendLine("  - $key: everShown=${progress?.everShownCardIds?.size ?: 0}, todayShown=${progress?.todayShownCardIds?.size ?: 0}")
-                    }
-                }
-                appendLine()
-
-                // Last session state
-                val lastSession = verbDrillStore.loadLastSession()
-                if (lastSession != null) {
-                    appendLine("Last Session State:")
-                    appendLine("  - Tense: ${lastSession.selectedTense ?: "null"}")
-                    appendLine("  - Group: ${lastSession.selectedGroup ?: "null"}")
-                    appendLine("  - SortByFrequency: ${lastSession.sortByFrequency}")
-                    appendLine("  - TodayShownCardIds: ${lastSession.todayShownCardIds.size}")
-                    appendLine("  - SessionCardIds: ${lastSession.sessionCardIds.size}")
-                    appendLine("  - CurrentIndex: ${lastSession.currentIndex}")
-                } else {
-                    appendLine("Last Session State: null")
-                }
-                appendLine()
-
-                // Store info
-                if (verbDrillStore is com.alexpo.grammermate.data.VerbDrillStoreImpl) {
-                    // Use reflection to access the private file field
-                    try {
-                        val fileField = verbDrillStore.javaClass.getDeclaredField("file")
-                        fileField.isAccessible = true
-                        val file = fileField.get(verbDrillStore) as? java.io.File
-                        appendLine("Progress File Path: ${file?.absolutePath ?: "unknown"}")
-                        appendLine("Progress File Exists: ${file?.exists() ?: false}")
-                        appendLine("Progress File Size: ${if (file?.exists() == true) "${file.length()} bytes" else "N/A"}")
-
-                        val lastSessionFileField = verbDrillStore.javaClass.getDeclaredField("lastSessionFile")
-                        lastSessionFileField.isAccessible = true
-                        val lastSessionFile = lastSessionFileField.get(verbDrillStore) as? java.io.File
-                        appendLine("Last Session File Path: ${lastSessionFile?.absolutePath ?: "unknown"}")
-                        appendLine("Last Session File Exists: ${lastSessionFile?.exists() ?: false}")
-                        appendLine("Last Session File Size: ${if (lastSessionFile?.exists() == true) "${lastSessionFile.length()} bytes" else "N/A"}")
-                    } catch (e: Exception) {
-                        appendLine("Error accessing file info: ${e.message}")
-                    }
-                }
-            }
+            val debugInfo = VerbDrillDebugReport.build(currentPackId, progressMap, verbDrillStore)
 
             // Log the debug info
             Log.d(logTag, "showDebugDialog:\n$debugInfo")
@@ -822,18 +721,9 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
         val index = session.currentIndex
         if (index >= session.cards.size) return
         val card = session.cards[index]
-        val packId = packIdForCardId[card.id] ?: return
-
-        badSentenceStore.addBadSentence(
-            packId = packId,
-            cardId = card.id,
-            languageId = _uiState.value.loadedLanguageId ?: "",
-            sentence = card.promptRu,
-            translation = card.answer,
-            mode = "verb_drill"
-        )
+        if (!badSentences.flag(card, _uiState.value.loadedLanguageId ?: "")) return
         _uiState.update {
-            it.copy(badSentenceCount = activePackIds.sumOf { pid -> badSentenceStore.getBadSentenceCount(pid) }, currentCardIsBad = true)
+            it.copy(badSentenceCount = badSentences.count(), currentCardIsBad = true)
         }
     }
 
@@ -842,11 +732,9 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
         val index = session.currentIndex
         if (index >= session.cards.size) return
         val card = session.cards[index]
-        val packId = packIdForCardId[card.id] ?: return
-
-        badSentenceStore.removeBadSentence(packId, card.id)
+        if (!badSentences.unflag(card)) return
         _uiState.update {
-            it.copy(badSentenceCount = activePackIds.sumOf { pid -> badSentenceStore.getBadSentenceCount(pid) }, currentCardIsBad = false)
+            it.copy(badSentenceCount = badSentences.count(), currentCardIsBad = false)
         }
     }
 
@@ -854,23 +742,9 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
         return _uiState.value.currentCardIsBad
     }
 
-    fun exportBadSentences(): String? {
-        if (activePackIds.isEmpty()) return null
-        // Use unified export for all packs
-        for (packId in activePackIds) {
-            val entries = badSentenceStore.getBadSentences(packId)
-            if (entries.isNotEmpty()) {
-                val file = badSentenceStore.exportUnified()
-                return file.absolutePath
-            }
-        }
-        return null
-    }
+    fun exportBadSentences(): String? = badSentences.export()
 
-    private fun isCardBad(card: VerbDrillCard): Boolean {
-        val packId = packIdForCardId[card.id] ?: return false
-        return badSentenceStore.isBadSentence(packId, card.id)
-    }
+    private fun isCardBad(card: VerbDrillCard): Boolean = badSentences.isBad(card)
 
     // ── Verb Reference ──────────────────────────────────────────────────
 
