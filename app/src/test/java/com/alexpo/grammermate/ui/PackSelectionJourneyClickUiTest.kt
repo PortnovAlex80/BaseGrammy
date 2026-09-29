@@ -6,16 +6,20 @@ import android.os.Looper
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.alexpo.grammermate.R
+import com.alexpo.grammermate.data.PackLessonProgressStoreImpl
 import com.alexpo.grammermate.data.SentenceCard
 import com.alexpo.grammermate.data.StoreFactory
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -24,6 +28,7 @@ import org.robolectric.RuntimeEnvironment
 import org.robolectric.Shadows
 import org.robolectric.annotation.Config
 import java.io.File
+import java.util.concurrent.TimeUnit
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 
@@ -41,11 +46,31 @@ class PackSelectionJourneyClickUiTest {
 
     @Before
     fun setUp() {
+        val stores = StoreFactory.getInstance(application())
+        val lessonProgress = PackLessonProgressStoreImpl(application())
+        testPackIds.forEach { packId ->
+            stores.getMasteryStore().clearPack(packId)
+            lessonProgress.deletePackProgress(packId)
+        }
         // Import before VM startup so its installed-pack snapshot contains all
         // three fixtures, exactly as it would after restarting the app.
         importPack(packA, "A Click shared", "shared", "Shared card from A")
         importPack(packB, "B Click shared", "shared", "Shared card from B")
         importPack(uniquePack, "C Click unique", "unique", "Unique card from C")
+        val lessonStore = StoreFactory.getInstance(application()).getLessonStore()
+        assertTrue(
+            "Imported pack catalog: ${lessonStore.getInstalledPacks().map { it.packId.value }}",
+            lessonStore.getInstalledPacks().map { it.packId.value }.containsAll(testPackIds)
+        )
+        testPackIds.zip(listOf("Shared card from A", "Shared card from B", "Unique card from C"))
+            .forEach { (packId, prompt) ->
+                assertTrue("Chapter manifest missing for $packId", lessonStore.hasChapters(packId))
+                assertEquals(
+                    "Pack-scoped CSV for $packId",
+                    prompt,
+                    (lessonStore.getLessons(packId, "it").single().cards.single() as SentenceCard).promptRu
+                )
+            }
 
         vm = TrainingViewModel(application())
         rule.setContent { GrammarMateTheme { GrammarMateApp(vm) } }
@@ -56,18 +81,45 @@ class PackSelectionJourneyClickUiTest {
         // The persisted language belongs to other journeys in this Robolectric
         // process. Establish the language only; every pack change below is a click.
         rule.runOnUiThread { vm.selectLanguage("it") }
-        rule.waitUntil(10_000) {
-            Shadows.shadowOf(Looper.getMainLooper()).idle()
-            vm.uiState.value.navigation.activePackId == null &&
-                vm.packTiles.value.map { it.packId }.containsAll(testPackIds)
+        try {
+            rule.waitUntil(10_000) {
+                Shadows.shadowOf(Looper.getMainLooper()).idle()
+                vm.uiState.value.navigation.activePackId == null &&
+                    vm.packTiles.value.map { it.packId }.containsAll(testPackIds)
+            }
+        } catch (cause: Throwable) {
+            val nav = vm.uiState.value.navigation
+            throw AssertionError(
+                "Pack selection failed: language=${nav.selectedLanguageId}, active=${nav.activePackId}, " +
+                    "navPacks=${nav.installedPacks.map { it.packId.value }}, " +
+                    "tiles=${vm.packTiles.value.map { it.packId }}, " +
+                    "storePacks=${lessonStore.getInstalledPacks().map { it.packId.value }}"
+            ).apply { initCause(cause) }
+        }
+        // Fresh installs cover Home with a welcome dialog after the Home
+        // composition's LaunchedEffect; wait for that effect before clicking.
+        val skipLabel = rule.activity.getString(R.string.dialog_welcome_skip)
+        val nav = vm.uiState.value.navigation
+        if (nav.userName == "GrammarMateUser" && nav.welcomeDialogAttempts < 3) {
+            rule.waitUntil(10_000) {
+                rule.onAllNodesWithText(skipLabel).fetchSemanticsNodes().isNotEmpty()
+            }
+        }
+        if (rule.onAllNodesWithText(skipLabel).fetchSemanticsNodes().isNotEmpty()) {
+            rule.onNodeWithText(skipLabel).performClick()
         }
     }
 
     @After
     fun tearDown() {
         if (::vm.isInitialized) rule.runOnUiThread { vm.selectLanguage("en") }
-        val lessonStore = StoreFactory.getInstance(application()).getLessonStore()
-        testPackIds.forEach { lessonStore.removeInstalledPackData(it) }
+        val stores = StoreFactory.getInstance(application())
+        val lessonProgress = PackLessonProgressStoreImpl(application())
+        testPackIds.forEach { packId ->
+            stores.getLessonStore().removeInstalledPackData(packId)
+            stores.getMasteryStore().clearPack(packId)
+            lessonProgress.deletePackProgress(packId)
+        }
     }
 
     @Test
@@ -106,12 +158,26 @@ class PackSelectionJourneyClickUiTest {
         assertEquals(listOf(lessonId), state.navigation.activePackLessonIds)
         assertEquals(listOf(lessonId), state.navigation.lessons.map { it.id.value })
         assertEquals(prompt, (state.navigation.lessons.single().cards.single() as SentenceCard).promptRu)
-        rule.onNodeWithContentDescription("Back").assertIsDisplayed()
+        try {
+            rule.waitUntil(10_000) {
+                rule.onAllNodesWithContentDescription("Back").fetchSemanticsNodes().isNotEmpty()
+            }
+            rule.onNodeWithContentDescription("Back").assertIsDisplayed()
+        } catch (cause: Throwable) {
+            throw AssertionError(
+                "Roadmap Back missing for $packId: hasChapters=${vm.uiState.value.navigation.activePackHasChapters}, " +
+                    "chapterCards=${vm.chapterCards.value.size}, " +
+                    "backNodes=${rule.onAllNodesWithContentDescription("Back").fetchSemanticsNodes().size}"
+            ).apply { initCause(cause) }
+        }
     }
 
     private fun returnToPackTiles() {
         // The chapter roadmap's production Back control clears the active pack.
         rule.onNodeWithContentDescription("Back").performClick()
+        // GrammarStoryRoadmapScreen posts its real Back callback 150 ms later so
+        // the ripple finishes. Robolectric's idle() does not advance that clock.
+        Shadows.shadowOf(Looper.getMainLooper()).idleFor(200, TimeUnit.MILLISECONDS)
         rule.waitUntil(10_000) {
             Shadows.shadowOf(Looper.getMainLooper()).idle()
             vm.uiState.value.navigation.activePackId == null
