@@ -1,7 +1,9 @@
 # GrammarMate: incremental Atomic Design migration
 
 Date: 2026-09-26. Source baseline: `c2717a075`.
-Status: proposed implementation plan; no runtime migration has been performed.
+Status: P0–P4 and one bounded P6 cleanup slice have been implemented; P5 and final P6 acceptance remain open. See the dated [inventory](../atomic-design/P0-baseline-inventory.md) for evidence.
+
+Scope note (2026-09-29): this is the broader Atomic Design/UI migration backlog. The user's finite goal of modularity, isolation, clean layers and business correctness is governed by the separate [architecture closure contract](2026-09-29-architecture-closure-contract.md) and [ADR-008](../architecture/decisions/008-bounded-architecture-closure.md). The 24 P5 dispatch items are not automatically blockers for that goal.
 
 Implementation handoff: [English implementation prompt](../prompts/atomic-design-implementation.md).
 Independent review: [English review prompt](../prompts/atomic-design-review.md).

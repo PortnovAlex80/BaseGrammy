@@ -7,3 +7,4 @@
 5. [005. Restore the complete product runtime with build variants](005-restore-product-runtime-with-build-variants.md)
 6. [006. Drop v2 and keep one shipping runtime](006-drop-v2-single-runtime.md)
 7. [007. Incremental Atomic Design with feature-owned presentation (proposed)](007-incremental-atomic-design.md)
+8. [008. Bounded architecture closure for the shipping app](008-bounded-architecture-closure.md)
