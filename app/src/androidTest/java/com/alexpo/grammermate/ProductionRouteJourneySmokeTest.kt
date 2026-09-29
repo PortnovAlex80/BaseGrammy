@@ -9,6 +9,7 @@ import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performScrollToIndex
 import androidx.compose.ui.test.performScrollToNode
 import androidx.test.core.app.ActivityScenario
 import androidx.test.espresso.Espresso
@@ -178,13 +179,20 @@ class ProductionRouteJourneySmokeTest {
     private fun clickChapterAction() {
         val action = hasAnyDescendant(hasTextExactly("Continue")) or
             hasAnyDescendant(hasTextExactly("Review"))
-        composeRule.onNode(hasScrollAction()).performScrollToNode(action)
+        val list = composeRule.onNode(hasScrollAction())
+        list.performScrollToIndex(0)
+        list.performScrollToNode(action)
         clickText(if (hasText("Continue")) "Continue" else "Review")
     }
 
     private fun clickRoadmapText(value: String) {
-        composeRule.onNode(hasScrollAction())
-            .performScrollToNode(hasAnyDescendant(hasTextExactly(value)))
+        val list = composeRule.onNode(hasScrollAction())
+        list.performScrollToIndex(0)
+        // Global actions live in item 0 and can be queried directly once it is
+        // composed. The LazyColumn item matcher only applies to chapter cards.
+        if (!hasText(value)) {
+            list.performScrollToNode(hasAnyDescendant(hasTextExactly(value)))
+        }
         clickText(value)
     }
 
