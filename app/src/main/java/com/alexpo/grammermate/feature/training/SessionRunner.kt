@@ -526,8 +526,9 @@ class SessionRunner(
         voiceWords: Int,
     ): SubmitResult {
         stateMachine.reset()
+        val voice = SessionAnswerTransitions.VoiceContribution.from(shouldAddVoiceMetrics, voiceDurationMs, voiceWords)
         stateAccess.updateState {
-            it.copy(cardSession = it.cardSession.copy(correctCount = it.cardSession.correctCount + 1, lastResult = null, incorrectAttemptsForCard = 0, answerText = null, voiceActiveMs = if (shouldAddVoiceMetrics) it.cardSession.voiceActiveMs + (voiceDurationMs ?: 0L) else it.cardSession.voiceActiveMs, voiceWordCount = if (shouldAddVoiceMetrics) it.cardSession.voiceWordCount + voiceWords else it.cardSession.voiceWordCount, voicePromptStartMs = null))
+            it.copy(cardSession = SessionAnswerTransitions.bossLast(it.cardSession, voice))
         }
         return SubmitResult(
             accepted = true,
@@ -552,8 +553,9 @@ class SessionRunner(
         state: com.alexpo.grammermate.data.TrainingUiState
     ): Pair<SubmitResult, List<SessionEvent>> {
         stateMachine.reset()
+        val voice = SessionAnswerTransitions.VoiceContribution.from(shouldAddVoiceMetrics, voiceDurationMs, voiceWords)
         stateAccess.updateState {
-            it.copy(cardSession = it.cardSession.copy(correctCount = it.cardSession.correctCount + 1, lastResult = true, incorrectAttemptsForCard = 0, answerText = null, voiceActiveMs = if (shouldAddVoiceMetrics) it.cardSession.voiceActiveMs + (voiceDurationMs ?: 0L) else it.cardSession.voiceActiveMs, voiceWordCount = if (shouldAddVoiceMetrics) it.cardSession.voiceWordCount + voiceWords else it.cardSession.voiceWordCount, voicePromptStartMs = null))
+            it.copy(cardSession = SessionAnswerTransitions.bossMid(it.cardSession, voice))
         }
         // nextCard handles voice trigger, word bank, save, and boss progress event.
         val events = nextCardInternal(triggerVoice = state.cardSession.inputMode == InputMode.VOICE)
@@ -571,21 +573,14 @@ class SessionRunner(
     ): Pair<SubmitResult, List<SessionEvent>> {
         pauseTimer()
         stateMachine.reset()
-        val speed = calculateSpeedPerMinute(state.cardSession.voiceActiveMs, state.cardSession.voiceWordCount)
-        val bestSpeeds = normalizeEliteSpeeds(state.elite.eliteBestSpeeds)
-        val stepIndex = state.elite.eliteStepIndex.coerceIn(0, eliteStepCount - 1)
-        val currentBest = bestSpeeds.getOrNull(stepIndex) ?: 0.0
-        val nextSpeeds = bestSpeeds.toMutableList().apply {
-            if (speed > currentBest) {
-                this[stepIndex] = speed
-            }
-        }
-        val nextStep = (stepIndex + 1) % eliteStepCount
+        val voice = SessionAnswerTransitions.VoiceContribution.from(shouldAddVoiceMetrics, voiceDurationMs, voiceWords)
+        // Score from the pre-answer snapshot; pauseTimer may update only active time.
+        val completion = SessionAnswerTransitions.eliteLast(state, voice, eliteStepCount)
         stateAccess.updateState {
-            it.copy(cardSession = it.cardSession.copy(correctCount = it.cardSession.correctCount + 1, lastResult = null, incorrectAttemptsForCard = 0, answerText = null, voiceActiveMs = if (shouldAddVoiceMetrics) it.cardSession.voiceActiveMs + (voiceDurationMs ?: 0L) else it.cardSession.voiceActiveMs, voiceWordCount = if (shouldAddVoiceMetrics) it.cardSession.voiceWordCount + voiceWords else it.cardSession.voiceWordCount, voicePromptStartMs = null, sessionState = SessionState.PAUSED, currentIndex = 0), elite = it.elite.copy(eliteActive = false, eliteStepIndex = nextStep, eliteBestSpeeds = nextSpeeds, eliteFinishedToken = it.elite.eliteFinishedToken + 1))
+            SessionAnswerTransitions.eliteLast(it, voice, eliteStepCount).state
         }
         // Audit: elite step finish
-        audit?.eliteStepFinish(stepIndex, speed, currentBest, state.elite.eliteFinishedToken + 1)
+        audit?.eliteStepFinish(completion.stepIndex, completion.speed, completion.previousBest, state.elite.eliteFinishedToken + 1)
         return SubmitResult(
             accepted = true,
             hintShown = false,
@@ -604,18 +599,14 @@ class SessionRunner(
     ): Pair<SubmitResult, List<SessionEvent>> {
         pauseTimer()
         stateMachine.reset()
+        val voice = SessionAnswerTransitions.VoiceContribution.from(shouldAddVoiceMetrics, voiceDurationMs, voiceWords)
         stateAccess.updateState {
-            val nextCompleted = (it.cardSession.completedSubLessonCount + 1).coerceAtMost(it.cardSession.subLessonCount)
             val lessonId = it.navigation.selectedLessonId
             val mastery = lessonId?.let { id -> it.navigation.selectedLanguageId?.let { langId -> getMastery(id.value, langId.value) } }
             val schedule = lessonId?.let { id -> getSchedule(id.value) }
             val subLessons = schedule?.subLessons.orEmpty()
             val actualCompletedCount = calculateCompletedSubLessons(subLessons, mastery, lessonId?.value, getHiddenCardIds())
-
-            val preservedActiveIndex = maxOf(it.cardSession.activeSubLessonIndex, actualCompletedCount)
-            val finalActiveIndex = preservedActiveIndex.coerceAtMost((it.cardSession.subLessonCount - 1).coerceAtLeast(0))
-
-            it.copy(cardSession = it.cardSession.copy(correctCount = it.cardSession.correctCount + 1, lastResult = null, incorrectAttemptsForCard = 0, answerText = null, voiceActiveMs = if (shouldAddVoiceMetrics) it.cardSession.voiceActiveMs + (voiceDurationMs ?: 0L) else it.cardSession.voiceActiveMs, voiceWordCount = if (shouldAddVoiceMetrics) it.cardSession.voiceWordCount + voiceWords else it.cardSession.voiceWordCount, voicePromptStartMs = null, sessionState = SessionState.PAUSED, currentIndex = 0, activeSubLessonIndex = finalActiveIndex, completedSubLessonCount = maxOf(nextCompleted, actualCompletedCount), subLessonFinishedToken = it.cardSession.subLessonFinishedToken + 1))
+            SessionAnswerTransitions.normalLast(it, voice, actualCompletedCount)
         }
         Log.d(logTag, "Answer submitted: accepted=true (last card)")
         // Audit: sub-lesson completed
@@ -646,8 +637,9 @@ class SessionRunner(
         state: com.alexpo.grammermate.data.TrainingUiState
     ): Pair<SubmitResult, List<SessionEvent>> {
         stateMachine.reset()
+        val voice = SessionAnswerTransitions.VoiceContribution.from(shouldAddVoiceMetrics, voiceDurationMs, voiceWords)
         stateAccess.updateState {
-            it.copy(cardSession = it.cardSession.copy(correctCount = it.cardSession.correctCount + 1, lastResult = true, incorrectAttemptsForCard = 0, answerText = null, voiceActiveMs = if (shouldAddVoiceMetrics) it.cardSession.voiceActiveMs + (voiceDurationMs ?: 0L) else it.cardSession.voiceActiveMs, voiceWordCount = if (shouldAddVoiceMetrics) it.cardSession.voiceWordCount + voiceWords else it.cardSession.voiceWordCount, voicePromptStartMs = null))
+            it.copy(cardSession = SessionAnswerTransitions.normalMid(it.cardSession, voice))
         }
         // nextCard handles voice trigger, word bank, save.
         val events = nextCardInternal(triggerVoice = state.cardSession.inputMode == InputMode.VOICE)
