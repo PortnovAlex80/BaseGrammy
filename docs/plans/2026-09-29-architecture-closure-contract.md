@@ -1,7 +1,7 @@
 # Architecture closure contract
 
 Date: 2026-09-29. Baseline: `c18bbacbd` on `feature/atomic-design`.
-Decisions: [ADR-008](../architecture/decisions/008-bounded-architecture-closure.md), amended by [ADR-009](../architecture/decisions/009-decompose-large-owners.md).
+Decisions: [ADR-008](../architecture/decisions/008-bounded-architecture-closure.md), amended by [ADR-009](../architecture/decisions/009-decompose-large-owners.md) and [ADR-026](../architecture/decisions/026-use-ownership-not-line-count-for-decomposition.md).
 Status: defined target, **not yet achieved**. This document fixes the finish line for the next refactoring effort; it is not a report that the gates below have passed.
 
 ## Goal and boundary
@@ -19,7 +19,7 @@ This contract covers the active paths for lesson/boss training, verb/aux session
 | G3 — business rules | The fixed scenario matrix below, with executable tests for each transition and a source-to-test map | Tests assert the observable result **and** the persisted/domain result where applicable. UI claims use production composables and actual clicks; a test that only mutates a fake ViewModel or a no-op harness does not satisfy a click gate. All named assertions pass. No grading, persistence or route behavior changes without a failing characterization test and an explicit expected outcome. |
 | G4 — known live defects | Disposition of the five frozen rows below | The three reachable user-visible defects are fixed and covered by focused regression evidence. Bluetooth lifecycle is traced and either wired correctly or the dead callback is removed with evidence that cleanup is owned elsewhere. Disabled Daily flip stays explicitly deferred and cannot be counted as verified; enabling that entry makes it a blocker. No new defect row is added to this milestone unless a gate reveals a reproducible high-impact regression. |
 | G5 — release evidence | Build/test log, route matrix, residual-risk note and doc update at one final revision | `:app:assembleDebug`, full `:app:testDebugUnitTest --no-parallel --max-workers=1`, and the relevant instrumented smoke/click paths pass after the final code change. Every currently reachable route has a fresh smoke result. The route matrix distinguishes `PASS`, `FAIL`, `UNTESTED`, `BLOCKED_BY_DESIGN` and `UNREACHABLE_LEGACY`; the latter three never count as passes. If an emulator is unavailable, G5 remains open rather than being inferred from compilation or an old run. |
-| G6 — large owners | The fixed [14-file decomposition workplan](2026-09-29-large-file-decomposition.md) | Every tracked file is at or below 800 physical lines; each extracted owner has one coherent capability and a live caller, with no duplicate authoritative state/effect path or wrapper-only split. G1–G5 still pass. |
+| G6 — large owners | The fixed [14-file decomposition workplan](2026-09-29-large-file-decomposition.md) | Review each tracked owner's responsibilities and move independently changing capabilities to cohesive owners with live callers. State and effects have one authoritative owner; no wrapper-only split or hidden callback cycle is accepted. Verify moved behavior through G3 and G5. Physical line counts are diagnostic, not a pass threshold. G1–G5 still pass. |
 
 G5's route inventory is the 14 constants in `ui/navigation/Routes.kt` at the baseline; classify each against actual entry paths on the final revision. A disabled entry or compatibility redirect is still listed, but it is not counted as an exercised user route.
 

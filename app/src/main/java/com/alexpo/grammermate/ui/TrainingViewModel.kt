@@ -52,7 +52,6 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import kotlin.random.Random
 
@@ -266,7 +265,6 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     private var subLessonTotal: Int = 0
     private var subLessonCount: Int = 0
     private var lessonSchedules: Map<com.alexpo.grammermate.data.LessonId, LessonSchedule> = emptyMap()
-    private var forceBackupOnSave: Boolean = false
 
     /** Saved lesson ID before daily practice started, for restoration on exit. */
     private var preDailySelectedLessonId: com.alexpo.grammermate.data.LessonId? = null
@@ -456,6 +454,24 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         backupManager = backupManager,
         coroutineScope = viewModelScope,
         resolveEliteUnlocked = { lessons, testMode -> sessionRunner.resolveEliteUnlocked(lessons, testMode) }
+    )
+
+    private val progressWriter: TrainingProgressWriter = TrainingProgressWriter(
+        snapshots = TrainingProgressSnapshotSource(
+            core = _coreState,
+            audio = audioCoordinator.audioState,
+            story = storyRunner.stateFlow,
+            vocab = vocabSprintRunner.vocabState,
+            daily = dailyPracticeCoordinator.dailyState,
+            flower = flowerRefresher.stateFlow,
+            boss = bossOrchestrator.stateFlow,
+            currentCursor = dailyPracticeCoordinator::getCursor
+        ),
+        progressTracker = progressTracker,
+        masteryStore = masteryStore,
+        normalizeEliteSpeeds = sessionRunner::normalizeEliteSpeeds,
+        createBackup = settingsActionHandler::createProgressBackup,
+        scope = viewModelScope
     )
 
     // ── Public helper accessors (UI uses vm.audio.X() instead of vm.X()) ─────
@@ -1137,7 +1153,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             finishBoss()
         }
         if (result.needsSubLessonComplete) {
-            forceBackupOnSave = true
+            progressWriter.requestBackup()
         }
 
         recordSelfProducedIfEarned(result.accepted, beforeState, beforeCard, beforeInputMode)
@@ -1165,7 +1181,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         }
 
         // A linear completion must persist after its mastery/daily hooks and
-        // after forceBackupOnSave is set. Other answer paths save via events.
+        // after the backup request. Other answer paths save via events.
         if (result.needsSaveProgress) saveProgress()
 
         Log.d(logTag, "Answer submitted: accepted=${result.accepted}")
@@ -1736,7 +1752,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     fun completeStory(phase: StoryPhase, allCorrect: Boolean) {
         when (val result = storyRunner.completeStory(phase, allCorrect)) {
             is StoryResult.SaveAndBackup -> {
-                forceBackupOnSave = true
+                progressWriter.requestBackup()
                 saveProgress()
             }
             is StoryResult.None -> {}
@@ -1752,7 +1768,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         }
         when (result.action) {
             is VocabResult.SaveAndBackup -> {
-                forceBackupOnSave = true
+                progressWriter.requestBackup()
                 saveProgress()
             }
             is VocabResult.ResetBoss -> bossOrchestrator.resetState()
@@ -2185,66 +2201,9 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             else -> PracticeType.TRANSLATION
         }
     }
-    /**
-     * Single-lane dispatcher for progress disk writes. The timer path launches
-     * onto it (off Main); synchronous paths runBlocking onto it. FIFO order
-     * keeps an in-flight timer save from interleaving with — or overwriting —
-     * a newer synchronous save across the two stores.
-     */
-    private val progressWriteLane = Dispatchers.IO.limitedParallelism(1)
+    private fun saveProgress(): Unit = progressWriter.save()
 
-    private fun saveProgress() = dispatchSaveProgress(async = false)
-
-    /**
-     * Timer path (SessionRunner 10s tick). The state snapshot is taken on
-     * Main; the two disk writes land on [progressWriteLane]. A queued save
-     * dropped by viewModelScope cancellation at onCleared is superseded by
-     * the final synchronous save there; an in-flight write always completes
-     * (blocking I/O has no cancellation points).
-     */
-    private fun saveProgressFromTimer() = dispatchSaveProgress(async = true)
-
-    private fun dispatchSaveProgress(async: Boolean) {
-        // The combined UI flow can lag immediate writes or stop collecting entirely.
-        // Persist from each authoritative flow so completion and cursor changes cannot
-        // be replaced by an older UI projection.
-        val state = _coreState.value.copy(
-            audio = audioCoordinator.audioState.value,
-            story = storyRunner.stateFlow.value,
-            vocabSprint = vocabSprintRunner.vocabState.value,
-            daily = dailyPracticeCoordinator.dailyState.value,
-            flowerDisplay = flowerRefresher.stateFlow.value,
-            boss = bossOrchestrator.stateFlow.value
-        )
-        // Read the cursor directly from its coordinator as well: it may have
-        // changed before dailyState has emitted its matching projection.
-        val actualCursor = dailyPracticeCoordinator.getCursor()
-        val stateToSave = if (state.daily.dailyCursor != actualCursor) {
-            state.copy(daily = state.daily.copy(dailyCursor = actualCursor))
-        } else {
-            state
-        }
-        val forceBackup = forceBackupOnSave
-        val normalizedEliteSpeeds = sessionRunner.normalizeEliteSpeeds(stateToSave.elite.eliteBestSpeeds)
-
-        val write: suspend () -> Unit = {
-            val shouldBackup = progressTracker.saveProgress(
-                state = stateToSave,
-                forceBackup = forceBackup,
-                normalizedEliteSpeeds = normalizedEliteSpeeds
-            )
-            masteryStore.flush()
-            if (shouldBackup) {
-                forceBackupOnSave = false
-                settingsActionHandler.createProgressBackup()
-            }
-        }
-        if (async) {
-            viewModelScope.launch(progressWriteLane) { write() }
-        } else {
-            runBlocking { withContext(progressWriteLane) { write() } }
-        }
-    }
+    private fun saveProgressFromTimer(): Unit = progressWriter.saveFromTimer()
     private fun buildSessionCards() {
         if (bossOrchestrator.stateFlow.value.bossActive || _coreState.value.elite.eliteActive) return
         val state = _coreState.value
@@ -2438,7 +2397,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                     _inputText.value = ""
                     resetDailyState()
                 }
-                is SettingsResult.SetForceBackup -> { forceBackupOnSave = true }
+                is SettingsResult.SetForceBackup -> { progressWriter.requestBackup() }
                 is SettingsResult.SaveProgress -> saveProgress()
                 is SettingsResult.ResetStreak -> resetStreak()
                 is SettingsResult.ResetStreakForLanguage -> resetStreakForLanguage(result.languageId)

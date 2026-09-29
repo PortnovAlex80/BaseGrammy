@@ -1,5 +1,7 @@
 # 009. Decompose large owners as part of architecture closure
 
+The 800-line acceptance threshold in this historical decision is superseded by [ADR-026](026-use-ownership-not-line-count-for-decomposition.md). Its responsibility-based decomposition scope remains in force.
+
 - **Status:** Accepted
 - **Date:** 2026-09-29
 - **Baseline:** `d8d228d67`
