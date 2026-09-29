@@ -5,8 +5,14 @@ import androidx.test.core.app.ApplicationProvider
 import com.alexpo.grammermate.data.CardSessionState
 import com.alexpo.grammermate.data.EliteState
 import com.alexpo.grammermate.data.InputMode
+import com.alexpo.grammermate.data.HintLevel
+import com.alexpo.grammermate.data.LanguageId
+import com.alexpo.grammermate.data.Lesson
+import com.alexpo.grammermate.data.LessonId
+import com.alexpo.grammermate.data.NavigationState
 import com.alexpo.grammermate.data.SentenceCard
 import com.alexpo.grammermate.data.SessionState
+import com.alexpo.grammermate.data.TrainingConfig
 import com.alexpo.grammermate.data.TrainingUiState
 import com.alexpo.grammermate.feature.progress.StreakManager
 import com.alexpo.grammermate.testharness.FakeStreakStore
@@ -136,5 +142,48 @@ class SessionRunnerAnswerModesTest {
         assertEquals(0, access.uiState.value.cardSession.incorrectAttemptsForCard)
         assertEquals("correct", access.uiState.value.cardSession.answerText)
         assertEquals(SessionState.HINT_SHOWN, access.uiState.value.cardSession.sessionState)
+    }
+
+    @Test
+    fun reviewRestartResetsCardSessionAndTriggersHardVoiceMode() {
+        val (runner, access) = runnerFor(TrainingUiState(cardSession = CardSessionState(
+            correctCount = 3,
+            incorrectCount = 2,
+            inputMode = InputMode.KEYBOARD
+        )))
+
+        assertEquals(
+            listOf(SessionEvent.RecordCardShow(card), SessionEvent.SaveProgress),
+            runner.startReview(listOf(card), HintLevel.HARD)
+        )
+        val session = access.uiState.value.cardSession
+        assertEquals(SessionState.ACTIVE, session.sessionState)
+        assertEquals(card, session.currentCard)
+        assertEquals(0, session.correctCount)
+        assertEquals(0, session.incorrectCount)
+        assertEquals(InputMode.VOICE, session.inputMode)
+        assertEquals(1, session.voiceTriggerToken)
+    }
+
+    @Test
+    fun eliteStepOpenAndCancelKeepDeckAndEventContract() {
+        val lesson = Lesson(LessonId("elite-lesson"), LanguageId("it"), "Elite", listOf(card))
+        val (runner, access) = runnerFor(TrainingUiState(
+            navigation = NavigationState(lessons = listOf(lesson)),
+            cardSession = CardSessionState(correctCount = 3)
+        ))
+
+        assertEquals(listOf(SessionEvent.SaveProgress), runner.openEliteStep(999))
+        assertEquals(card, access.uiState.value.cardSession.currentCard)
+        assertEquals(0, access.uiState.value.cardSession.correctCount)
+        assertEquals(TrainingConfig.ELITE_STEP_COUNT - 1, access.uiState.value.elite.eliteStepIndex)
+        assertTrue(access.uiState.value.elite.eliteActive)
+
+        assertEquals(
+            listOf(SessionEvent.SaveProgress, SessionEvent.RefreshFlowerStates),
+            runner.cancelEliteSession()
+        )
+        assertEquals(false, access.uiState.value.elite.eliteActive)
+        assertEquals(SessionState.PAUSED, access.uiState.value.cardSession.sessionState)
     }
 }
