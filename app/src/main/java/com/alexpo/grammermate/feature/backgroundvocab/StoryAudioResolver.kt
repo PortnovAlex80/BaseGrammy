@@ -1,5 +1,6 @@
 package com.alexpo.grammermate.feature.backgroundvocab
 
+import com.alexpo.grammermate.shared.audio.StoryClipResolver
 import java.io.File
 
 /**
@@ -20,7 +21,7 @@ import java.io.File
  * @param baseDir the grammarmate root directory (`File(context.filesDir, "grammarmate")`),
  *  matching the convention used by `DrillFileManager` and [BgVocabAudioResolver].
  */
-class StoryAudioResolver(private val baseDir: File) {
+class StoryAudioResolver(private val baseDir: File) : StoryClipResolver {
 
     /**
      * Extract the two-digit chapter number from a [storyFile] name.
@@ -47,7 +48,7 @@ class StoryAudioResolver(private val baseDir: File) {
      *  [storyFile] in pack [packId], if it exists on disk; `null` otherwise (caller
      *  falls back to TTS).
      */
-    fun resolveChapterAudio(packId: String, storyFile: String?): File? {
+    override fun resolveChapterAudio(packId: String, storyFile: String?): File? {
         val num = chapterNumberFromStoryFile(storyFile) ?: return null
         val file = File(baseDir, "packs/$packId/stories/audio/book3_ch$num.opus")
         return file.takeIf { it.exists() && it.canRead() }

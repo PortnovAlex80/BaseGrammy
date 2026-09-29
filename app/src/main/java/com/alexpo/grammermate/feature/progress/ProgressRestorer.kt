@@ -17,7 +17,7 @@ import com.alexpo.grammermate.data.StreakStore
 import com.alexpo.grammermate.data.TrainingProgress
 import com.alexpo.grammermate.data.TrainingUiState
 import com.alexpo.grammermate.data.UserProfile
-import com.alexpo.grammermate.feature.daily.TrainingStateAccess
+import com.alexpo.grammermate.shared.TrainingStateAccess
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 

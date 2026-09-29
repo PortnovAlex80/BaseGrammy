@@ -18,6 +18,7 @@ import com.alexpo.grammermate.data.PackDailyCursorStore
 import com.alexpo.grammermate.data.StreakStore
 import com.alexpo.grammermate.feature.progress.StreakManager
 import com.alexpo.grammermate.feature.training.AnswerValidator
+import com.alexpo.grammermate.shared.TrainingStateAccess
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify

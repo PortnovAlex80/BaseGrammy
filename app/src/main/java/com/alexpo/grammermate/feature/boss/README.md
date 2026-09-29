@@ -38,7 +38,7 @@ Fields: `bossActive`, `bossType`, `bossTotal`, `bossProgress`, `bossReward`,
 Also writes to `TrainingUiState.cardSession` and `navigation` via `stateAccess.updateState{}`.
 
 ## Dependencies
-- `feature.daily.TrainingStateAccess` -- state read/write interface
+- `shared.TrainingStateAccess` -- state read/write interface
 - `feature.training.CardProvider` -- builds boss card pools
 - `feature.training.SessionRunner` -- sets/clears session cards
 - `data.ProgressStore` -- loads progress for session restoration after finish

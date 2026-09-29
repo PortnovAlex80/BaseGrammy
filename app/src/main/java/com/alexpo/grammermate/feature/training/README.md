@@ -34,7 +34,7 @@ Reads/writes `TrainingUiState` via `TrainingStateAccess`. Key fields in `cardSes
 - **data stores**: `DrillProgressStore`, `LessonStore` (via constructor)
 - **data utilities**: `Normalizer`, `MixedReviewScheduler`, `TrainingConfig`
 - **feature/progress**: `ProgressTracker`, `StreakManager`
-- **feature/daily**: `TrainingStateAccess` interface (defined in `DailySessionHelper.kt`)
+- **shared**: `TrainingStateAccess` interface
 - **Android**: `Application` context, `SystemClock`, `CoroutineScope`
 
 ## Edit scope warnings

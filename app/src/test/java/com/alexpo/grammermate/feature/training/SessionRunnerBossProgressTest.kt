@@ -12,7 +12,7 @@ import com.alexpo.grammermate.data.NavigationState
 import com.alexpo.grammermate.data.SentenceCard
 import com.alexpo.grammermate.data.SessionState
 import com.alexpo.grammermate.data.TrainingUiState
-import com.alexpo.grammermate.feature.daily.TrainingStateAccess
+import com.alexpo.grammermate.shared.TrainingStateAccess
 import com.alexpo.grammermate.feature.progress.StreakManager
 import com.alexpo.grammermate.testharness.FakeStreakStore
 import com.alexpo.grammermate.testharness.FakeTrainingStateAccess

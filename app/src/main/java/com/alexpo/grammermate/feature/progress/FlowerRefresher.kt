@@ -5,7 +5,7 @@ import com.alexpo.grammermate.data.FlowerCalculator
 import com.alexpo.grammermate.data.FlowerDisplayState
 import com.alexpo.grammermate.data.LessonLadderCalculator
 import com.alexpo.grammermate.data.MasteryStore
-import com.alexpo.grammermate.feature.daily.TrainingStateAccess
+import com.alexpo.grammermate.shared.TrainingStateAccess
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update

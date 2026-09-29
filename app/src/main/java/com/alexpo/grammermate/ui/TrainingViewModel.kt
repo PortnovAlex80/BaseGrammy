@@ -61,7 +61,7 @@ import com.alexpo.grammermate.feature.boss.BossBattleRunner
 import com.alexpo.grammermate.feature.boss.BossCommand
 import com.alexpo.grammermate.feature.boss.BossOrchestrator
 import com.alexpo.grammermate.feature.daily.DailyPracticeCoordinator
-import com.alexpo.grammermate.feature.daily.TrainingStateAccess
+import com.alexpo.grammermate.shared.TrainingStateAccess
 import com.alexpo.grammermate.feature.progress.BadSentenceHelper
 import com.alexpo.grammermate.feature.progress.BadSentenceResult
 import com.alexpo.grammermate.feature.progress.ChapterProgressCalculator

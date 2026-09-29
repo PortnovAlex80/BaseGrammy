@@ -37,7 +37,7 @@ progress recording (correct/incorrect tracking per entry).
 Also holds `vocabSession: List<VocabEntry>` as a public mutable var (set by openSprint).
 
 ## Dependencies
-- `feature.daily.TrainingStateAccess` -- state read/write interface
+- `shared.TrainingStateAccess` -- state read/write interface
 - `feature.training.AnswerValidator` -- answer normalization and matching
 - `data.LessonStore` -- loads vocab entries per lesson/language
 - `data.VocabProgressStore` -- SRS progress: correct/incorrect records, completed indices, sprint sorting

@@ -17,7 +17,7 @@ import com.alexpo.grammermate.data.ScheduledSubLesson
 import com.alexpo.grammermate.data.TrainingConfig
 import com.alexpo.grammermate.data.TrainingProgress
 import com.alexpo.grammermate.data.TrainingUiState
-import com.alexpo.grammermate.feature.daily.TrainingStateAccess
+import com.alexpo.grammermate.shared.TrainingStateAccess
 import com.alexpo.grammermate.data.PackDailyCursorStore
 import com.alexpo.grammermate.data.PackLessonProgressStore
 import com.alexpo.grammermate.data.PackLessonProgressState

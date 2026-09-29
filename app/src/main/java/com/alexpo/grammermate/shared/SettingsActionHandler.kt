@@ -14,7 +14,6 @@ import com.alexpo.grammermate.data.ProfileStore
 import com.alexpo.grammermate.data.SessionState
 import com.alexpo.grammermate.data.UserProfile
 import com.alexpo.grammermate.data.WordMasteryStore
-import com.alexpo.grammermate.feature.daily.TrainingStateAccess
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext

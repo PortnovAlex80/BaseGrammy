@@ -21,7 +21,7 @@ import com.alexpo.grammermate.data.SessionState
 import com.alexpo.grammermate.data.TrainingConfig
 import com.alexpo.grammermate.data.TrainingScreenMode
 import com.alexpo.grammermate.data.TrainingUiState
-import com.alexpo.grammermate.feature.daily.TrainingStateAccess
+import com.alexpo.grammermate.shared.TrainingStateAccess
 import com.alexpo.grammermate.feature.progress.StreakManager
 import com.alexpo.grammermate.shared.AuditLogger
 import kotlinx.coroutines.CoroutineScope

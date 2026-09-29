@@ -8,7 +8,7 @@ import com.alexpo.grammermate.data.VocabEntry
 import com.alexpo.grammermate.data.VocabProgressStore
 import com.alexpo.grammermate.data.VocabSprintState
 import com.alexpo.grammermate.data.TrainingUiState
-import com.alexpo.grammermate.feature.daily.TrainingStateAccess
+import com.alexpo.grammermate.shared.TrainingStateAccess
 import com.alexpo.grammermate.feature.training.AnswerValidator
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow

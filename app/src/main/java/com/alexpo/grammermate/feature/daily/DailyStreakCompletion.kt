@@ -5,6 +5,7 @@ import com.alexpo.grammermate.data.PracticeType
 import com.alexpo.grammermate.data.StreakData
 import com.alexpo.grammermate.data.StreakStore
 import com.alexpo.grammermate.feature.progress.StreakManager
+import com.alexpo.grammermate.shared.TrainingStateAccess
 
 /** Records each completed daily block's fire and publishes the persisted streak to shared UI state. */
 internal class DailyStreakCompletion(

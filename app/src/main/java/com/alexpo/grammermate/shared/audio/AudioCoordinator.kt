@@ -16,8 +16,7 @@ import com.alexpo.grammermate.data.TtsProvider
 import com.alexpo.grammermate.data.TtsModelManager
 import com.alexpo.grammermate.data.TtsModelRegistry
 import com.alexpo.grammermate.data.TtsState
-import com.alexpo.grammermate.feature.backgroundvocab.StoryAudioResolver
-import com.alexpo.grammermate.feature.daily.TrainingStateAccess
+import com.alexpo.grammermate.shared.TrainingStateAccess
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -76,7 +75,7 @@ class AudioCoordinator(
      * no-resolver path stays all-TTS, preserving pre-story-audio behavior for packs/tests
      * that don't ship narration.
      */
-    private val storyAudioResolver: StoryAudioResolver? = null
+    private val storyAudioResolver: StoryClipResolver? = null
 ) {
     companion object {
         private const val TAG = "AudioCoordinator"

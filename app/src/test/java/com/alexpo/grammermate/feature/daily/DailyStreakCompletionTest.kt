@@ -7,6 +7,7 @@ import com.alexpo.grammermate.data.StreakData
 import com.alexpo.grammermate.data.StreakStore
 import com.alexpo.grammermate.data.TrainingUiState
 import com.alexpo.grammermate.feature.progress.StreakManager
+import com.alexpo.grammermate.shared.TrainingStateAccess
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify

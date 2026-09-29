@@ -24,6 +24,7 @@ import com.alexpo.grammermate.data.TrainingUiState
 import com.alexpo.grammermate.data.StreakStore
 import com.alexpo.grammermate.feature.progress.StreakManager
 import com.alexpo.grammermate.feature.training.AnswerValidator
+import com.alexpo.grammermate.shared.TrainingStateAccess
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update

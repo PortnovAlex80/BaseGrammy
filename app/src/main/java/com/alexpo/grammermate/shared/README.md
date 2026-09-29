@@ -29,7 +29,7 @@ None. All state writes go through `TrainingStateAccess.updateState {}`.
 
 ## Dependencies
 - Data stores: AppConfigStore, ProfileStore, BackupManager
-- Feature: TrainingStateAccess interface
+- Shared contract: TrainingStateAccess interface
 - Injected function: `resolveEliteUnlocked(lessons, testMode) -> Boolean`
 
 ## Edit scope warnings

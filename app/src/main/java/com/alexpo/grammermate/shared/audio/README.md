@@ -31,7 +31,7 @@ with core state in TrainingViewModel to produce the final TrainingUiState.
 ## Dependencies
 - Data: TtsProvider, TtsEngine, TtsModelManager, TtsModelRegistry, AsrEngine,
   AsrModelManager, AppConfigStore
-- Feature: TrainingStateAccess interface (reads selectedLanguageId)
+- Shared: TrainingStateAccess interface (reads selectedLanguageId)
 - Android: SoundPool, CoroutineScope, Application context
 
 ## Edit scope warnings

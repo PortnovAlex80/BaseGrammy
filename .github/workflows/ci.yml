@@ -31,6 +31,11 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
+      - name: Check package boundaries
+        run: |
+          python3 -m unittest discover -s scripts -p 'test_check_package_boundaries.py'
+          python3 scripts/check_package_boundaries.py
+
       - name: Build production APK
         run: ./gradlew :app:assembleDebug
 

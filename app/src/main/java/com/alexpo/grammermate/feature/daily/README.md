@@ -7,7 +7,7 @@ Each block has 10 tasks. Replaces former Elite mode and Vocab Sprint.
 
 ## API Surface
 
-- **TrainingStateAccess** -- Interface for reading/writing shared training state.
+- **TrainingStateAccess** (`shared`) -- Interface for reading/writing shared training state.
   `val uiState: StateFlow<TrainingUiState>`, `updateState{}`, `saveProgress()`.
   Implemented by TrainingViewModel. Also used by boss and vocab modules.
 
