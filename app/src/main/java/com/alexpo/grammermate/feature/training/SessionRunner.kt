@@ -664,35 +664,18 @@ class SessionRunner(
         isLastCard: Boolean
     ): SubmitResult {
         stateMachine.reset()
+        val voice = LinearSessionTransitions.VoiceContribution.from(
+            shouldAddVoiceMetrics, voiceDurationMs, voiceWords
+        )
         if (isLastCard) {
             pauseTimer()
             stateAccess.updateState {
-                it.copy(cardSession = it.cardSession.copy(
-                    currentCard = null,
-                    correctCount = it.cardSession.correctCount + 1,
-                    lastResult = null,
-                    incorrectAttemptsForCard = 0,
-                    answerText = null,
-                    voiceActiveMs = if (shouldAddVoiceMetrics) it.cardSession.voiceActiveMs + (voiceDurationMs ?: 0L) else it.cardSession.voiceActiveMs,
-                    voiceWordCount = if (shouldAddVoiceMetrics) it.cardSession.voiceWordCount + voiceWords else it.cardSession.voiceWordCount,
-                    voicePromptStartMs = null,
-                    sessionState = SessionState.PAUSED,
-                    subLessonFinishedToken = it.cardSession.subLessonFinishedToken + 1
-                ))
+                it.copy(cardSession = LinearSessionTransitions.correctLast(it.cardSession, voice))
             }
             return SubmitResult(accepted = true, hintShown = false, needsSubLessonComplete = true, needsSaveProgress = true)
         } else {
             updateStateAndClearInput {
-                it.copy(cardSession = it.cardSession.copy(
-                    correctCount = it.cardSession.correctCount + 1,
-                    lastResult = null,
-                    incorrectAttemptsForCard = 0,
-                    answerText = null,
-                    voiceActiveMs = if (shouldAddVoiceMetrics) it.cardSession.voiceActiveMs + (voiceDurationMs ?: 0L) else it.cardSession.voiceActiveMs,
-                    voiceWordCount = if (shouldAddVoiceMetrics) it.cardSession.voiceWordCount + voiceWords else it.cardSession.voiceWordCount,
-                    voicePromptStartMs = null,
-                    sessionState = SessionState.ACTIVE
-                ))
+                it.copy(cardSession = LinearSessionTransitions.correctMid(it.cardSession, voice))
             }
             advanceLinearCard()
             return SubmitResult(accepted = true, hintShown = false, needsSaveProgress = false)
@@ -712,15 +695,9 @@ class SessionRunner(
             stateMachine.triggerVoice()
         }
         updateStateAndClearInput {
-            it.copy(cardSession = it.cardSession.copy(
-                currentIndex = nextIndex,
-                currentCard = nextCard,
-                lastResult = null,
-                answerText = null,
-                incorrectAttemptsForCard = stateMachine.incorrectAttempts,
-                sessionState = if (nextCard != null) SessionState.ACTIVE else SessionState.PAUSED,
-                voiceTriggerToken = stateMachine.voiceTriggerToken,
-                voicePromptStartMs = null
+            it.copy(cardSession = LinearSessionTransitions.advance(
+                it.cardSession, nextIndex, nextCard,
+                stateMachine.incorrectAttempts, stateMachine.voiceTriggerToken
             ))
         }
     }
@@ -749,15 +726,7 @@ class SessionRunner(
         if (isOnLastCard && isLinearSession) {
             pauseTimer()
             stateAccess.updateState {
-                it.copy(cardSession = it.cardSession.copy(
-                    currentCard = null,
-                    lastResult = null,
-                    incorrectAttemptsForCard = 0,
-                    answerText = null,
-                    voicePromptStartMs = null,
-                    sessionState = SessionState.PAUSED,
-                    subLessonFinishedToken = it.cardSession.subLessonFinishedToken + 1
-                ))
+                it.copy(cardSession = LinearSessionTransitions.completeViaNext(it.cardSession))
             }
             Log.d(logTag, "LinearSession: Next pressed on last card — signaling completion")
             return listOf(SessionEvent.SaveProgress)
@@ -1099,37 +1068,7 @@ class SessionRunner(
             stateMachine.triggerVoice()
         }
         updateStateAndClearInput {
-            it.copy(
-                cardSession = it.cardSession.copy(
-                    sessionState = if (firstCard != null) SessionState.ACTIVE else SessionState.PAUSED,
-                    currentCard = firstCard,
-                    currentIndex = 0,
-                    lastResult = null,
-                    answerText = null,
-                    incorrectAttemptsForCard = 0,
-                    correctCount = 0,
-                    incorrectCount = 0,
-                    activeTimeMs = 0L,
-                    voiceActiveMs = 0L,
-                    voiceWordCount = 0,
-                    hintCount = 0,
-                    voicePromptStartMs = null,
-                    subLessonTotal = cards.size,
-                    subLessonCount = 1,
-                    activeSubLessonIndex = 0,
-                    completedSubLessonCount = 0,
-                    subLessonFinishedToken = 0,
-                    wordBankWords = emptyList(),
-                    selectedWords = emptyList(),
-                    screenMode = mode,
-                    voiceTriggerToken = stateMachine.voiceTriggerToken,
-                    verbConjugationCards = if (mode == TrainingScreenMode.VERB_DRILL || mode == TrainingScreenMode.DAILY_VERBS) {
-                        cards.filterIsInstance<VerbDrillCard>()
-                    } else emptyList()
-                ),
-                boss = it.boss.copy(bossActive = false),
-                elite = it.elite.copy(eliteActive = false)
-            )
+            LinearSessionTransitions.start(it, cards, mode, stateMachine.voiceTriggerToken)
         }
         if (firstCard != null) {
             resumeTimer()
@@ -1153,25 +1092,7 @@ class SessionRunner(
         stateMachine.reset()
         sessionCards = emptyList()
         updateStateAndClearInput {
-            it.copy(
-                cardSession = it.cardSession.copy(
-                    sessionState = SessionState.PAUSED,
-                    currentCard = null,
-                    currentIndex = 0,
-                    lastResult = null,
-                    answerText = null,
-                    incorrectAttemptsForCard = 0,
-                    correctCount = 0,
-                    incorrectCount = 0,
-                    activeTimeMs = 0L,
-                    voiceActiveMs = 0L,
-                    voiceWordCount = 0,
-                    hintCount = 0,
-                    voicePromptStartMs = null,
-                    subLessonTotal = 0,
-                    screenMode = TrainingScreenMode.NORMAL
-                )
-            )
+            LinearSessionTransitions.exit(it)
         }
         return listOf(SessionEvent.SaveProgress)
     }
@@ -1276,31 +1197,7 @@ class SessionRunner(
             stateMachine.triggerVoice()
         }
         updateStateAndClearInput {
-            it.copy(
-                cardSession = it.cardSession.copy(
-                    sessionState = if (firstCard != null) SessionState.ACTIVE else SessionState.PAUSED,
-                    currentCard = firstCard,
-                    currentIndex = 0,
-                    lastResult = null,
-                    answerText = null,
-                    incorrectAttemptsForCard = 0,
-                    correctCount = 0,
-                    incorrectCount = 0,
-                    activeTimeMs = 0L,
-                    voiceActiveMs = 0L,
-                    voiceWordCount = 0,
-                    hintCount = 0,
-                    voicePromptStartMs = null,
-                    subLessonTotal = cards.size,
-                    subLessonFinishedToken = 0,
-                    wordBankWords = emptyList(),
-                    selectedWords = emptyList(),
-                    voiceTriggerToken = stateMachine.voiceTriggerToken,
-                    verbConjugationCards = if (it.cardSession.screenMode == TrainingScreenMode.VERB_DRILL || it.cardSession.screenMode == TrainingScreenMode.DAILY_VERBS) {
-                        cards.filterIsInstance<VerbDrillCard>()
-                    } else emptyList()
-                )
-            )
+            LinearSessionTransitions.replace(it, cards, stateMachine.voiceTriggerToken)
         }
         if (firstCard != null) {
             resumeTimer()
