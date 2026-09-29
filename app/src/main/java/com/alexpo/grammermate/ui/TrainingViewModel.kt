@@ -13,7 +13,8 @@ import com.alexpo.grammermate.data.SubmitResult
 import com.alexpo.grammermate.data.TrainingUiState
 import com.alexpo.grammermate.data.ParseError
 import com.alexpo.grammermate.data.SoundPackManager
-import com.alexpo.grammermate.data.DownloadState
+import com.alexpo.grammermate.feature.backgroundvocab.SoundPackManagerSource
+import com.alexpo.grammermate.feature.backgroundvocab.SoundPackTransferController
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -41,7 +42,6 @@ import com.alexpo.grammermate.data.CefrCalculator
 import com.alexpo.grammermate.data.CompletionNextAction
 import com.alexpo.grammermate.data.PracticeType
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -471,17 +471,15 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         storyAudioResolver = container.storyAudioResolver
     )
 
-    /**
-     * Pre-rendered sound-pack loader ([SoundPackManager]). Built lazily from the same
-     * `context` ([Application]) and `baseDir` ([AppContainer.baseDir]) the rest of the VM
-     * uses, so imported/downloaded clips land exactly where
-     * [com.alexpo.grammermate.feature.backgroundvocab.BgVocabAudioResolver] reads them.
-     */
-    private val soundPackManager: SoundPackManager by lazy {
-        SoundPackManager(getApplication(), container.baseDir)
+    /** Lifecycle owner is lazy because most sessions never open sound-pack settings. */
+    private val soundPackTransfers: SoundPackTransferController by lazy {
+        SoundPackTransferController(
+            source = SoundPackManagerSource(SoundPackManager(getApplication(), container.baseDir)),
+            scope = viewModelScope,
+            publishState = audioCoordinator::updateSoundPackDownloadState,
+            publishCount = audioCoordinator::updateSoundPackInstalledCount
+        )
     }
-    /** Cancellable handle for the running sound-pack import/download flow. */
-    private var soundPackDownloadJob: Job? = null
 
     private val pomodoroSettingsStore = PomodoroSettingsStore(getApplication<Application>())
     private val pomodoroHistoryStore = PomodoroHistoryStore(getApplication<Application>())
@@ -655,79 +653,27 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
 
     // ── Sound-pack (pre-rendered background-vocab audio) ──────────────────
 
-    /**
-     * Refresh [AudioState.soundPackInstalledCount] from disk for the active pack. Called on
-     * Settings entry and after a successful import/download so the UI shows the live count.
-     * No-op if no pack is active.
-     */
+    /** Refresh the selected pack's installed clip count on Settings entry. */
     fun refreshSoundPackInstalledCount() {
-        val packId = _coreState.value.navigation.activePackId?.value ?: return
-        val count = soundPackManager.installedClipCount(packId)
-        audioCoordinator.updateSoundPackInstalledCount(count)
+        soundPackTransfers.refreshInstalledCount(_coreState.value.navigation.activePackId?.value)
     }
 
-    /**
-     * Import a sound-pack ZIP picked via SAF (`ACTION_OPEN_DOCUMENT`). Stream-extracts the
-     * clips into the active pack's background-vocab audio dir. Requires an active pack; if
-     * none is selected, emits an error into [AudioState.soundPackDownloadState] instead.
-     * The flow is collected on [viewModelScope] into [AudioState.soundPackDownloadState],
-     * and [soundPackDownloadJob] is retained so [cancelSoundPackDownload] can abort it.
-     */
+    /** Import a sound-pack ZIP picked through the document picker. */
     fun importSoundPack(uri: Uri) {
-        val packId = _coreState.value.navigation.activePackId?.value
-        if (packId == null) {
-            audioCoordinator.updateSoundPackDownloadState(DownloadState.Error("Сначала выберите языковой пакет"))
-            return
-        }
-        if (soundPackDownloadJob?.isActive == true) {
-            Log.d(logTag, "Sound-pack download already in progress, ignoring import request")
-            return
-        }
-        val resolver = getApplication<Application>().contentResolver
-        soundPackDownloadJob = viewModelScope.launch(Dispatchers.IO) {
-            soundPackManager.installFromUri(uri, resolver, packId).collect { state ->
-                audioCoordinator.updateSoundPackDownloadState(state)
-                if (state is DownloadState.Done) {
-                    audioCoordinator.updateSoundPackInstalledCount(soundPackManager.installedClipCount(packId))
-                }
-            }
-        }
+        soundPackTransfers.import(
+            uri, getApplication<Application>().contentResolver,
+            _coreState.value.navigation.activePackId?.value
+        )
     }
 
-    /**
-     * Download the sound pack for the active pack from its [com.alexpo.grammermate.data.SoundPackRegistry]
-     * URL and stream-extract it. Same null-guard / job / state-collection pattern as
-     * [importSoundPack].
-     */
+    /** Download the registered sound pack for the selected pack. */
     fun downloadSoundPack() {
-        val packId = _coreState.value.navigation.activePackId?.value
-        if (packId == null) {
-            audioCoordinator.updateSoundPackDownloadState(DownloadState.Error("Сначала выберите языковой пакет"))
-            return
-        }
-        if (soundPackDownloadJob?.isActive == true) {
-            Log.d(logTag, "Sound-pack download already in progress, ignoring download request")
-            return
-        }
-        soundPackDownloadJob = viewModelScope.launch(Dispatchers.IO) {
-            soundPackManager.downloadAndInstall(packId).collect { state ->
-                audioCoordinator.updateSoundPackDownloadState(state)
-                if (state is DownloadState.Done) {
-                    val count = soundPackManager.installedClipCount(packId)
-                    audioCoordinator.updateSoundPackInstalledCount(count)
-                }
-            }
-        }
+        soundPackTransfers.download(_coreState.value.navigation.activePackId?.value)
     }
 
-    /**
-     * Cancel an in-flight sound-pack import/download and reset state to [DownloadState.Idle].
-     * Mirrors [AudioCoordinator]'s cancel pattern.
-     */
+    /** Cancel the active transfer and reset displayed progress. */
     fun cancelSoundPackDownload() {
-        soundPackDownloadJob?.cancel()
-        soundPackDownloadJob = null
-        audioCoordinator.updateSoundPackDownloadState(DownloadState.Idle)
+        soundPackTransfers.cancel()
     }
 
     /**

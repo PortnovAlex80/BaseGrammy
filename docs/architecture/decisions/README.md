@@ -12,3 +12,4 @@
 10. [010. Keep linear session effects in SessionRunner and extract state rules](010-linear-session-state-rules.md)
 11. [011. Scope answer de-duplication to the active card, except for voice races](011-scope-submit-deduplication.md)
 12. [012. Save linear completion after answer-side effects](012-save-linear-completion-after-answer-effects.md)
+13. [013. Own sound-pack transfer lifecycle in the background-vocab feature](013-own-sound-pack-transfer-lifecycle-in-feature.md)
