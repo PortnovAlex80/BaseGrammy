@@ -1,34 +1,18 @@
 package com.alexpo.grammermate.ui
 
-import com.alexpo.grammermate.data.ChapterCardUi
-import com.alexpo.grammermate.data.ChapterStatus
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.EmojiEvents
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Card
-import androidx.compose.material3.Button
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -37,19 +21,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.compose.ui.platform.LocalLifecycleOwner
@@ -60,34 +36,18 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.alexpo.grammermate.R
 import com.alexpo.grammermate.data.AppScreen
-import com.alexpo.grammermate.data.BossReward
 import com.alexpo.grammermate.data.CompletionNextAction
-import com.alexpo.grammermate.data.DailyBlockType
 import com.alexpo.grammermate.data.VerbDrillCard
 import com.alexpo.grammermate.data.DownloadState
 import com.alexpo.grammermate.data.HintLevel
-import com.alexpo.grammermate.data.SessionCard
-import com.alexpo.grammermate.data.TrainingUiState
 import com.alexpo.grammermate.data.TtsState
-import com.alexpo.grammermate.data.GrammarChipStore
-import android.Manifest
-import android.content.pm.PackageManager
-import android.os.Build
 import android.widget.Toast
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 // Imported from extracted screen files
 import com.alexpo.grammermate.ui.screens.HomeScreen
 import com.alexpo.grammermate.ui.screens.LessonRoadmapScreen
 import com.alexpo.grammermate.ui.screens.StoryQuizScreen
-import com.alexpo.grammermate.ui.screens.TrainingScreen
 import com.alexpo.grammermate.ui.components.TtsDownloadStatusBanner
 import com.alexpo.grammermate.ui.components.calcBgDownloadProgress
 import com.alexpo.grammermate.ui.navigation.Routes
@@ -100,28 +60,11 @@ import com.alexpo.grammermate.ui.dialogs.NavDialogs
 import com.alexpo.grammermate.ui.screens.TrainingScreenContent
 import com.alexpo.grammermate.ui.screens.DailyPracticeScreenContent
 import com.alexpo.grammermate.ui.screens.GrammarStoryRoadmapScreen
-import com.alexpo.grammermate.ui.screens.ChapterLessonsScreen
-import com.alexpo.grammermate.ui.screens.StoryReaderScreen
-import com.alexpo.grammermate.ui.screens.BackgroundVocabScreen
-import com.alexpo.grammermate.ui.TenseInfo
 import com.alexpo.grammermate.ui.VerbDrillViewModel
-import com.alexpo.grammermate.ui.screens.SettingsSheet
 import com.alexpo.grammermate.ui.screens.LadderScreen
-import com.alexpo.grammermate.ui.components.TtsDownloadDialog
-import com.alexpo.grammermate.ui.components.MeteredNetworkDialog
-import com.alexpo.grammermate.ui.components.AsrMeteredNetworkDialog
-import com.alexpo.grammermate.ui.components.ProfileStatsPopup
 import android.util.Log
 import com.alexpo.grammermate.shared.AuditLogger
 import com.alexpo.grammermate.shared.ScreenLogger
-
-// ── Route constants ──────────────────────────────────────────────────────────
-
-
-// ── Dialog state holder ──────────────────────────────────────────────────────
-
-
-// ── Main composable ──────────────────────────────────────────────────────────
 
 @Composable
 fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
@@ -154,7 +97,8 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
         val context = LocalContext.current
 
         // Story reader state managed in ViewModel (state.storyReaderChapterTitle, state.storyReaderContent)
-        var dialogs by remember { mutableStateOf<DialogState>(DialogState.None) }
+        val dialogState = remember { mutableStateOf<DialogState>(DialogState.None) }
+        var dialogs by dialogState
         val dailyScope = rememberCoroutineScope()
         val lastFinishedToken = remember { mutableStateOf(state.cardSession.subLessonFinishedToken) }
         val completionNextAction = remember { mutableStateOf(CompletionNextAction.NONE) }
@@ -298,91 +242,7 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
             }
 
             Box(modifier = Modifier.weight(1f)) {
-                // Bluetooth mic permission launcher — handles BLUETOOTH_CONNECT on API 31+
-                val btPermissionLauncher = rememberLauncherForActivityResult(
-                    contract = ActivityResultContracts.RequestPermission()
-                ) { granted ->
-                    if (granted) {
-                        vm.audio.setUseBluetoothMic(true)
-                    } else {
-                        vm.audio.setUseBluetoothMic(false)
-                    }
-                }
-
-                SettingsSheet(
-                    show = dialogs == DialogState.Settings,
-                    state = state,
-                    onDismiss = remember(dialogs, currentRoute, state.cardSession.currentCard) {
-                        {
-                            ScreenLogger.overlay("settings", shown = false)
-                            dialogs = DialogState.None
-                            if (currentRoute == Routes.TRAINING && state.cardSession.currentCard != null) {
-                                vm.resumeFromSettings()
-                            }
-                        }
-                    },
-                    onOpenLadder = remember(navController) {
-                        {
-                            ScreenLogger.overlay("settings", shown = false)
-                            dialogs = DialogState.None
-                            // Plain push: LADDER back pops to the screen that opened it.
-                            navController.navigate(Routes.LADDER) {
-                                launchSingleTop = true
-                            }
-                        }
-                    },
-                    onSelectLanguage = vm::selectLanguage,
-                    onSelectPack = vm::selectPack,
-                    onAddLanguage = vm::addLanguage,
-                    onImportLessonPack = vm::importLessonPack,
-                    onImportLesson = vm::importLesson,
-                    onResetReload = vm::resetAndImportLesson,
-                    onCreateEmptyLesson = vm::createEmptyLesson,
-                    onDeleteAllLessons = vm::deleteAllLessons,
-                    onDeletePack = vm::deletePack,
-                    onToggleTestMode = vm::toggleTestMode,
-                    onUpdateVocabLimit = vm.settings::updateVocabSprintLimit,
-                    onUpdateUserName = vm.settings::updateUserName,
-                    onSaveProgress = vm::saveProgressNow,
-                    onRestoreBackup = vm::restoreBackup,
-                    onSetTtsSpeed = vm.audio::setTtsSpeed,
-                    onSetRuTextScale = vm::setRuTextScale,
-                    onSetUseOfflineAsr = vm.audio::setUseOfflineAsr,
-                    onSetUseBluetoothMic = { enabled ->
-                        if (enabled && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                            val hasPermission = context.checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED
-                            if (hasPermission) {
-                                vm.audio.setUseBluetoothMic(true)
-                            } else {
-                                btPermissionLauncher.launch(Manifest.permission.BLUETOOTH_CONNECT)
-                            }
-                        } else {
-                            vm.audio.setUseBluetoothMic(enabled)
-                        }
-                    },
-                    onStartAsrDownload = remember { { vm.audio.startAsrDownload() } },
-                    onStartTtsDownload = remember { { vm.startTtsDownload() } },
-                    onImportSoundPack = remember { { uri: android.net.Uri -> vm.importSoundPack(uri) } },
-                    onDownloadSoundPack = remember { { vm.downloadSoundPack() } },
-                    onCancelSoundPackDownload = remember { { vm.cancelSoundPackDownload() } },
-                    onRefreshSoundPackCount = remember { { vm.refreshSoundPackInstalledCount() } },
-                    onResetAllProgress = vm::resetLanguageProgress,
-                    onSetHintLevel = vm.settings::setHintLevel,
-                    onSetThemeMode = vm.settings::setThemeMode,
-                    onSetVoiceAutoStart = vm.audio::setVoiceAutoStart,
-                    onSetUiLanguage = vm.settings::setUiLanguage,
-                    onSetSessionSize = { size ->
-                        vm.setSessionSize(size)
-                        verbDrillVm.setSessionSize(size)
-                    },
-                    onSetClickableWordHints = vm.settings::setClickableWordHints,
-                    onDismissParseWarning = vm::dismissParseWarning,
-                    onConfirmPartialImport = vm::confirmPartialImport,
-                    sessionSize = vm.currentSessionSize,
-                    clickableWordHints = state.navigation.clickableWordHints,
-                    uiLanguage = state.navigation.uiLanguage,
-                    languageDisplayName = state.navigation.languages.firstOrNull { it.id == state.navigation.selectedLanguageId }?.displayName ?: state.navigation.selectedLanguageId?.value ?: ""
-                )
+                AppSettingsOverlay(state, vm, verbDrillVm, navController, currentRoute, dialogState)
 
                 NavHost(
                     navController = navController,
@@ -805,226 +665,27 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                     }
 
                     composable(Routes.VERB_DRILL) {
-                        // Force reload when entering verb drill screen — ensures cards are loaded
-                        // even if the outer LaunchedEffect didn't fire (e.g. packId didn't change)
-                        val vdPackId = state.navigation.activePackId
-                        LaunchedEffect(vdPackId, state.navigation.selectedLanguageId) {
-                            if (vdPackId != null) {
-                                verbDrillVm.reloadForPack(vdPackId.value)
-                            } else {
-                                verbDrillVm.reloadForLanguage(state.navigation.selectedLanguageId?.value ?: "en")
-                            }
-                        }
-                        val verbDrillExit = remember(verbDrillVm) {
-                            {
-                                verbDrillVm.exitSession()
-                                vm.refreshStreakFromStore()
-                                onNavigateResetStack(Routes.HOME)
-                            }
-                        }
-                        BackHandler {
-                            ScreenLogger.nav(currentRoute, "BACK", trigger = "back_press")
-                            AuditLogger.getInstanceOrNull()?.backPress("verb_drill", "exit_to_home")
-                            verbDrillExit()
-                        }
-                        VerbDrillScreen(
-                            viewModel = verbDrillVm,
-                            onBack = verbDrillExit,
-                            onStartSession = remember { { cards: List<VerbDrillCard> ->
-                                vm.startVerbDrillSession(cards)
-                                vm.setReturnTo(Routes.VERB_DRILL)
-                                onNavigate(Routes.TRAINING)
-                            } }
-                        )
+                        VerbDrillDestination(state, vm, verbDrillVm, currentRoute, onNavigate, onNavigateResetStack)
                     }
 
                     composable(Routes.VOCAB_DRILL) {
-                        val vocabDrillVm = viewModel<VocabDrillViewModel>()
-                        val packId = state.navigation.activePackId
-                        LaunchedEffect(packId, state.navigation.selectedLanguageId) {
-                            if (packId != null) {
-                                vocabDrillVm.reloadForPack(packId.value, state.navigation.selectedLanguageId?.value ?: "en")
-                            } else {
-                                vocabDrillVm.reloadForLanguage(state.navigation.selectedLanguageId?.value ?: "en")
-                            }
-                        }
-                        val vocabExit = remember(vocabDrillVm) {
-                            {
-                                if (vocabDrillVm.hasRatedCards) {
-                                    vm.refreshVocabMasteryCount()
-                                }
-                                vm.refreshStreakFromStore()
-                                onNavigateResetStack(Routes.HOME)
-                            }
-                        }
-                        BackHandler {
-                            ScreenLogger.nav(currentRoute, "BACK", trigger = "back_press")
-                            AuditLogger.getInstanceOrNull()?.backPress("vocab_drill", "exit_to_home")
-                            vocabExit()
-                        }
-                        VocabDrillScreen(
-                            viewModel = vocabDrillVm,
-                            onBack = vocabExit,
-                            hintLevel = state.cardSession.hintLevel,
-                            textScale = state.audio.ruTextScale,
-                            voiceAutoStart = state.audio.voiceAutoStart,
-                            onBluetoothSetup = vm.audio::startBluetoothMicIfNeeded,
-                            onBluetoothCleanup = vm.audio::stopBluetoothMicIfNeeded,
-                            onClearBadSentences = vocabDrillVm::clearBadSentences,
-                            badSentenceCount = vocabDrillVm.getBadSentenceCount()
-                        )
+                        VocabDrillDestination(state, vm, currentRoute, onNavigateResetStack)
                     }
 
                     composable(Routes.AUX_DRILL) {
-                        val auxVm = viewModel<AuxDrillViewModel>()
-                        val packId = state.navigation.activePackId
-                        LaunchedEffect(packId, state.navigation.selectedLanguageId) {
-                            if (packId != null) {
-                                auxVm.reloadForPack(packId.value, state.navigation.selectedLanguageId?.value ?: "it")
-                            }
-                        }
-                        val auxExit = remember(auxVm) {
-                            {
-                                onNavigateResetStack(Routes.HOME)
-                            }
-                        }
-                        BackHandler {
-                            auxExit()
-                        }
-                        AuxDrillScreen(
-                            viewModel = auxVm,
-                            onBack = auxExit,
-                            onStartTraining = remember(auxVm) { { pair ->
-                                val deck = auxVm.sessionCardsFor(pair)
-                                if (!deck.isNullOrEmpty()) {
-                                    // Record shown cards for aux-scoped progress, then hand the
-                                    // deck to the shared training session (same path as Verb Drill).
-                                    auxVm.recordShown(pair, deck.map { it.id }.toSet())
-                                    vm.startVerbDrillSession(deck)
-                                    vm.setReturnTo(Routes.AUX_DRILL)
-                                    onNavigate(Routes.TRAINING)
-                                }
-                            } }
-                        )
+                        AuxDrillDestination(state, vm, onNavigate, onNavigateResetStack)
                     }
 
                     composable(Routes.STORY_READER) {
-                        val chapterTitle = state.storyReaderChapterTitle ?: "Unknown Chapter"
-                        val content = state.storyReaderContent
-                        val isCurrentlyPlaying = state.audio.isStoryPlaybackActive || state.audio.ttsState == TtsState.Speaking
-                        val isStoryPaused = state.audio.isStoryPlaybackPaused
-
-                        StoryReaderScreen(
-                            chapterTitle = chapterTitle,
-                            markdownContent = content,
-                            textScale = state.audio.ruTextScale,
-                            onBack = remember {
-                                {
-                                    // Stop TTS if playing or paused
-                                    if (isCurrentlyPlaying || isStoryPaused) {
-                                        vm.stopStoryNarration()
-                                    }
-                                    vm.clearStoryReader()
-                                    // Pop back to whatever launched STORY_READER
-                                    // (HOME showing the roadmap).
-                                    navController.popBackStack()
-                                }
-                            },
-                            onPlayStory = remember {
-                                {
-                                    // Play story narration: prefer the pre-rendered Opus clip for this
-                                    // chapter (real-voice narration) when present; otherwise fall back to
-                                    // multilingual TTS synthesis of the on-screen content.
-                                    if (content.isNotEmpty()) {
-                                        vm.speakMultilingualStory(
-                                            content,
-                                            defaultLanguageId = "ru",
-                                            storyFile = state.storyReaderStoryFile,
-                                            packId = state.navigation.activePackId?.value
-                                        )
-                                    }
-                                }
-                            },
-                            onStopStory = remember {
-                                {
-                                    vm.stopStoryNarration()
-                                }
-                            },
-                            onPauseStory = remember {
-                                {
-                                    vm.pauseStoryPlayback()
-                                }
-                            },
-                            onResumeStory = remember {
-                                {
-                                    vm.resumeStoryPlayback()
-                                }
-                            },
-                            isPlaying = isCurrentlyPlaying,
-                            isStoryPaused = isStoryPaused
-                        )
+                        StoryReaderDestination(state, vm, navController)
                     }
 
                     composable(Routes.CHAPTER_LESSONS) {
-                        val selectedChapter = state.navigation.selectedChapter
-                        val packId = state.navigation.activePackId
-                        // Live progress (Phase 3, item 3.3): the SAME
-                        // computation the HOME roadmap consumes — the roadmap
-                        // and this screen can no longer diverge.
-                        val chapterCards by vm.chapterCards.collectAsStateWithLifecycle()
-
-                        if (selectedChapter != null && packId != null) {
-                            val chapterProgress = chapterCards.firstOrNull {
-                                it.chapter.chapterId == selectedChapter.chapterId
-                            }?.progress
-                            val lessons = vm.getLessonsForChapter(selectedChapter)
-                            val completedLessonIds = vm.getCompletedLessonIds(selectedChapter)
-
-                            ChapterLessonsScreen(
-                                chapterTitle = selectedChapter.title,
-                                chapterSubtitle = selectedChapter.subtitle ?: "",
-                                chapterId = selectedChapter.chapterId,
-                                lessons = lessons,
-                                chapterProgress = chapterProgress,
-                                completedLessonIds = completedLessonIds,
-                                onLessonClick = remember { { lesson ->
-                                    vm.selectLesson(lesson.id.value, packId.value)
-                                    onNavigate(Routes.LESSON)
-                                } },
-                                onBack = remember { { navController.popBackStack(Routes.HOME, inclusive = false) } }
-                            )
-                        } else {
-                            // Fallback if no chapter selected
-                            Box(modifier = Modifier.fillMaxSize()) {
-                                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-                            }
-                        }
-                        // Inner BackHandler — higher priority than NavController, so system back
-                        // works correctly on Android 14+ predictive back.
-                        BackHandler(enabled = dialogs != DialogState.Settings) {
-                            Log.d("NavDebug", "BACK: CHAPTER_LESSONS inner handler → HOME")
-                            ScreenLogger.nav("chapter_lessons", "BACK", trigger = "back_press")
-                            AuditLogger.getInstanceOrNull()?.backPress("chapter_lessons", "back_to_home")
-                            navController.popBackStack(Routes.HOME, inclusive = false)
-                        }
+                        ChapterLessonsDestination(state, vm, navController, onNavigate, dialogs == DialogState.Settings)
                     }
 
                     composable(Routes.BACKGROUND_VOCAB) {
-                        LaunchedEffect(Unit) {
-                            ScreenLogger.screenShown("BACKGROUND_VOCAB")
-                        }
-                        BackgroundVocabScreen(
-                            onBack = remember { {
-                                ScreenLogger.nav("background_vocab", "BACK", trigger = "back_press")
-                                AuditLogger.getInstanceOrNull()?.backPress("background_vocab", "back_to_home")
-                                navController.popBackStack(Routes.HOME, inclusive = false)
-                            } }
-                        )
-                        BackHandler(enabled = dialogs != DialogState.Settings) {
-                            ScreenLogger.nav("background_vocab", "BACK", trigger = "back_press")
-                            AuditLogger.getInstanceOrNull()?.backPress("background_vocab", "back_to_home")
-                            navController.popBackStack(Routes.HOME, inclusive = false)
-                        }
+                        BackgroundVocabDestination(navController, dialogs == DialogState.Settings)
                     }
                 }
 
@@ -1064,12 +725,3 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
         } // else (not loading)
     } // Surface
 } // GrammarMateApp
-
-/**
- * True when the training session's [returnTo] route is a verb-drill-style
- * screen (regular Verb Drill or the aux lead-in drill). Aux drill reuses the
- * VERB_DRILL training mode, so all verb-drill-specific UI logic (chip cards,
- * header suppression, back/return navigation, session-done routing) applies to
- * both. Centralizing the check here keeps the call sites from listing both
- * routes explicitly.
- */

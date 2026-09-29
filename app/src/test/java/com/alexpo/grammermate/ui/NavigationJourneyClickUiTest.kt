@@ -11,6 +11,7 @@ import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
@@ -149,5 +150,45 @@ class NavigationJourneyClickUiTest {
                 useUnmergedTree = true
             ).fetchSemanticsNodes().isNotEmpty()
         }
+    }
+
+    @Test
+    fun selectedPackRoadmap_opensSettingsSheet() {
+        val skipLabel = rule.activity.getString(R.string.dialog_welcome_skip)
+        rule.waitUntil(10_000) {
+            rule.onAllNodesWithText(skipLabel).fetchSemanticsNodes().isNotEmpty()
+        }
+        rule.onNodeWithText(skipLabel).performClick()
+        rule.waitUntil(5_000) {
+            rule.onAllNodesWithText(skipLabel).fetchSemanticsNodes().isEmpty()
+        }
+        rule.waitUntil(30_000) {
+            vm.packTiles.value.any { it.packId == "EN_ENGLISH_FULL_COURSE" }
+        }
+        if (vm.uiState.value.navigation.activePackId == null) {
+            if (rule.onAllNodesWithText("English Full Course").fetchSemanticsNodes().isEmpty()) {
+                rule.waitUntil(10_000) {
+                    rule.onAllNodesWithText("English").fetchSemanticsNodes().isNotEmpty()
+                }
+                rule.onAllNodesWithText("English")[0].performClick()
+                rule.waitUntil(10_000) {
+                    rule.onAllNodesWithText("English Full Course").fetchSemanticsNodes().isNotEmpty()
+                }
+            }
+            rule.onNodeWithText("English Full Course").performClick()
+            rule.waitUntil(10_000) {
+                vm.uiState.value.navigation.activePackId != null
+            }
+        }
+        rule.waitUntil(10_000) { vm.chapterCards.value.isNotEmpty() }
+
+        rule.onNodeWithContentDescription("Settings").performClick()
+        org.robolectric.Shadows.shadowOf(android.os.Looper.getMainLooper())
+            .idleFor(200, java.util.concurrent.TimeUnit.MILLISECONDS)
+        val settingsLabel = rule.activity.getString(R.string.settings_interface_language)
+        rule.waitUntil(5_000) {
+            rule.onAllNodesWithText(settingsLabel).fetchSemanticsNodes().isNotEmpty()
+        }
+        rule.onNodeWithText(settingsLabel).assertIsDisplayed()
     }
 }
