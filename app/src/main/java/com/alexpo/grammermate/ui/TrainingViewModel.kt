@@ -32,7 +32,6 @@ import com.alexpo.grammermate.data.TrainingConfig
 import com.alexpo.grammermate.data.TrainingMode
 import com.alexpo.grammermate.data.VerbDrillCard
 import com.alexpo.grammermate.data.VocabEntry
-import com.alexpo.grammermate.data.LessonMasteryState
 import com.alexpo.grammermate.data.StreakData
 import com.alexpo.grammermate.data.DailyBlockType
 import com.alexpo.grammermate.data.HintLevel
@@ -94,9 +93,6 @@ import com.alexpo.grammermate.data.Chapter
 import com.alexpo.grammermate.data.ChapterProgress
 import com.alexpo.grammermate.data.ChapterCardUi
 import com.alexpo.grammermate.data.ChapterStatus
-import com.alexpo.grammermate.data.FlowerCalculator
-import com.alexpo.grammermate.data.FlowerState
-import com.alexpo.grammermate.feature.progress.PackProgressCalculator
 
 /**
  * Re-import every bundled pack from assets on each app start, ignoring pack versions.
@@ -113,21 +109,6 @@ import com.alexpo.grammermate.feature.progress.PackProgressCalculator
  * edit is impractical — and flip it back before committing.
  */
 private const val FORCE_RELOAD_DEFAULT_PACKS_ON_START = false
-
-data class PackTileUi(
-    val packId: String,
-    val displayName: String,
-    val languageId: String,
-    val flowerEmoji: String,
-    val flowerState: FlowerState,
-    val depth: Float,
-    val healthPercent: Float,
-    val scaleMultiplier: Float,
-    val completedLessons: Int,
-    val totalLessons: Int,
-    val totalCards: Int,
-    val isActive: Boolean
-)
 
 class TrainingViewModel(application: Application) : AndroidViewModel(application) {
     private val logTag = "GrammarMate"
@@ -214,64 +195,9 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
 
     // ── Pack tile data for home screen ────────────────────────────────────
 
-    /**
-     * Build a list of [PackTileUi] for every installed pack.
-     * Each tile contains flower state, progress counters, and active flag.
-     */
-    fun getPackTiles(): List<PackTileUi> {
-        val nav = _coreState.value.navigation
-        val selectedLangId = nav.selectedLanguageId?.value
-        val packs = if (selectedLangId != null) {
-            nav.installedPacks.filter { it.languageId.value == selectedLangId }
-        } else {
-            nav.installedPacks
-        }
-        val activePackId = nav.activePackId?.value
+    private val packTileSource = PackTileSource(lessonStore, masteryStore)
 
-        return packs.map { pack ->
-            val packIdStr = pack.packId.value
-            val langIdStr = pack.languageId.value
-
-            val lessons = lessonStore.getLessons(packIdStr, langIdStr)
-            val lessonIds = lessons.map { it.id.value }
-
-            // Build mastery map for all lessons in this pack. One loadAll()
-            // snapshot instead of a per-lesson getForPack — each of those
-            // takes the store's ReentrantLock (63 lessons per pack).
-            val packMastery = masteryStore.loadAll()["pack:$packIdStr"]
-            val masteryMap = mutableMapOf<String, LessonMasteryState>()
-            var totalCards = 0
-            for (lesson in lessons) {
-                val lessonIdStr = lesson.id.value
-                val mastery = packMastery?.get(lessonIdStr)
-                if (mastery != null) {
-                    masteryMap[lessonIdStr] = mastery
-                    totalCards += mastery.uniqueCardShows
-                }
-            }
-
-            // Calculate pack-level flower using PackProgressCalculator
-            val packFlower = PackProgressCalculator.calculatePackFlower(lessonIds, masteryMap)
-
-            // No flower for untouched packs (0 cards shown)
-            val hasFlower = totalCards > 0
-
-            PackTileUi(
-                packId = packIdStr,
-                displayName = pack.displayName ?: packIdStr,
-                languageId = langIdStr,
-                flowerEmoji = if (hasFlower) FlowerCalculator.getEmoji(packFlower.flowerState) else "",
-                flowerState = packFlower.flowerState,
-                depth = packFlower.depth,
-                healthPercent = packFlower.healthPercent,
-                scaleMultiplier = packFlower.scaleMultiplier,
-                completedLessons = packFlower.completedLessons,
-                totalLessons = packFlower.totalLessons,
-                totalCards = totalCards,
-                isActive = packIdStr == activePackId
-            )
-        }.sortedWith(compareBy({ it.languageId }, { it.displayName }))
-    }
+    fun getPackTiles(): List<PackTileUi> = packTileSource.getTiles(_coreState.value.navigation)
 
     // ── Derived data as state (Phase 1: no disk I/O during composition) ───
     // These were imperative per-composition calls; they are now StateFlows
