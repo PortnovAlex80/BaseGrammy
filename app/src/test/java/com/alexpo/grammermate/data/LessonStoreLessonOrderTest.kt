@@ -35,15 +35,7 @@ class LessonStoreLessonOrderTest {
         packsDir = File(baseDir, "packs")
         packsDir.mkdirs()
 
-        // Run ensureSeedData() once on a clean LessonStoreImpl so that the seed
-        // marker is written and the language file is initialized. We do this
-        // BEFORE registering our test pack, because ensureSeedData() also runs
-        // cleanupStalePacks() which deletes any pack whose id is not in the
-        // hardcoded defaultPacks list — that would wipe our test pack if it ran
-        // after registration. By seeding first, the subsequent getLessons() call
-        // (which also calls ensureSeedData) finds the seed marker present and
-        // cleanup still filters our pack, BUT we additionally mark the seed
-        // marker below so cleanup is a no-op for a stable test.
+        // Initialize language metadata before registering the synthetic pack.
         LessonStoreImpl(context).ensureSeedData()
         File(baseDir, "seed_v1.done").writeText("ok")
     }
@@ -54,11 +46,7 @@ class LessonStoreLessonOrderTest {
      * schema-v2 manifest declaring [lessonIds] as the canonical order, and a
      * matching packs.yaml entry.
      *
-     * NOTE on packId choice: `LessonStoreImpl.ensureSeedData()` runs
-     * `cleanupStalePacks()` on every `getLessons()` call, which DELETES any pack
-     * whose id is not in the hardcoded `defaultPacks` list. So the test pack id
-     * MUST be one of the default pack ids (here ITALIAN_SHORT, lang "it"); the
-     * lesson content is fully synthetic and does not match the real asset pack.
+     * The lesson content is synthetic and does not match the bundled asset pack.
      */
     private fun seedPack(
         packId: String,
@@ -100,8 +88,6 @@ class LessonStoreLessonOrderTest {
 
     @Test
     fun `getLessons returns lessons in manifest order regardless of filesystem order`() {
-        // packId must be in defaultPacks so ensureSeedData's cleanupStalePacks
-        // does not delete it; content is synthetic and unique to this test.
         val packId = "ITALIAN_SHORT"
         val langId = "it"
         // Manifest declares a NON-lexicographic order (C01 -> A01 -> B01).

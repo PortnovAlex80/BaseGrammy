@@ -171,11 +171,7 @@ class LessonStoreLazyLoadingTest {
  * Disk-backed tests for the lazy lesson-loading API against the real
  * [LessonStoreImpl] (TASK-092). Setup pattern copied from
  * [LessonStoreLessonOrderTest]: Robolectric filesDir, a seeded store, and a
- * synthetic pack registered under a default pack id (required —
- * cleanupStalePacks deletes unknown ids).
- *
- * packId must be one of the hardcoded defaultPacks; lesson content is fully
- * synthetic and does not match the real asset pack.
+ * synthetic pack. Its lesson content does not match the bundled asset pack.
  */
 @RunWith(RobolectricTestRunner::class)
 class LessonStoreLazyLoadingDiskTest {
@@ -196,8 +192,7 @@ class LessonStoreLazyLoadingDiskTest {
         packsDir = File(baseDir, "packs")
         packsDir.mkdirs()
 
-        // Seed first so the marker is present; otherwise ensureSeedData() (run
-        // inside every getLessons/getLesson call) would clean up our pack.
+        // Initialize language metadata before registering the synthetic pack.
         LessonStoreImpl(context).ensureSeedData()
         File(baseDir, "seed_v1.done").writeText("ok")
     }
