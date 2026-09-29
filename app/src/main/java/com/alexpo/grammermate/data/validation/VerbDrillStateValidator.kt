@@ -29,21 +29,21 @@ object VerbDrillStateValidator {
 
         val errors = mutableListOf<ValidationError>()
 
-        // Validate group
-        val group = (data["group"] as? String)?.takeIf { it.isNotBlank() }
-        if (group == null) {
+        // Empty strings represent an unfiltered selection in persisted combo
+        // progress. A missing field or whitespace-only value is corrupt.
+        val group = data["group"] as? String
+        if (group == null || (group.isNotEmpty() && group.isBlank())) {
             errors.add(ValidationError(
                 field = "group",
-                message = "Missing or empty group for key=$key"
+                message = "Missing or invalid group for key=$key"
             ))
         }
 
-        // Validate tense
-        val tense = (data["tense"] as? String)?.takeIf { it.isNotBlank() }
-        if (tense == null) {
+        val tense = data["tense"] as? String
+        if (tense == null || (tense.isNotEmpty() && tense.isBlank())) {
             errors.add(ValidationError(
                 field = "tense",
-                message = "Missing or empty tense for key=$key"
+                message = "Missing or invalid tense for key=$key"
             ))
         }
 

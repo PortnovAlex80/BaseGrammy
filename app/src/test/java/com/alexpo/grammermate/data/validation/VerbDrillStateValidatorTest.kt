@@ -39,6 +39,26 @@ class VerbDrillStateValidatorTest {
     }
 
     @Test
+    fun `Unfiltered verb combo progress survives validation but whitespace does not`() {
+        val unfiltered = mapOf(
+            "group" to "",
+            "tense" to "",
+            "totalCards" to 4,
+            "everShownCardIds" to listOf("card1")
+        )
+        val valid = VerbDrillStateValidator.validateVerbDrillComboProgress("||", unfiltered)
+        assertTrue("Empty filters are the persisted unfiltered selection", valid.isValid)
+        assertEquals("", valid.getDataOrDefault().group)
+        assertEquals("", valid.getDataOrDefault().tense)
+        assertEquals(setOf("card1"), valid.getDataOrDefault().everShownCardIds)
+
+        val corrupt = VerbDrillStateValidator.validateVerbDrillComboProgress(
+            "||", unfiltered + ("group" to "  ")
+        )
+        assertFalse("Whitespace is not the unfiltered sentinel", corrupt.isValid)
+    }
+
+    @Test
     fun `Null verb drill combo progress should return valid default`() {
         val result = VerbDrillStateValidator.validateVerbDrillComboProgress("key1", null)
 

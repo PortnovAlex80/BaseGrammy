@@ -280,6 +280,7 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
                 loadedLanguageId = ioResult.lang
             )
         }
+        updateProgressDisplay()
 
         Log.d(logTag, "Loaded ${ioResult.cards.size} verb drill cards for language ${ioResult.lang}")
 
