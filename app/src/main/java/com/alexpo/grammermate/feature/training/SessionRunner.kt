@@ -601,12 +601,7 @@ class SessionRunner(
         stateMachine.reset()
         val voice = SessionAnswerTransitions.VoiceContribution.from(shouldAddVoiceMetrics, voiceDurationMs, voiceWords)
         stateAccess.updateState {
-            val lessonId = it.navigation.selectedLessonId
-            val mastery = lessonId?.let { id -> it.navigation.selectedLanguageId?.let { langId -> getMastery(id.value, langId.value) } }
-            val schedule = lessonId?.let { id -> getSchedule(id.value) }
-            val subLessons = schedule?.subLessons.orEmpty()
-            val actualCompletedCount = calculateCompletedSubLessons(subLessons, mastery, lessonId?.value, getHiddenCardIds())
-            SessionAnswerTransitions.normalLast(it, voice, actualCompletedCount)
+            SessionAnswerTransitions.normalLast(it, voice, actualCompletedSubLessonCount(it))
         }
         Log.d(logTag, "Answer submitted: accepted=true (last card)")
         // Audit: sub-lesson completed
@@ -625,6 +620,15 @@ class SessionRunner(
             SessionEvent.UpdateStreak,
             SessionEvent.SaveProgress
         )
+    }
+
+    private fun actualCompletedSubLessonCount(state: TrainingUiState): Int {
+        val lessonId = state.navigation.selectedLessonId
+        val mastery = lessonId?.let { id ->
+            state.navigation.selectedLanguageId?.let { languageId -> getMastery(id.value, languageId.value) }
+        }
+        val subLessons = lessonId?.let { getSchedule(it.value)?.subLessons }.orEmpty()
+        return calculateCompletedSubLessons(subLessons, mastery, lessonId?.value, getHiddenCardIds())
     }
 
     /**
@@ -729,26 +733,7 @@ class SessionRunner(
         if (isOnLastCard && !state.boss.bossActive && !state.elite.eliteActive) {
             pauseTimer()
             stateAccess.updateState {
-                val nextCompleted = (it.cardSession.completedSubLessonCount + 1).coerceAtMost(it.cardSession.subLessonCount)
-                val lessonId = it.navigation.selectedLessonId
-                val mastery = lessonId?.let { id -> it.navigation.selectedLanguageId?.let { langId -> getMastery(id.value, langId.value) } }
-                val schedule = lessonId?.let { id -> getSchedule(id.value) }
-                val subLessons = schedule?.subLessons.orEmpty()
-                val actualCompletedCount = calculateCompletedSubLessons(subLessons, mastery, lessonId?.value, getHiddenCardIds())
-                val preservedActiveIndex = maxOf(it.cardSession.activeSubLessonIndex, actualCompletedCount)
-                val finalActiveIndex = preservedActiveIndex.coerceAtMost((it.cardSession.subLessonCount - 1).coerceAtLeast(0))
-
-                it.copy(cardSession = it.cardSession.copy(
-                    lastResult = null,
-                    incorrectAttemptsForCard = 0,
-                    answerText = null,
-                    voicePromptStartMs = null,
-                    sessionState = SessionState.PAUSED,
-                    currentIndex = 0,
-                    activeSubLessonIndex = finalActiveIndex,
-                    completedSubLessonCount = maxOf(nextCompleted, actualCompletedCount),
-                    subLessonFinishedToken = it.cardSession.subLessonFinishedToken + 1
-                ))
+                SessionAnswerTransitions.normalCompleteViaNext(it, actualCompletedSubLessonCount(it))
             }
             Log.d(logTag, "Next pressed on last card — triggering sub-lesson completion")
             return listOf(

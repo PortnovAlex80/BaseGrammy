@@ -42,16 +42,36 @@ internal object SessionAnswerTransitions {
         actualCompletedCount: Int
     ): TrainingUiState {
         val card = state.cardSession
+        return state.copy(cardSession = completedSubLessonCard(
+            acceptedCard(card, voice, lastResult = null), actualCompletedCount
+        ))
+    }
+
+    /** Explicit Next completes the sub-lesson without crediting a correct answer. */
+    fun normalCompleteViaNext(state: TrainingUiState, actualCompletedCount: Int): TrainingUiState {
+        val card = state.cardSession
+        return state.copy(cardSession = completedSubLessonCard(card.copy(
+            lastResult = null,
+            incorrectAttemptsForCard = 0,
+            answerText = null,
+            voicePromptStartMs = null
+        ), actualCompletedCount))
+    }
+
+    private fun completedSubLessonCard(
+        card: CardSessionState,
+        actualCompletedCount: Int
+    ): CardSessionState {
         val nextCompleted = (card.completedSubLessonCount + 1).coerceAtMost(card.subLessonCount)
         val preservedActiveIndex = maxOf(card.activeSubLessonIndex, actualCompletedCount)
         val finalActiveIndex = preservedActiveIndex.coerceAtMost((card.subLessonCount - 1).coerceAtLeast(0))
-        return state.copy(cardSession = acceptedCard(card, voice, lastResult = null).copy(
+        return card.copy(
             sessionState = SessionState.PAUSED,
             currentIndex = 0,
             activeSubLessonIndex = finalActiveIndex,
             completedSubLessonCount = maxOf(nextCompleted, actualCompletedCount),
             subLessonFinishedToken = card.subLessonFinishedToken + 1
-        ))
+        )
     }
 
     data class EliteCompletion(

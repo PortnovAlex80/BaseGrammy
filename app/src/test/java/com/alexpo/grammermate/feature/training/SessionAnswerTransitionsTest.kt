@@ -60,6 +60,27 @@ class SessionAnswerTransitionsTest {
     }
 
     @Test
+    fun explicitNextCompletesWithoutCreditingCorrectAnswerOrVoice() {
+        val state = TrainingUiState(cardSession = CardSessionState(
+            correctCount = 2,
+            currentIndex = 4,
+            subLessonCount = 3,
+            completedSubLessonCount = 1,
+            voiceActiveMs = 500L,
+            voiceWordCount = 7,
+            answerText = "hint"
+        ))
+        val completed = SessionAnswerTransitions.normalCompleteViaNext(state, 2).cardSession
+        assertEquals(2, completed.correctCount)
+        assertEquals(500L, completed.voiceActiveMs)
+        assertEquals(7, completed.voiceWordCount)
+        assertEquals(2, completed.completedSubLessonCount)
+        assertEquals(1, completed.subLessonFinishedToken)
+        assertEquals(null, completed.answerText)
+        assertEquals(SessionState.PAUSED, completed.sessionState)
+    }
+
+    @Test
     fun normalMidRecordsAnswerWithoutAdvancingCard() {
         val card = CardSessionState(currentIndex = 2, correctCount = 1)
         val accepted = SessionAnswerTransitions.normalMid(card, voice)

@@ -72,6 +72,29 @@ class SessionRunnerAnswerModesTest {
     }
 
     @Test
+    fun explicitNextOnFinalNormalCardCompletesWithoutCorrectCredit() {
+        val (runner, access) = runnerFor(TrainingUiState(cardSession = CardSessionState(
+            currentCard = card,
+            subLessonCount = 3,
+            correctCount = 4,
+            inputMode = InputMode.KEYBOARD
+        )))
+
+        val events = runner.nextCard()
+
+        assertEquals(listOf(
+            SessionEvent.MarkSubLessonCardsShown(listOf(card)),
+            SessionEvent.BuildSessionCards,
+            SessionEvent.CheckAndMarkLessonCompleted,
+            SessionEvent.RefreshFlowerStates,
+            SessionEvent.UpdateStreak,
+            SessionEvent.SaveProgress
+        ), events)
+        assertEquals(4, access.uiState.value.cardSession.correctCount)
+        assertEquals(2, access.uiState.value.cardSession.completedSubLessonCount)
+    }
+
+    @Test
     fun eliteLastAnswerScoresBeforeFinalVoiceAndOnlyRequestsSave() {
         val (runner, access) = runnerFor(TrainingUiState(
             cardSession = CardSessionState(
