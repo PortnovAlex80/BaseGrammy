@@ -4,7 +4,6 @@ import android.content.ContentResolver
 import android.content.Context
 import android.net.Uri
 import android.util.Log
-import com.alexpo.grammermate.BuildConfig
 import org.yaml.snakeyaml.Yaml
 import java.io.File
 
@@ -160,8 +159,10 @@ interface LessonStore {
  *
  * Delegates to:
  * - [LanguageManager] for language/pack CRUD and seed data
+ * - [LessonCatalog] for lesson discovery, loading and cache ownership
  * - [PackImporter] for ZIP import, SAF URI import, manifest handling
  * - [DrillFileManager] for drill file queries, story/vocab lookups
+ * - [PackChapterStoryRepository] for pack chapter and story reads
  *
  * All existing public method signatures are preserved — consumers import LessonStore only.
  */
@@ -181,10 +182,6 @@ class LessonStoreImpl(private val context: Context) : LessonStore {
     private val vocabDir = File(baseDir, "vocab")
     private val vocabIndexFile = File(vocabDir, "vocab.yaml")
     private val vocabStore = YamlListStore(yaml, vocabIndexFile)
-
-    // In-memory cache for getLessons() — invalidated on pack import/delete/reload
-    private val lessonsCache = java.util.concurrent.ConcurrentHashMap<String, List<Lesson>>()
-    private val metadataCache = java.util.concurrent.ConcurrentHashMap<String, List<LessonMetadata>>()
 
     private val defaultPacks = listOf(
         LanguageManager.DefaultPack("EN_WORD_ORDER_A1", "grammarmate/packs/EN_WORD_ORDER_A1.zip"),
@@ -208,6 +205,10 @@ class LessonStoreImpl(private val context: Context) : LessonStore {
         baseDir, lessonsDir, packsDir, languagesFile, languagesStore,
         packsStore, seedMarker, defaultPacks
     )
+
+    private val lessonCatalog = LessonCatalog(packsDir, lessonsDir, languageManager, ::loadIndex)
+
+    private val chapterStories = PackChapterStoryRepository(context, packsDir, languageManager::readInstalledPackManifest)
 
     private val drillFileManager = DrillFileManager(
         context, baseDir, storiesDir, storiesStore, vocabDir, vocabStore
@@ -281,52 +282,12 @@ class LessonStoreImpl(private val context: Context) : LessonStore {
 
     override fun getInstalledPacks(): List<LessonPack> = languageManager.getInstalledPacks()
 
-    override fun getPackIdForLesson(lessonId: String): String? {
-        val packs = getInstalledPacks()
-        for (pack in packs) {
-            val manifest = languageManager.readInstalledPackManifest(pack.packId.value) ?: continue
+    override fun getPackIdForLesson(lessonId: String): String? = lessonCatalog.getPackIdForLesson(lessonId)
 
-            // Check root-level lessons (schema v1)
-            if (manifest.lessons.any { it.lessonId == lessonId }) {
-                return pack.packId.value
-            }
+    override fun getLessonIdsForPack(packId: String): List<String> = lessonCatalog.getLessonIdsForPack(packId)
 
-            // Check chapter-level lessons (schema v2)
-            for (chapter in manifest.chapters) {
-                val chapterLessonIds = chapter.lessons
-                if (chapterLessonIds.contains(lessonId)) {
-                    return pack.packId.value
-                }
-            }
-        }
-        return null
-    }
-
-    override fun getLessonIdsForPack(packId: String): List<String> {
-        val manifest = languageManager.readInstalledPackManifest(packId) ?: return emptyList()
-
-        // For schema v2, collect lessons from chapters in order
-        if (manifest.schemaVersion == 2) {
-            return manifest.chapters
-                .sortedBy { it.order }
-                .flatMap { chapter -> chapter.lessons }
-        }
-
-        // For schema v1, use root-level lessons
-        return manifest.lessons.sortedBy { it.order }.map { it.lessonId }
-    }
-
-    override fun getCumulativeTenses(packId: String, lessonLevel: Int): List<String> {
-        val manifest = languageManager.readInstalledPackManifest(packId) ?: return emptyList()
-        val sortedLessons = manifest.lessons
-            .filter { it.type != "verb_drill" }
-            .sortedBy { it.order }
-        if (lessonLevel < 1 || lessonLevel > sortedLessons.size) return emptyList()
-        return sortedLessons
-            .take(lessonLevel)
-            .flatMap { it.tenses }
-            .distinct()
-    }
+    override fun getCumulativeTenses(packId: String, lessonLevel: Int): List<String> =
+        lessonCatalog.getCumulativeTenses(packId, lessonLevel)
 
     // ── Pack import ──────────────────────────────────────────────────────
 
@@ -410,225 +371,43 @@ class LessonStoreImpl(private val context: Context) : LessonStore {
 
     override fun getLessons(languageId: String): List<Lesson> {
         ensureSeedData()
-        return lessonsCache.getOrPut(languageId) {
-            Log.d("LessonStore", "Cache miss for language: $languageId, loading from disk")
-            loadLessonsFromDisk(languageId)
-        }
+        return lessonCatalog.getLessons(languageId)
     }
 
     override fun getLessons(packId: String, languageId: String): List<Lesson> {
         ensureSeedData()
-        val cacheKey = "$packId:$languageId"
-        return lessonsCache.getOrPut(cacheKey) {
-            Log.d("LessonStore", "Cache miss for pack:language: $cacheKey, loading from disk")
-            loadLessonsFromDisk(languageId, packId)
-        }
+        return lessonCatalog.getLessons(packId, languageId)
     }
 
     override fun getLessonMetadata(packId: String, languageId: String): List<LessonMetadata> {
         ensureSeedData()
-        val cacheKey = "meta:$packId:$languageId"
-        return metadataCache.getOrPut(cacheKey) {
-            Log.d("LessonStore", "Loading lesson metadata for $cacheKey")
-            loadLessonMetadataFromDisk(languageId, packId)
-        }
+        return lessonCatalog.getLessonMetadata(packId, languageId)
     }
 
     override fun getLesson(packId: String, languageId: String, lessonId: String): Lesson? {
         ensureSeedData()
-        // Check if already in lessons cache
-        val cacheKey = "$packId:$languageId"
-        lessonsCache[cacheKey]?.find { it.id.value == lessonId }?.let { return it }
-        // Load single lesson from disk
-        return loadSingleLessonFromDisk(languageId, packId, lessonId)
+        return lessonCatalog.getLesson(packId, languageId, lessonId)
     }
 
     override fun getLessonCount(packId: String, languageId: String): Int {
         ensureSeedData()
-        return getOrderedLessonIdsFromManifest(packId).size
+        return lessonCatalog.getLessonCount(packId, languageId)
     }
 
     override fun getLessonIdAtIndex(packId: String, languageId: String, index: Int): String? {
         ensureSeedData()
-        return getOrderedLessonIdsFromManifest(packId).getOrNull(index)
+        return lessonCatalog.getLessonIdAtIndex(packId, languageId, index)
     }
 
     override fun getCardsForLesson(packId: String, languageId: String, lessonId: String): List<SentenceCard> {
-        return getLesson(packId, languageId, lessonId)?.cards ?: emptyList()
+        ensureSeedData()
+        return lessonCatalog.getCardsForLesson(packId, languageId, lessonId)
     }
 
-    /**
-     * Invalidate the lessons cache. Call with a specific languageId to evict one entry,
-     * or null to clear the entire cache. Also drops the drill vocab word cache —
-     * pack imports/deletes/reloads can change drill CSVs, so the two caches
-     * must never get out of sync.
-     */
+    /** Evict lesson reads and drill-word reads after a store mutation. */
     fun invalidateLessonsCache(languageId: String? = null) {
-        if (languageId != null) {
-            lessonsCache.remove(languageId)
-        } else {
-            lessonsCache.clear()
-        }
-        metadataCache.clear()
+        lessonCatalog.invalidate(languageId)
         drillFileManager.invalidateVocabWordsCache()
-    }
-
-    private fun loadLessonsFromDisk(languageId: String): List<Lesson> {
-        // Try loading from packs FIRST (new schema v2 structure)
-        val packLessons = mutableListOf<Lesson>()
-        val installedPacks = getInstalledPacks()
-
-        for (pack in installedPacks) {
-            // Only load packs matching the languageId
-            if (pack.languageId.value != languageId) continue
-
-            val packDir = File(packsDir, pack.packId.value)
-            if (!packDir.exists()) {
-                Log.w("LessonStore", "Pack directory does not exist: ${packDir.absolutePath}")
-                continue
-            }
-
-            // Read manifest to determine which files are actual lessons
-            val manifest = languageManager.readInstalledPackManifest(pack.packId.value)
-            val manifestLessonFiles = getManifestLessonFileNames(manifest)
-
-            // Load ONLY files declared in manifest — exclude drill/vocab CSVs
-            val lessonFiles = packDir.listFiles()?.filter {
-                it.isFile && it.name.endsWith(".csv") && it.name in manifestLessonFiles
-            } ?: continue
-
-            Log.d("LessonStore", "Loading ${lessonFiles.size} lesson files from pack: ${pack.packId.value} (filtered from ${packDir.listFiles()?.count { it.isFile && it.name.endsWith(".csv") } ?: 0} CSVs), schema: ${manifest?.schemaVersion}")
-
-            for (lessonFile in lessonFiles) {
-                try {
-                    val parseResult = CsvParser.parseLesson(lessonFile.inputStream())
-                    val (parsedTitle, cards) = parseResult.data ?: continue
-
-                    // For schema v1, use lessonId from manifest; for schema v2, use filename
-                    val lessonId = if (manifest?.schemaVersion == 1) {
-                        // Find lesson in manifest by filename
-                        val fileName = lessonFile.name
-                        val lessonEntry = manifest.lessons.find { it.file == fileName }
-                        if (lessonEntry != null) {
-                            Log.d("LessonStore", "Mapped file '$fileName' to lessonId '${lessonEntry.lessonId}'")
-                            lessonEntry.lessonId
-                        } else {
-                            Log.w("LessonStore", "No manifest entry for file: $fileName, using filename as ID")
-                            fileName.removeSuffix(".csv")
-                        }
-                    } else {
-                        // Schema v2 or no manifest - use filename
-                        lessonFile.name.removeSuffix(".csv")
-                    }
-
-                    packLessons.add(Lesson(
-                        id = LessonId(lessonId),
-                        languageId = LanguageId(languageId),
-                        title = parsedTitle ?: lessonId,
-                        cards = cards
-                    ))
-                } catch (e: Exception) {
-                    Log.e("LessonStore", "Failed to parse lesson file: ${lessonFile.name}", e)
-                }
-            }
-        }
-
-        // If pack lessons were found, return them (prioritize pack lessons over legacy)
-        if (packLessons.isNotEmpty()) {
-            Log.d("LessonStore", "Loaded ${packLessons.size} lessons from pack directories for language: $languageId (PACK LESSONS PRIORITY)")
-            return packLessons
-        }
-
-        // Otherwise, fall back to legacy structure (schema v1)
-        Log.d("LessonStore", "No pack lessons found for language: $languageId, falling back to legacy structure")
-        val entries = loadIndex(languageId)
-        val legacyLessons = entries.mapNotNull { entry ->
-            val id = entry["id"] as? String ?: return@mapNotNull null
-            val title = entry["title"] as? String ?: "Lesson"
-            val fileName = entry["file"] as? String ?: return@mapNotNull null
-            val csvFile = File(languageDir(languageId), fileName)
-            if (!csvFile.exists()) return@mapNotNull null
-            val parseResult = CsvParser.parseLesson(csvFile.inputStream())
-            val (parsedTitle, cards) = parseResult.data ?: return@mapNotNull null
-            Lesson(id = LessonId(id), languageId = LanguageId(languageId), title = parsedTitle ?: title, cards = cards)
-        }
-
-        Log.d("LessonStore", "Loaded ${legacyLessons.size} lessons from legacy structure for language: $languageId")
-        return legacyLessons
-    }
-
-    /**
-     * Load lessons from disk filtered to a single pack.
-     * Only loads lessons from the pack directory matching [packId].
-     */
-    private fun loadLessonsFromDisk(languageId: String, packId: String): List<Lesson> {
-        val installedPacks = getInstalledPacks()
-
-        // Find the specific pack
-        val pack = installedPacks.find {
-            it.packId.value == packId && it.languageId.value == languageId
-        } ?: run {
-            Log.w("LessonStore", "Pack not found or language mismatch: packId=$packId, languageId=$languageId")
-            return emptyList()
-        }
-
-        val packDir = File(packsDir, pack.packId.value)
-        if (!packDir.exists()) {
-            Log.w("LessonStore", "Pack directory does not exist: ${packDir.absolutePath}")
-            return emptyList()
-        }
-
-        val manifest = languageManager.readInstalledPackManifest(pack.packId.value)
-        val manifestLessonFiles = getManifestLessonFileNames(manifest)
-
-        val lessonFiles = packDir.listFiles()?.filter {
-            it.isFile && it.name.endsWith(".csv") && it.name in manifestLessonFiles
-        } ?: return emptyList()
-
-        val lessons = mutableListOf<Lesson>()
-
-        Log.d("LessonStore", "Loading ${lessonFiles.size} lesson files from pack: ${pack.packId.value} (filtered from ${packDir.listFiles()?.count { it.isFile && it.name.endsWith(".csv") } ?: 0} CSVs), schema: ${manifest?.schemaVersion}")
-
-        // Canonical lesson order from the manifest (v2: chapter order; v1: lesson
-        // order). listFiles() returns files in FS/readdir order which is
-        // non-deterministic on ext4 — sorting the result here keeps
-        // MixedReviewScheduler (which mixes review cards by positional lesson
-        // index) stable and prevents unrelated lessons from leaking into a
-        // level's mix (Symptom B regression).
-        val orderedLessonIds = getOrderedLessonIdsFromManifest(pack.packId.value)
-
-        for (lessonFile in lessonFiles) {
-            try {
-                val parseResult = CsvParser.parseLesson(lessonFile.inputStream())
-                val (parsedTitle, cards) = parseResult.data ?: continue
-
-                val lessonId = if (manifest?.schemaVersion == 1) {
-                    val fileName = lessonFile.name
-                    val lessonEntry = manifest.lessons.find { it.file == fileName }
-                    if (lessonEntry != null) {
-                        Log.d("LessonStore", "Mapped file '$fileName' to lessonId '${lessonEntry.lessonId}'")
-                        lessonEntry.lessonId
-                    } else {
-                        Log.w("LessonStore", "No manifest entry for file: $fileName, using filename as ID")
-                        fileName.removeSuffix(".csv")
-                    }
-                } else {
-                    lessonFile.name.removeSuffix(".csv")
-                }
-
-                lessons.add(Lesson(
-                    id = LessonId(lessonId),
-                    languageId = LanguageId(languageId),
-                    title = parsedTitle ?: lessonId,
-                    cards = cards
-                ))
-            } catch (e: Exception) {
-                Log.e("LessonStore", "Failed to parse lesson file: ${lessonFile.name}", e)
-            }
-        }
-
-        Log.d("LessonStore", "Loaded ${lessons.size} lessons from pack: $packId for language: $languageId")
-        return sortByManifestOrder(lessons, orderedLessonIds)
     }
 
     override fun deleteAllLessons(languageId: String) {
@@ -725,85 +504,15 @@ class LessonStoreImpl(private val context: Context) : LessonStore {
 
     // ── Chapter queries (Grammar Story Roadmap) ───────────────────────────
 
-    override fun getChapters(packId: String): List<Chapter> {
-        val manifest = languageManager.readInstalledPackManifest(packId) ?: return emptyList()
-        val chapters = manifest.chapters.sortedBy { it.order }
-        if (BuildConfig.DEBUG) {
-            Log.d("LessonStore", "getChapters($packId): returning ${chapters.size} chapters")
-            chapters.forEach { Log.d("LessonStore", "  - ${it.chapterId}: ${it.title}") }
-        }
-        return chapters
-    }
+    override fun getChapters(packId: String): List<Chapter> = chapterStories.getChapters(packId)
 
-    override fun getChapterStory(packId: String, storyFile: String): String? {
-        if (storyFile.isBlank()) return null
+    override fun getChapterStory(packId: String, storyFile: String): String? =
+        chapterStories.getChapterStory(packId, storyFile)
 
-        val packDir = File(packsDir, packId)
-        val storiesDir = File(packDir, "stories")
-        val storyFileObj = File(storiesDir, storyFile)
+    fun getChapterStoryWithLanguageDetection(packId: String, chapterId: String, uiLanguage: String): String? =
+        chapterStories.getChapterStoryWithLanguageDetection(packId, chapterId, uiLanguage)
 
-        Log.d("LessonStore", "Loading story: packId=$packId, storyFile=$storyFile")
-        Log.d("LessonStore", "Pack dir exists: ${packDir.exists()}, Stories dir exists: ${storiesDir.exists()}")
-
-        return try {
-            // First, try to read from internal storage
-            if (storyFileObj.exists()) {
-                Log.d("LessonStore", "Story found in internal storage: ${storyFileObj.absolutePath}")
-                return storyFileObj.readText()
-            }
-
-            Log.d("LessonStore", "Story NOT found in internal storage, trying assets...")
-            Log.d("LessonStore", "Story file path: ${storyFileObj.absolutePath}")
-
-            // If not in internal storage, try to read from assets and copy it
-            val assetPath = "grammarmate/packs/$packId/stories/$storyFile"
-            try {
-                context.assets.open(assetPath).use { input ->
-                    // Ensure the stories directory exists
-                    if (!storiesDir.exists()) {
-                        storiesDir.mkdirs()
-                        Log.d("LessonStore", "Created stories directory: ${storiesDir.absolutePath}")
-                    }
-
-                    // Read from assets and write to internal storage
-                    val content = input.bufferedReader().readText()
-                    storyFileObj.writeText(content)
-
-                    Log.d("LessonStore", "Copied story from assets: $assetPath -> $storyFileObj")
-                    return content
-                }
-            } catch (e: Exception) {
-                Log.e("LessonStore", "Story file not found in assets: $assetPath", e)
-                Log.d("LessonStore", "Available stories in pack:")
-                storiesDir.listFiles()?.forEach { file ->
-                    Log.d("LessonStore", "  - ${file.name}")
-                }
-                null
-            }
-        } catch (e: Exception) {
-            Log.e("LessonStore", "Failed to load story content: $storyFile", e)
-            null
-        }
-    }
-
-    /**
-     * Get chapter story with automatic language detection based on UI language preference.
-     * This is the preferred method for loading stories in the Grammar Story Roadmap.
-     *
-     * @param packId Pack identifier
-     * @param chapterId Chapter identifier (e.g., "chapter_01")
-     * @param uiLanguage UI language setting ("ru", "en", "system")
-     * @return Story content if found, null otherwise
-     */
-    fun getChapterStoryWithLanguageDetection(packId: String, chapterId: String, uiLanguage: String): String? {
-        val storyFile = detectStoryLanguage(packId, chapterId, uiLanguage) ?: return null
-        return getChapterStory(packId, storyFile)
-    }
-
-    override fun hasChapters(packId: String): Boolean {
-        val manifest = languageManager.readInstalledPackManifest(packId) ?: return false
-        return manifest.chapters.isNotEmpty()
-    }
+    override fun hasChapters(packId: String): Boolean = chapterStories.hasChapters(packId)
 
     // ── External lesson loading ─────────────────────────────────────────────
 
@@ -881,82 +590,8 @@ class LessonStoreImpl(private val context: Context) : LessonStore {
 
     // ── Story language detection ─────────────────────────────────────────────
 
-    /**
-     * Detect which story file to use based on UI language preference.
-     *
-     * Logic:
-     * - If uiLanguage is "ru", try Russian story file first (chapter_XX_original.md)
-     * - If uiLanguage is "en" or "system", try English story file first (chapter_XX.md)
-     * - Fall back to available file if preferred language doesn't exist
-     *
-     * @param packId Pack identifier
-     * @param chapterId Chapter identifier (e.g., "chapter_01")
-     * @param uiLanguage UI language setting ("ru", "en", "system")
-     * @return Story filename if found, null otherwise
-     */
-    override fun detectStoryLanguage(packId: String, chapterId: String, uiLanguage: String): String? {
-        val packDir = File(packsDir, packId)
-        val storiesDir = File(packDir, "stories")
-        if (!storiesDir.exists()) {
-            android.util.Log.w("LessonStore", "Stories directory does not exist for pack: $packId")
-            return null
-        }
-
-        // Normalize chapter ID for filename
-        val chapterBase = chapterId.removePrefix("chapter_").trim()
-        if (chapterBase.isEmpty()) {
-            android.util.Log.w("LessonStore", "Invalid chapter ID: $chapterId")
-            return null
-        }
-
-        // Determine preferred language
-        val preferRussian = when (uiLanguage.lowercase()) {
-            "ru" -> true
-            "system" -> {
-                // Check system locale
-                val systemLang = java.util.Locale.getDefault().language
-                systemLang == "ru"
-            }
-            else -> false
-        }
-
-        android.util.Log.d("LessonStore", "Detecting story language for chapterId=$chapterId, preferRussian=$preferRussian")
-
-        // List all available story files for this chapter
-        val availableFiles = storiesDir.listFiles()?.filter { file ->
-            file.name.startsWith("chapter_$chapterBase") && file.name.endsWith(".md")
-        } ?: emptyList()
-
-        android.util.Log.d("LessonStore", "Available story files for chapter_$chapterBase: ${availableFiles.map { it.name }}")
-
-        if (availableFiles.isEmpty()) {
-            android.util.Log.w("LessonStore", "No story files found for chapter_$chapterBase")
-            return null
-        }
-
-        // Prioritize based on language preference
-        // _original.md files are Russian, others are English translations
-        val prioritizedFiles = if (preferRussian) {
-            // Prefer _original.md (Russian), then any other variant
-            availableFiles.sortedByDescending { it.name.endsWith("_original.md") }
-        } else {
-            // Prefer non-_original.md files (English variants), then _original.md
-            availableFiles.sortedBy { it.name.endsWith("_original.md") }
-        }
-
-        android.util.Log.d("LessonStore", "Prioritized story files: ${prioritizedFiles.map { it.name }}")
-
-        for (file in prioritizedFiles) {
-            android.util.Log.d("LessonStore", "Trying story file: ${file.name}")
-            if (file.exists()) {
-                android.util.Log.d("LessonStore", "Found story file for $chapterId: ${file.name} (uiLanguage=$uiLanguage, preferRussian=$preferRussian)")
-                return file.name
-            }
-        }
-
-        android.util.Log.w("LessonStore", "No suitable story file found for chapter: $chapterId")
-        return null
-    }
+    override fun detectStoryLanguage(packId: String, chapterId: String, uiLanguage: String): String? =
+        chapterStories.detectStoryLanguage(packId, chapterId, uiLanguage)
 
     // ── Private helpers ──────────────────────────────────────────────────
 
@@ -1089,124 +724,5 @@ class LessonStoreImpl(private val context: Context) : LessonStore {
 
     // ── Lazy loading private helpers ───────────────────────────────────
 
-    /**
-     * Extract the set of CSV filenames declared as lessons in the manifest.
-     * v1: lessons[].file  |  v2: chapter lessonIds → "{lessonId}.csv"
-     * Only these files are loaded as lessons — drill/vocab CSVs are excluded.
-     */
-    private fun getManifestLessonFileNames(manifest: LessonPackManifest?): Set<String> {
-        if (manifest == null) return emptySet()
-        return if (manifest.schemaVersion == 2) {
-            // v2: chapters contain lessonIds; filename = "{lessonId}.csv"
-            // If manifest.lessons has explicit file mappings, use those
-            val lessonIdToFile = manifest.lessons.associate { it.lessonId to it.file }
-            manifest.chapters.flatMap { it.lessons }.map { lessonId ->
-                lessonIdToFile[lessonId] ?: "$lessonId.csv"
-            }.toSet()
-        } else {
-            // v1: lessons directly list file names
-            manifest.lessons.map { it.file }.toSet()
-        }
-    }
 
-    private fun getOrderedLessonIdsFromManifest(packId: String): List<String> {
-        val manifest = languageManager.readInstalledPackManifest(packId) ?: return emptyList()
-        return if (manifest.schemaVersion == 2) {
-            manifest.chapters.sortedBy { it.order }.flatMap { it.lessons }
-        } else {
-            manifest.lessons.sortedBy { it.order }.map { it.lessonId }
-        }
-    }
-
-    /**
-     * Sort [lessons] to match the canonical [orderedLessonIds] from the manifest.
-     * Lessons not present in the manifest (e.g. stray CSVs) keep their relative
-     * order and are placed after the known ones — stable, so the result is
-     * deterministic regardless of listFiles()/readdir order on the device FS.
-     */
-    private fun sortByManifestOrder(
-        lessons: List<Lesson>,
-        orderedLessonIds: List<String>
-    ): List<Lesson> {
-        if (orderedLessonIds.isEmpty()) return lessons
-        val orderIndex = orderedLessonIds.withIndex().associate { (i, id) -> id to i }
-        val knownCount = orderedLessonIds.size
-        // Kotlin's sortedBy is stable: unknown lessons (all keyed at knownCount)
-        // keep their input relative order and land after every known lesson.
-        return lessons.sortedBy { lesson -> orderIndex[lesson.id.value] ?: knownCount }
-    }
-
-    /**
-     * Resolve the CSV filename for [lessonId] in [packId].
-     *
-     * Mirrors the rule in [getManifestLessonFileNames]: an explicit `file` in
-     * manifest.lessons wins, otherwise the filename is "<lessonId>.csv". Works for both
-     * schema v1 (lessons listed at the root) and v2 (lesson IDs listed in chapters).
-     */
-    private fun lessonFileNameFor(packId: String, lessonId: String): String {
-        val manifest = languageManager.readInstalledPackManifest(packId)
-        val explicit = manifest?.lessons?.firstOrNull { it.lessonId == lessonId }?.file
-        return explicit ?: "$lessonId.csv"
-    }
-
-    private fun findPack(packId: String, languageId: String): LessonPack? {
-        return getInstalledPacks().find {
-            it.packId.value == packId && it.languageId.value == languageId
-        }
-    }
-
-    private fun loadLessonMetadataFromDisk(languageId: String, packId: String): List<LessonMetadata> {
-        val pack = findPack(packId, languageId) ?: return emptyList()
-        val packDir = File(packsDir, pack.packId.value)
-        if (!packDir.exists()) return emptyList()
-
-        val lessonIds = getOrderedLessonIdsFromManifest(packId)
-        if (lessonIds.isEmpty()) return emptyList()
-
-        val result = mutableListOf<LessonMetadata>()
-        for (lessonId in lessonIds) {
-            val csvFile = File(packDir, lessonFileNameFor(packId, lessonId))
-            if (!csvFile.exists()) continue
-            try {
-                val title = CsvParser.parseLessonTitle(csvFile.inputStream()) ?: lessonId
-                result.add(LessonMetadata(
-                    id = LessonId(lessonId),
-                    languageId = LanguageId(languageId),
-                    title = title
-                ))
-            } catch (e: Exception) {
-                Log.e("LessonStore", "Failed to parse title for $lessonId", e)
-                result.add(LessonMetadata(
-                    id = LessonId(lessonId),
-                    languageId = LanguageId(languageId),
-                    title = lessonId
-                ))
-            }
-        }
-        Log.d("LessonStore", "Loaded ${result.size} lesson metadata entries for $packId")
-        return result
-    }
-
-    private fun loadSingleLessonFromDisk(languageId: String, packId: String, lessonId: String): Lesson? {
-        val pack = findPack(packId, languageId) ?: return null
-        val packDir = File(packsDir, pack.packId.value)
-        val csvFile = File(packDir, lessonFileNameFor(packId, lessonId))
-        if (!csvFile.exists()) {
-            Log.w("LessonStore", "Lesson file not found: ${csvFile.absolutePath}")
-            return null
-        }
-        try {
-            val parseResult = CsvParser.parseLesson(csvFile.inputStream())
-            val (title, cards) = parseResult.data ?: return null
-            return Lesson(
-                id = LessonId(lessonId),
-                languageId = LanguageId(languageId),
-                title = title ?: lessonId,
-                cards = cards
-            )
-        } catch (e: Exception) {
-            Log.e("LessonStore", "Failed to load lesson $lessonId", e)
-            return null
-        }
-    }
 }

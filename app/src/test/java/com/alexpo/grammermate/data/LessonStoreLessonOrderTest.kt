@@ -152,4 +152,37 @@ class LessonStoreLessonOrderTest {
         assertEquals("reload must preserve canonical order", first, second)
         assertTrue("cache invalidation should have evicted the entry", first.isNotEmpty())
     }
+
+    @Test
+    fun `language invalidation evicts pack scoped lesson cache`() {
+        val packId = "ITALIAN_SHORT"
+        val lessonId = "lesson_01_A01"
+        seedPack(packId, "it", listOf(lessonId), listOf(lessonId))
+        val store = LessonStoreImpl(context)
+        val first = store.getLessons(packId, "it").single().title
+        File(packsDir, "$packId/$lessonId.csv").writeText("Updated title\nPrompt;Answer\n")
+
+        store.invalidateLessonsCache("it")
+
+        assertEquals("Updated title", store.getLessons(packId, "it").single().title)
+        assertTrue(first != store.getLessons(packId, "it").single().title)
+    }
+
+    @Test
+    fun `chapter and story reads stay scoped to pack and prefer requested language`() {
+        val packId = "ITALIAN_SHORT"
+        seedPack(packId, "it", listOf("lesson_01_A01"), listOf("lesson_01_A01"))
+        val storyDir = File(packsDir, "$packId/stories").apply { mkdirs() }
+        File(storyDir, "chapter_1.md").writeText("English story")
+        File(storyDir, "chapter_1_original.md").writeText("Russian story")
+        val store = LessonStoreImpl(context)
+
+        assertEquals("chapter_1", store.getChapters(packId).single().chapterId)
+        assertTrue(store.hasChapters(packId))
+        assertEquals("chapter_1_original.md", store.detectStoryLanguage(packId, "chapter_1", "ru"))
+        assertEquals("chapter_1.md", store.detectStoryLanguage(packId, "chapter_1", "en"))
+        assertEquals("Russian story", store.getChapterStory(packId, "chapter_1_original.md"))
+        assertEquals(null, store.detectStoryLanguage("missing-pack", "chapter_1", "en"))
+    }
+
 }
