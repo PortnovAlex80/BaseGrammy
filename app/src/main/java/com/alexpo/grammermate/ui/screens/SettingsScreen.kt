@@ -13,11 +13,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.ui.unit.dp
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Download
-import androidx.compose.material.icons.filled.Insights
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Upload
 import androidx.compose.material3.AlertDialog
@@ -26,7 +24,6 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -55,7 +52,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.alexpo.grammermate.R
 import com.alexpo.grammermate.data.DownloadState
-import com.alexpo.grammermate.data.InitPhase
 import com.alexpo.grammermate.data.HintLevel
 import com.alexpo.grammermate.data.TrainingUiState
 import com.alexpo.grammermate.shared.AuditLogger
@@ -202,8 +198,6 @@ fun SettingsSheet(
     val sheetState = rememberModalBottomSheetState()
     var newLessonTitle by remember { mutableStateOf("") }
     var newLanguageName by remember { mutableStateOf("") }
-    var vocabLimitText by remember(state.cardSession.vocabSprintLimit) { mutableStateOf(state.cardSession.vocabSprintLimit.toString()) }
-    var sessionSizeText by remember(sessionSize) { mutableStateOf(sessionSize.toString()) }
     var userNameInput by remember(state.navigation.userName) { mutableStateOf(state.navigation.userName) }
     var showResetConfirmDialog by remember { mutableStateOf(false) }
     val scrollState = rememberScrollState()
@@ -242,241 +236,26 @@ fun SettingsSheet(
                 .verticalScroll(scrollState),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // Interface language selector (separate from learning content language)
-            Text(
-                text = stringResource(R.string.settings_interface_language),
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold
-            )
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                val languageOptions = listOf(
-                    "system" to stringResource(R.string.settings_language_system),
-                    "en" to stringResource(R.string.settings_language_en),
-                    "ru" to stringResource(R.string.settings_language_ru)
-                )
-                languageOptions.forEach { (code, label) ->
-                    FilterChip(
-                        selected = uiLanguage == code,
-                        onClick = {
-                            AuditLogger.getInstanceOrNull()?.settingsChange("uiLanguage", code)
-                            onSetUiLanguage(code)
-                        },
-                        label = { Text(text = label) },
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-            }
-
-            Text(
-                text = stringResource(R.string.settings_service_mode),
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold
-            )
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(text = stringResource(R.string.settings_test_mode), style = MaterialTheme.typography.bodyLarge)
-                Switch(
-                    checked = state.cardSession.testMode,
-                    onCheckedChange = {
-                        AuditLogger.getInstanceOrNull()?.settingsChange("testMode", (!state.cardSession.testMode).toString())
-                        onToggleTestMode()
-                    }
-                )
-            }
-            Text(
-                text = stringResource(R.string.settings_test_mode_description),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-            )
-            OutlinedButton(
-                onClick = onOpenLadder,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Icon(Icons.Default.Insights, contentDescription = null)
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(text = stringResource(R.string.settings_show_ladder))
-            }
-
-            // Appearance / Theme selector
-            Text(
-                text = stringResource(R.string.settings_appearance),
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold
-            )
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                com.alexpo.grammermate.data.ThemeMode.entries.forEach { mode ->
-                    val isSelected = state.navigation.themeMode == mode
-                    val label = when (mode) {
-                        com.alexpo.grammermate.data.ThemeMode.LIGHT -> stringResource(R.string.settings_theme_light)
-                        com.alexpo.grammermate.data.ThemeMode.DARK -> stringResource(R.string.settings_theme_dark)
-                        com.alexpo.grammermate.data.ThemeMode.SYSTEM -> stringResource(R.string.settings_theme_system)
-                    }
-                    FilterChip(
-                        selected = isSelected,
-                        onClick = {
-                            AuditLogger.getInstanceOrNull()?.settingsChange("themeMode", mode.name)
-                            onSetThemeMode(mode)
-                        },
-                        label = { Text(text = label) },
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-            }
-            Text(
-                text = stringResource(R.string.settings_theme_description),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-            )
-
-            // Difficulty / Hint level selector
-            Text(
-                text = stringResource(R.string.settings_difficulty),
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold
-            )
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                HintLevel.entries.forEach { level ->
-                    val isSelected = state.cardSession.hintLevel == level
-                    val label = when (level) {
-                        HintLevel.EASY -> stringResource(R.string.settings_easy)
-                        HintLevel.MEDIUM -> stringResource(R.string.settings_medium)
-                        HintLevel.HARD -> stringResource(R.string.settings_hard)
-                    }
-                    FilterChip(
-                        selected = isSelected,
-                        onClick = {
-                            AuditLogger.getInstanceOrNull()?.settingsChange("hintLevel", level.name)
-                            onSetHintLevel(level)
-                        },
-                        label = { Text(text = label) },
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-            }
-            Text(
-                text = when (state.cardSession.hintLevel) {
-                    HintLevel.EASY ->
-                        stringResource(R.string.settings_easy_description)
-                    HintLevel.MEDIUM ->
-                        stringResource(R.string.settings_medium_description)
-                    HintLevel.HARD ->
-                        stringResource(R.string.settings_hard_description)
-                },
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-            )
-
-            // Clickable word hints toggle
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "Clickable word hints",
-                    style = MaterialTheme.typography.bodyMedium
-                )
-                Switch(
-                    checked = clickableWordHints,
-                    onCheckedChange = {
-                        AuditLogger.getInstanceOrNull()?.settingsChange("clickableWordHints", it.toString())
-                        onSetClickableWordHints(it)
-                    }
-                )
-            }
-            Text(
-                text = "Show word translations and ranks when viewing answers",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            OutlinedTextField(
-                value = vocabLimitText,
-                onValueChange = { next ->
-                    val cleaned = next.filter { it.isDigit() }
-                    vocabLimitText = cleaned
-                    val parsed = cleaned.toIntOrNull()
-                    if (parsed != null) {
-                        AuditLogger.getInstanceOrNull()?.settingsChange("vocabLimit", parsed.toString())
-                        onUpdateVocabLimit(parsed)
-                    } else if (cleaned.isEmpty()) {
-                        AuditLogger.getInstanceOrNull()?.settingsChange("vocabLimit", "0")
-                        onUpdateVocabLimit(0)
-                    }
-                },
-                modifier = Modifier.fillMaxWidth(),
-                label = { Text(text = stringResource(R.string.settings_vocab_sprint_limit)) }
-            )
-            Text(
-                text = stringResource(R.string.settings_vocab_limit_hint),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-            )
-            OutlinedTextField(
-                value = sessionSizeText,
-                onValueChange = { next ->
-                    val cleaned = next.filter { it.isDigit() }
-                    sessionSizeText = cleaned
-                    val parsed = cleaned.toIntOrNull()
-                    if (parsed != null) {
-                        AuditLogger.getInstanceOrNull()?.settingsChange("sessionSize", parsed.toString())
-                        onSetSessionSize(parsed)
-                    }
-                },
-                modifier = Modifier.fillMaxWidth(),
-                label = { Text(text = stringResource(R.string.settings_session_size)) }
-            )
-            Text(
-                text = stringResource(R.string.settings_session_size_hint),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-            )
-
-            // TTS speed control
-            Text(
-                text = stringResource(R.string.settings_pronunciation_speed),
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold
-            )
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                Text(text = "0.5x", style = MaterialTheme.typography.bodySmall)
-                Slider(
-                    value = state.audio.ttsSpeed,
-                    onValueChange = {
-                        AuditLogger.getInstanceOrNull()?.settingsChange("ttsSpeed", it.toString())
-                        onSetTtsSpeed(it)
-                    },
-                    valueRange = 0.5f..1.5f,
-                    steps = 3,
-                    modifier = Modifier.weight(1f)
-                )
-                Text(text = "1.5x", style = MaterialTheme.typography.bodySmall)
-            }
-            Text(
-                text = String.format("%.2fx", state.audio.ttsSpeed),
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.Medium,
-                modifier = Modifier.fillMaxWidth(),
-                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+            SettingsPreferencesSection(
+                values = SettingsPreferencesValues(
+                    uiLanguage = uiLanguage,
+                    testMode = state.cardSession.testMode,
+                    themeMode = state.navigation.themeMode,
+                    hintLevel = state.cardSession.hintLevel,
+                    clickableWordHints = clickableWordHints,
+                    vocabSprintLimit = state.cardSession.vocabSprintLimit,
+                    sessionSize = sessionSize,
+                    ttsSpeed = state.audio.ttsSpeed
+                ),
+                onSetUiLanguage = onSetUiLanguage,
+                onToggleTestMode = onToggleTestMode,
+                onOpenLadder = onOpenLadder,
+                onSetThemeMode = onSetThemeMode,
+                onSetHintLevel = onSetHintLevel,
+                onSetClickableWordHints = onSetClickableWordHints,
+                onUpdateVocabLimit = onUpdateVocabLimit,
+                onSetSessionSize = onSetSessionSize,
+                onSetTtsSpeed = onSetTtsSpeed
             )
 
             // Background vocab — reset "easy" (green-marked) words
@@ -569,253 +348,13 @@ fun SettingsSheet(
                 onCancel = onCancelSoundPackDownload
             )
 
-            // TTS voice models (explicit download section)
-            Text(
-                text = "Голосовые модели (TTS)",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold
-            )
-            // Per-language status list. TtsModelRegistry.displayNames are plain
-            // ("Italian", "Russian"); append the model dir name to match the task's
-            // "Italian — paola-medium" expectation.
-            val ttsTargetLanguages = listOf("it", "ru")
-            ttsTargetLanguages.forEach { langId ->
-                val spec = com.alexpo.grammermate.data.TtsModelRegistry.specFor(langId)
-                val displayName = spec?.let { "${it.displayName} — ${it.modelDirName}" } ?: langId
-                val present = state.audio.ttsModelsReady[langId] == true
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = displayName,
-                        style = MaterialTheme.typography.bodyLarge,
-                        modifier = Modifier.weight(1f)
-                    )
-                    Text(
-                        text = if (present) "✓ Загружено" else "Не загружено",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = if (present) MaterialTheme.colorScheme.primary
-                            else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                    )
-                }
-            }
-            Button(
-                onClick = {
-                    AuditLogger.getInstanceOrNull()?.settingsChange("ttsDownload", "manual")
-                    onStartTtsDownload()
-                },
-                modifier = Modifier.fillMaxWidth(),
-                enabled = ttsTargetLanguages.any { state.audio.ttsModelsReady[it] != true } &&
-                    state.audio.ttsDownloadState !is DownloadState.Downloading &&
-                    state.audio.ttsDownloadState !is DownloadState.Extracting &&
-                    state.audio.ttsDownloadState !is DownloadState.Initializing
-            ) {
-                Icon(Icons.Default.Download, contentDescription = null)
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(text = "Загрузить модели")
-            }
-            // Progress block mirroring the ASR section's when(DownloadState).
-            when (val ttsState = state.audio.ttsDownloadState) {
-                is DownloadState.Downloading -> {
-                    LinearProgressIndicator(
-                        progress = { ttsState.percent / 100f },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    Text(
-                        text = "Загрузка модели… ${ttsState.percent}%",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                    )
-                }
-                is DownloadState.Extracting -> {
-                    LinearProgressIndicator(
-                        progress = { ttsState.percent / 100f },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    Text(
-                        text = "Распаковка модели… ${ttsState.percent}%",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                    )
-                }
-                is DownloadState.Initializing -> {
-                    LinearProgressIndicator(
-                        progress = { ttsState.percent / 100f },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    Text(
-                        text = when (ttsState.phase) {
-                            InitPhase.CHECKING_FILES -> "Проверка файлов…"
-                            InitPhase.LOADING_MODEL -> "Загрузка движка…"
-                            InitPhase.PREPARING_ENGINE -> "Подготовка…"
-                        } + " ${ttsState.percent}%",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                    )
-                }
-                is DownloadState.Error -> {
-                    Text(
-                        text = ttsState.message,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.error
-                    )
-                }
-                is DownloadState.Done -> {
-                    Text(
-                        text = "Модели готовы к использованию.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                }
-                DownloadState.Idle -> {
-                    Text(
-                        text = "Скачайте модели для озвучки Italian и Russian заранее.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                    )
-                }
-            }
-
-            // Offline ASR toggle
-            Text(
-                text = stringResource(R.string.settings_voice_recognition),
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold
-            )
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(text = stringResource(R.string.settings_offline_speech_recognition), style = MaterialTheme.typography.bodyLarge)
-                }
-                Switch(
-                    checked = state.audio.useOfflineAsr,
-                    onCheckedChange = { enabled ->
-                        AuditLogger.getInstanceOrNull()?.settingsChange("offlineAsr", enabled.toString())
-                        onSetUseOfflineAsr(enabled)
-                        if (enabled && !state.audio.asrModelReady) {
-                            onStartAsrDownload()
-                        }
-                    }
-                )
-            }
-            when (val dlState = state.audio.asrDownloadState) {
-                is DownloadState.Downloading -> {
-                    LinearProgressIndicator(
-                        progress = { dlState.percent / 100f },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    Text(
-                        text = stringResource(R.string.settings_downloading_model, dlState.percent),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                    )
-                }
-                is DownloadState.Extracting -> {
-                    LinearProgressIndicator(
-                        progress = { dlState.percent / 100f },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    Text(
-                        text = stringResource(R.string.settings_extracting_model, dlState.percent),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                    )
-                }
-                is DownloadState.Initializing -> {
-                    LinearProgressIndicator(
-                        progress = { dlState.percent / 100f },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                    Text(
-                        text = when (dlState.phase) {
-                            InitPhase.CHECKING_FILES -> "Checking model files..."
-                            InitPhase.LOADING_MODEL -> "Loading engine..."
-                            InitPhase.PREPARING_ENGINE -> "Preparing..."
-                        } + " ${dlState.percent}%",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                    )
-                }
-                is DownloadState.Error -> {
-                    Text(
-                        text = dlState.message,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.error
-                    )
-                }
-                else -> {
-                    Text(
-                        text = if (state.audio.useOfflineAsr) {
-                            if (state.audio.asrModelReady) stringResource(R.string.settings_using_on_device) else stringResource(R.string.settings_model_not_downloaded)
-                        } else {
-                            stringResource(R.string.settings_using_google_recognition)
-                        },
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                    )
-                }
-            }
-
-            // Bluetooth microphone toggle
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = stringResource(R.string.settings_bluetooth_microphone),
-                        style = MaterialTheme.typography.bodyLarge
-                    )
-                }
-                Switch(
-                    checked = state.audio.useBluetoothMic,
-                    onCheckedChange = { enabled ->
-                        AuditLogger.getInstanceOrNull()?.settingsChange("bluetoothMic", enabled.toString())
-                        onSetUseBluetoothMic(enabled)
-                    }
-                )
-            }
-            Text(
-                text = if (state.audio.useBluetoothMic) {
-                    stringResource(R.string.settings_bluetooth_mic_on)
-                } else {
-                    stringResource(R.string.settings_bluetooth_mic_off)
-                },
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-            )
-
-            // Voice auto-start toggle
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(text = stringResource(R.string.settings_auto_start_voice), style = MaterialTheme.typography.bodyLarge)
-                }
-                Switch(
-                    checked = state.audio.voiceAutoStart,
-                    onCheckedChange = {
-                        AuditLogger.getInstanceOrNull()?.settingsChange("voiceAutoStart", it.toString())
-                        onSetVoiceAutoStart(it)
-                    }
-                )
-            }
-            Text(
-                text = if (state.audio.voiceAutoStart) {
-                    stringResource(R.string.settings_voice_auto_start_on)
-                } else {
-                    stringResource(R.string.settings_voice_auto_start_off)
-                },
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+            TtsModelsSection(state.audio, onStartTtsDownload)
+            SpeechSettingsSection(
+                audio = state.audio,
+                onSetUseOfflineAsr = onSetUseOfflineAsr,
+                onStartAsrDownload = onStartAsrDownload,
+                onSetUseBluetoothMic = onSetUseBluetoothMic,
+                onSetVoiceAutoStart = onSetVoiceAutoStart
             )
 
             // Russian text size control
