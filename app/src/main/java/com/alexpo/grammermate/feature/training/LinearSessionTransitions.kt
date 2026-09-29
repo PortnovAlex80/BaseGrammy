@@ -9,6 +9,12 @@ import com.alexpo.grammermate.data.VerbDrillCard
 
 /** State rules shared by verb drill and daily linear card sessions. No effects or stored state. */
 internal object LinearSessionTransitions {
+    fun handles(mode: TrainingScreenMode): Boolean = mode in listOf(
+        TrainingScreenMode.VERB_DRILL,
+        TrainingScreenMode.DAILY_TRANSLATE,
+        TrainingScreenMode.DAILY_VERBS
+    )
+
     data class VoiceContribution(val activeMs: Long, val words: Int) {
         companion object {
             fun from(shouldRecord: Boolean, durationMs: Long?, words: Int): VoiceContribution =

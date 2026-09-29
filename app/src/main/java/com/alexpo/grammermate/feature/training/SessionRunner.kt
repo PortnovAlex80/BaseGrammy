@@ -32,8 +32,8 @@ import kotlinx.coroutines.flow.update
 /**
  * Session management module extracted from TrainingViewModel.
  *
- * Owns the training session lifecycle: card navigation, answer submission,
- * timer entrypoints, word bank interaction, and elite sub-mode.
+ * Owns session lifecycle and answer submission. [SessionNavigator] owns card-movement
+ * commands; [SessionWordBank] preserves the existing optional word-bank mode.
  * [SessionActiveTimer] owns the running clock and checkpoint cadence.
  *
  * Query-style operations (getMastery, getSchedule, calculateCompletedSubLessons)
@@ -51,7 +51,7 @@ class SessionRunner(
     private val appContext: Application,
     private val coroutineScope: CoroutineScope,
     private val answerValidator: AnswerValidator,
-    private val wordBankGenerator: WordBankGenerator,
+    wordBankGenerator: WordBankGenerator,
     private val cardProvider: CardProvider,
     private val streakManager: StreakManager,
     private val getMastery: (String, String) -> LessonMasteryState?,
@@ -107,6 +107,11 @@ class SessionRunner(
         onDisplayTick = sessionTimerMsSink,
         onCheckpoint = onTimerSaveProgress
     )
+    private val wordBank = SessionWordBank(stateAccess, inputTextFlow, wordBankGenerator) { sessionCards }
+    private val navigator = SessionNavigator(
+        stateAccess, stateMachine, { sessionCards }, activeTimer, inputTextFlow, wordBank,
+        ::actualCompletedSubLessonCount
+    )
 
     private var subLessonSize = TrainingConfig.SUB_LESSON_SIZE_DEFAULT
     private val eliteStepCount = TrainingConfig.ELITE_STEP_COUNT
@@ -119,22 +124,7 @@ class SessionRunner(
      * They share a single answer-handling and completion path.
      */
     private val isLinearSession: Boolean
-        get() = stateAccess.uiState.value.cardSession.screenMode in listOf(
-            TrainingScreenMode.VERB_DRILL,
-            TrainingScreenMode.DAILY_TRANSLATE,
-            TrainingScreenMode.DAILY_VERBS
-        )
-
-    /**
-     * Verb-style word banks use all session card answers as distractors.
-     * Sentence-style word banks use lesson cards as distractors.
-     * This is a session configuration, not business logic branching.
-     */
-    private val usesVerbWordBank: Boolean
-        get() = stateAccess.uiState.value.cardSession.screenMode in listOf(
-            TrainingScreenMode.VERB_DRILL,
-            TrainingScreenMode.DAILY_VERBS
-        )
+        get() = LinearSessionTransitions.handles(stateAccess.uiState.value.cardSession.screenMode)
 
     // ── CardSessionStateModel implementation ─────────────────────────────
     // Maps internal SessionState enum + stateMachine to the unified state model.
@@ -513,7 +503,7 @@ class SessionRunner(
     /**
      * Boss mode: mid-session correct answer. Advance to next card.
      *
-     * Returns the events emitted by [nextCardInternal] (notably
+     * Returns the events emitted by [nextCard] (notably
      * [SessionEvent.AdvanceBossProgress]) so the ViewModel can advance the
      * boss progress field the progress bar reads. Dropping these events
      * leaves the boss progress bar frozen at "1 / N".
@@ -530,7 +520,7 @@ class SessionRunner(
             it.copy(cardSession = SessionAnswerTransitions.bossMid(it.cardSession, voice))
         }
         // nextCard handles voice trigger, word bank, save, and boss progress event.
-        val events = nextCardInternal(triggerVoice = state.cardSession.inputMode == InputMode.VOICE)
+        val events = nextCard(triggerVoice = state.cardSession.inputMode == InputMode.VOICE)
         return SubmitResult(accepted = true, hintShown = false, needsSaveProgress = false, needsFlowerRefresh = true) to events
     }
 
@@ -618,7 +608,7 @@ class SessionRunner(
             it.copy(cardSession = SessionAnswerTransitions.normalMid(it.cardSession, voice))
         }
         // nextCard handles voice trigger, word bank, save.
-        val events = nextCardInternal(triggerVoice = state.cardSession.inputMode == InputMode.VOICE)
+        val events = nextCard(triggerVoice = state.cardSession.inputMode == InputMode.VOICE)
         return SubmitResult(accepted = true, hintShown = false, needsSaveProgress = false, needsFlowerRefresh = true) to events
     }
 
@@ -678,163 +668,11 @@ class SessionRunner(
      *
      * @param triggerVoice Whether to trigger voice input on the next card.
      */
-    fun nextCard(triggerVoice: Boolean = false): List<SessionEvent> {
-        val events = nextCardInternal(triggerVoice)
-        return events
-    }
-
-    private fun nextCardInternal(triggerVoice: Boolean): List<SessionEvent> {
-        val state = stateAccess.uiState.value
-        val fromIdx = state.cardSession.currentIndex
-        val wasHintShown = state.cardSession.sessionState == SessionState.HINT_SHOWN || stateMachine.hintAnswer != null
-        stateMachine.reset()
-        val lastIndex = sessionCards.lastIndex
-        val isOnLastCard = state.cardSession.currentIndex >= lastIndex && lastIndex >= 0
-
-        // Linear sessions: on last card, signal completion without lesson-level mechanics
-        if (isOnLastCard && isLinearSession) {
-            pauseTimer()
-            stateAccess.updateState {
-                it.copy(cardSession = LinearSessionTransitions.completeViaNext(it.cardSession))
-            }
-            Log.d(logTag, "LinearSession: Next pressed on last card — signaling completion")
-            return listOf(SessionEvent.SaveProgress)
-        }
-
-        // Fix 3: If already on the last card, trigger sub-lesson completion instead of staying put
-        if (isOnLastCard && !state.boss.bossActive && !state.elite.eliteActive) {
-            pauseTimer()
-            stateAccess.updateState {
-                SessionAnswerTransitions.normalCompleteViaNext(it, actualCompletedSubLessonCount(it))
-            }
-            Log.d(logTag, "Next pressed on last card — triggering sub-lesson completion")
-            return listOf(
-                SessionEvent.MarkSubLessonCardsShown(sessionCards),
-                SessionEvent.BuildSessionCards,
-                SessionEvent.CheckAndMarkLessonCompleted,
-                SessionEvent.RefreshFlowerStates,
-                SessionEvent.UpdateStreak,
-                SessionEvent.SaveProgress
-            )
-        }
-
-        val nextIndex = (state.cardSession.currentIndex + 1).coerceAtMost(lastIndex)
-        val nextCard = sessionCards.getOrNull(nextIndex)
-
-        if (triggerVoice && stateAccess.uiState.value.cardSession.inputMode == InputMode.VOICE) {
-            stateMachine.triggerVoice()
-        }
-        updateStateAndClearInput {
-            it.copy(cardSession = it.cardSession.copy(currentIndex = nextIndex, currentCard = nextCard, lastResult = null, answerText = null, incorrectAttemptsForCard = stateMachine.incorrectAttempts, sessionState = SessionState.ACTIVE, voiceTriggerToken = stateMachine.voiceTriggerToken, voicePromptStartMs = null))
-        }
-        val events = mutableListOf<SessionEvent>()
-        // Boss progress: trigger update in orchestrator
-        if (state.boss.bossActive) {
-            events.add(SessionEvent.AdvanceBossProgress(nextIndex, sessionCards.size))
-        }
-        // Update word bank if in WORD_BANK mode
-        if (stateAccess.uiState.value.cardSession.inputMode == InputMode.WORD_BANK) {
-            updateWordBank()
-        }
-
-        if (wasHintShown) {
-            resumeTimer()
-        }
-        // Audit: card navigation next
-        val toIdx = stateAccess.uiState.value.cardSession.currentIndex
-        audit?.cardNav("next", fromIdx, toIdx, "submit")
-        events.add(SessionEvent.SaveProgress)
-        return events
-    }
-
-    fun prevCard(): List<SessionEvent> {
-        val state = stateAccess.uiState.value
-        val fromIdx = state.cardSession.currentIndex
-        val prevIndex = (state.cardSession.currentIndex - 1).coerceAtLeast(0)
-        val prevCard = sessionCards.getOrNull(prevIndex)
-        stateMachine.reset()
-        updateStateAndClearInput {
-            it.copy(cardSession = it.cardSession.copy(currentIndex = prevIndex, currentCard = prevCard, lastResult = null, answerText = null, incorrectAttemptsForCard = 0, voicePromptStartMs = null))
-        }
-        // Audit: card navigation prev
-        audit?.cardNav("prev", fromIdx, prevIndex, "manual")
-        val events = mutableListOf<SessionEvent>()
-        events.add(SessionEvent.SaveProgress)
-        return events
-    }
-
-    /**
-     * Navigate to the next card, pausing first if the session is ACTIVE.
-     * Used by UI navigation arrows — always leaves the session in PAUSED state
-     * so the user can browse cards without timer pressure.
-     * Pressing Play resumes the session.
-     */
-    fun navigateNext(): List<SessionEvent> {
-        val events = mutableListOf<SessionEvent>()
-        // Pause first if ACTIVE
-        if (stateAccess.uiState.value.cardSession.sessionState == SessionState.ACTIVE) {
-            events.addAll(pauseSession())
-        }
-        // Advance card but leave PAUSED
-        stateMachine.reset()
-        val state = stateAccess.uiState.value
-        val fromIdx = state.cardSession.currentIndex
-        val nextIndex = (state.cardSession.currentIndex + 1).coerceAtMost(sessionCards.lastIndex)
-        val nextCard = sessionCards.getOrNull(nextIndex)
-        updateStateAndClearInput {
-            it.copy(cardSession = it.cardSession.copy(currentIndex = nextIndex, currentCard = nextCard, lastResult = null, answerText = null, incorrectAttemptsForCard = 0, sessionState = SessionState.PAUSED, voicePromptStartMs = null))
-        }
-        // Audit: card navigation next (manual)
-        audit?.cardNav("next", fromIdx, nextIndex, "manual")
-        // Update word bank if in WORD_BANK mode
-        if (stateAccess.uiState.value.cardSession.inputMode == InputMode.WORD_BANK) {
-            updateWordBank()
-        }
-
-        events.add(SessionEvent.SaveProgress)
-        return events
-    }
-
-    /**
-     * Navigate to the previous card, pausing first if the session is ACTIVE.
-     * Used by UI navigation arrows — always leaves the session in PAUSED state.
-     */
-    fun navigatePrev(): List<SessionEvent> {
-        val events = mutableListOf<SessionEvent>()
-        // Pause first if ACTIVE
-        if (stateAccess.uiState.value.cardSession.sessionState == SessionState.ACTIVE) {
-            events.addAll(pauseSession())
-        }
-        // Go back but leave PAUSED
-        stateMachine.reset()
-        val state = stateAccess.uiState.value
-        val fromIdx = state.cardSession.currentIndex
-        val prevIndex = (state.cardSession.currentIndex - 1).coerceAtLeast(0)
-        val prevCard = sessionCards.getOrNull(prevIndex)
-        updateStateAndClearInput {
-            it.copy(cardSession = it.cardSession.copy(currentIndex = prevIndex, currentCard = prevCard, lastResult = null, answerText = null, incorrectAttemptsForCard = 0, sessionState = SessionState.PAUSED, voicePromptStartMs = null))
-        }
-        // Audit: card navigation prev (manual)
-        audit?.cardNav("prev", fromIdx, prevIndex, "manual")
-        events.add(SessionEvent.SaveProgress)
-        return events
-    }
-
-    fun selectSubLesson(index: Int): List<SessionEvent> {
-        pauseTimer()
-        stateMachine.reset()
-        val prevState = stateAccess.uiState.value
-        val fromSub = prevState.cardSession.activeSubLessonIndex
-        val fromIdx = prevState.cardSession.currentIndex
-        updateStateAndClearInput {
-            it.copy(cardSession = it.cardSession.copy(activeSubLessonIndex = index.coerceAtLeast(0), currentIndex = 0, lastResult = null, answerText = null, sessionState = SessionState.PAUSED))
-        }
-        // Audit: sub-lesson transition
-        audit?.subLessonTransition(fromSub, index, prevState.cardSession.subLessonCount, fromIdx, 0)
-        return listOf(SessionEvent.BuildSessionCards, SessionEvent.SaveProgress)
-    }
-
-    // ── Pause/resume ────────────────────────────────────────────────────
+    fun nextCard(triggerVoice: Boolean = false): List<SessionEvent> = navigator.nextCard(triggerVoice)
+    fun prevCard(): List<SessionEvent> = navigator.prevCard()
+    fun navigateNext(): List<SessionEvent> = navigator.navigateNext()
+    fun navigatePrev(): List<SessionEvent> = navigator.navigatePrev()
+    fun selectSubLesson(index: Int): List<SessionEvent> = navigator.selectSubLesson(index)
 
     fun togglePause(): List<SessionEvent> {
         val state = stateAccess.uiState.value
@@ -877,13 +715,7 @@ class SessionRunner(
         return startSession()
     }
 
-    fun pauseSession(): List<SessionEvent> {
-        pauseTimer()
-        stateAccess.updateState { it.copy(cardSession = it.cardSession.copy(sessionState = SessionState.PAUSED, voicePromptStartMs = null)) }
-        return listOf(SessionEvent.SaveProgress)
-    }
-
-    // ── Hint ────────────────────────────────────────────────────────────
+    fun pauseSession(): List<SessionEvent> = navigator.pauseSession()
 
     fun showAnswer(): List<SessionEvent> {
         val card = currentCard() ?: return emptyList()
@@ -901,53 +733,16 @@ class SessionRunner(
     // ── Word bank interaction ───────────────────────────────────────────
 
     fun selectWordFromBank(word: String) {
-        val currentSelected = stateAccess.uiState.value.cardSession.selectedWords
-        val newSelected = currentSelected + word
-        val inputText = newSelected.joinToString(" ")
-        // Audit: word bank select
-        audit?.wordBankSelect(word, newSelected.size, currentCard()?.id ?: "")
-        inputTextFlow.value = inputText
-        stateAccess.updateState {
-            it.copy(cardSession = it.cardSession.copy(selectedWords = newSelected))
-        }
+        wordBank.select(word)
     }
 
     fun removeLastSelectedWord() {
-        val currentSelected = stateAccess.uiState.value.cardSession.selectedWords
-        if (currentSelected.isEmpty()) return
-
-        val newSelected = currentSelected.dropLast(1)
-        val inputText = newSelected.joinToString(" ")
-        // Audit: word bank remove
-        audit?.wordBankRemove(newSelected.size, currentCard()?.id ?: "")
-        inputTextFlow.value = inputText
-        stateAccess.updateState {
-            it.copy(cardSession = it.cardSession.copy(selectedWords = newSelected))
-        }
+        wordBank.removeLast()
     }
 
     // ── Skip ────────────────────────────────────────────────────────────
 
-    fun skipToNextCard() {
-        val state = stateAccess.uiState.value
-        val fromIdx = state.cardSession.currentIndex
-        val nextIndex = state.cardSession.currentIndex + 1
-        if (nextIndex < sessionCards.size) {
-            stateMachine.reset()
-            updateStateAndClearInput {
-                it.copy(cardSession = it.cardSession.copy(currentIndex = nextIndex, currentCard = sessionCards[nextIndex], lastResult = null, answerText = null, incorrectAttemptsForCard = 0))
-            }
-            // Audit: skip to next card
-            audit?.cardNav("skip", fromIdx, nextIndex, "manual")
-        } else {
-            pauseTimer()
-            updateStateAndClearInput {
-                it.copy(cardSession = it.cardSession.copy(sessionState = SessionState.PAUSED, lastResult = null, answerText = null))
-            }
-        }
-    }
-
-    // ── Elite sub-mode ──────────────────────────────────────────────────
+    fun skipToNextCard() = navigator.skipToNextCard()
 
     fun openEliteStep(index: Int): List<SessionEvent> {
         pauseTimer()
@@ -1186,30 +981,7 @@ class SessionRunner(
     }
 
     fun updateWordBank() {
-        val state = stateAccess.uiState.value
-        // Pomodoro hint level guard: Word Bank only available at EASY level
-        if (state.cardSession.hintLevel != HintLevel.EASY) return
-        val card = state.cardSession.currentCard
-        if (card == null) {
-            stateAccess.updateState {
-                it.copy(cardSession = it.cardSession.copy(wordBankWords = emptyList(), selectedWords = emptyList()))
-            }
-            return
-        }
-
-        val correctAnswer = card.acceptedAnswers.firstOrNull() ?: ""
-        val wordBank = if (usesVerbWordBank) {
-            // Verb-style word bank: use all session card answers as distractor pool
-            val allAnswers = sessionCards.mapNotNull { it.acceptedAnswers.firstOrNull() }
-            wordBankGenerator.generateForVerb(correctAnswer, allAnswers)
-        } else {
-            val allCards = state.navigation.lessons.flatMap { it.cards }
-            wordBankGenerator.generateForSentence(correctAnswer, allCards)
-        }
-
-        updateStateAndClearInput {
-            it.copy(cardSession = it.cardSession.copy(wordBankWords = wordBank, selectedWords = emptyList()))
-        }
+        wordBank.update()
     }
 
     private fun countMetricWords(text: String): Int {
