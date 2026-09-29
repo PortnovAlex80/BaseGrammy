@@ -18,7 +18,9 @@ import com.alexpo.grammermate.data.CardSessionContract
 import com.alexpo.grammermate.data.HintLevel
 import com.alexpo.grammermate.data.InputMode
 import com.alexpo.grammermate.feature.training.HintCalculator
+import com.alexpo.grammermate.shared.audio.SpeechRouteLease
 import com.alexpo.grammermate.ui.features.training.components.TrainingAnswerPanel
+import com.alexpo.grammermate.ui.voice.rememberSpeechRecognitionAttempt
 
 /**
  * Unified input controls bar for all card session modes (Training, VerbDrill, DailyPractice).
@@ -36,16 +38,14 @@ import com.alexpo.grammermate.ui.features.training.components.TrainingAnswerPane
  * - auto-submit on exact match + incorrect-feedback clearing, fused into the
  *   `onInputChanged` handler below (row 12, decision D-D — the dedicated
  *   `vm.inputText` flow upstream keeps its single collector and per-keystroke cadence);
- * - Bluetooth setup/cleanup callbacks (row 5, decision D-C — [onBluetoothCleanup]
- *   stays threaded-but-unused exactly as before; pre-existing defect, separate work item);
+ * - external recognizer route lease, closed on result or disposal;
  * - the [InputMode] enum reading (mode-conditional visibility + label resolution).
  *
  * Design Principle DP-01: All card-based drill modes MUST use identical
  * input controls for shared elements.
  *
  * Signature note: [reportCard] was already unused before P3b (the report sheet lives
- * in the AnswerBox adapter) and [onBluetoothCleanup] is the D-C defect — both are kept
- * so the AnswerBox and dead-file call sites stay untouched.
+ * in the AnswerBox adapter).
  *
  * @param contract          The card session contract providing state and actions.
  * @param inputText         Current text in the input field.
@@ -77,12 +77,12 @@ fun UnifiedInputControlsBar(
     hintLevel: HintLevel = HintLevel.EASY,
     clickableWordHints: Boolean = false,
     baseDir: java.io.File? = null,
-    onBluetoothSetup: suspend () -> Boolean = { true },
-    onBluetoothCleanup: () -> Unit = {}
+    onAcquireSpeechRoute: suspend () -> SpeechRouteLease? = { SpeechRouteLease {} }
 ) {
     val canLaunchVoice = hasCards && contract.canSubmit
     val canSelectInputMode = hasCards && contract.canSubmit
     val scope = rememberCoroutineScope()
+    val speechAttempt = rememberSpeechRecognitionAttempt(onAcquireSpeechRoute)
 
     // Word info cache for clickable hints (only when feature is enabled)
     val wordInfoCache = remember(clickableWordHints, baseDir) {
@@ -105,6 +105,7 @@ fun UnifiedInputControlsBar(
     val speechLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
     ) { result ->
+        speechAttempt.finish()
         if (result.resultCode == Activity.RESULT_OK) {
             val spoken = result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.firstOrNull()
             if (!spoken.isNullOrBlank()) {
@@ -127,8 +128,7 @@ fun UnifiedInputControlsBar(
             putExtra(RecognizerIntent.EXTRA_LANGUAGE, languageTag)
             putExtra(RecognizerIntent.EXTRA_PROMPT, "Say the translation")
         }
-        scope.launch { onBluetoothSetup() }
-        speechLauncher.launch(intent)
+        scope.launch { speechAttempt.launch { speechLauncher.launch(intent) } }
     }
 
     // Clickable-hint data: the cache read (which can lazily trigger file I/O) stays at

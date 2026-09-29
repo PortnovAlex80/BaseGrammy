@@ -13,6 +13,7 @@ import android.media.AudioDeviceInfo
 import android.media.AudioManager
 import android.os.Build
 import android.util.Log
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -186,18 +187,14 @@ class BluetoothAudioRouter(
     suspend fun startBluetoothAudio(): Boolean = mutex.withLock {
         if (_isConnected.value) return true
 
-        // Ensure headset profile proxy is connected
-        if (bluetoothHeadset == null) {
-            connectHeadsetProfile()
-            // Wait briefly for proxy connection
-            withTimeoutOrNull(1500L) {
-                while (bluetoothHeadset == null) {
-                    delay(100)
+        try {
+            // Ensure headset profile proxy is connected.
+            if (bluetoothHeadset == null) {
+                connectHeadsetProfile()
+                withTimeoutOrNull(1500L) {
+                    while (bluetoothHeadset == null) delay(100)
                 }
             }
-        }
-
-        try {
             val success = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 startModernApi()
             } else {
@@ -208,12 +205,16 @@ class BluetoothAudioRouter(
             if (success) {
                 Log.i(TAG, "Bluetooth audio routing active")
             } else {
+                stopBluetoothAudio()
                 Log.w(TAG, "Bluetooth audio routing failed, using default microphone")
             }
             success
+        } catch (cancelled: CancellationException) {
+            stopBluetoothAudio()
+            throw cancelled
         } catch (e: Exception) {
             Log.e(TAG, "Error starting Bluetooth audio", e)
-            _isConnected.value = false
+            stopBluetoothAudio()
             false
         }
     }
@@ -350,15 +351,16 @@ class BluetoothAudioRouter(
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             stopHeadsetVoiceRecognition()
             @Suppress("DEPRECATION")
-            audioManager.isBluetoothScoOn = false
+            runCatching { audioManager.isBluetoothScoOn = false }
             @Suppress("DEPRECATION")
-            audioManager.stopBluetoothSco()
-            audioManager.clearCommunicationDevice()
-            audioManager.mode = AudioManager.MODE_NORMAL
-            communicationDeviceListener?.let {
-                audioManager.removeOnCommunicationDeviceChangedListener(it)
-            }
+            runCatching { audioManager.stopBluetoothSco() }
+            runCatching { audioManager.clearCommunicationDevice() }
+            runCatching { audioManager.mode = AudioManager.MODE_NORMAL }
+            val listener = communicationDeviceListener
             communicationDeviceListener = null
+            listener?.let {
+                runCatching { audioManager.removeOnCommunicationDeviceChangedListener(it) }
+            }
         }
     }
 
@@ -427,8 +429,8 @@ class BluetoothAudioRouter(
         } catch (_: Exception) {}
         scoReceiver = null
 
-        audioManager.isBluetoothScoOn = false
-        audioManager.stopBluetoothSco()
-        audioManager.mode = AudioManager.MODE_NORMAL
+        runCatching { audioManager.isBluetoothScoOn = false }
+        runCatching { audioManager.stopBluetoothSco() }
+        runCatching { audioManager.mode = AudioManager.MODE_NORMAL }
     }
 }

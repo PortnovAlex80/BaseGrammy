@@ -165,8 +165,7 @@ internal fun TrainingScreenContent(
         baseDir = LocalContext.current.filesDir,
         grammarChip = grammarChip,
         lessonTitle = lessonTitle,
-        onBluetoothSetup = vm.audio::startBluetoothMicIfNeeded,
-        onBluetoothCleanup = vm.audio::stopBluetoothMicIfNeeded
+        onAcquireSpeechRoute = vm.audio::acquireSpeechRoute
     )
 }
 

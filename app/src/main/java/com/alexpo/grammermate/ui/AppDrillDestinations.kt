@@ -89,8 +89,7 @@ internal fun VocabDrillDestination(
         hintLevel = state.cardSession.hintLevel,
         textScale = state.audio.ruTextScale,
         voiceAutoStart = state.audio.voiceAutoStart,
-        onBluetoothSetup = vm.audio::startBluetoothMicIfNeeded,
-        onBluetoothCleanup = vm.audio::stopBluetoothMicIfNeeded,
+        onAcquireSpeechRoute = vm.audio::acquireSpeechRoute,
         onClearBadSentences = vocabDrillVm::clearBadSentences,
         badSentenceCount = vocabDrillVm.getBadSentenceCount()
     )

@@ -45,10 +45,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -87,10 +83,13 @@ import com.alexpo.grammermate.ui.components.VerbReferenceBottomSheet
 import com.alexpo.grammermate.ui.components.TenseInfoBottomSheet
 import com.alexpo.grammermate.ui.components.GrammarInfoBottomSheet
 import com.alexpo.grammermate.shared.AuditLogger
+import com.alexpo.grammermate.shared.audio.SpeechRouteLease
 import com.alexpo.grammermate.ui.designsystem.atoms.TtsButtonState
 import com.alexpo.grammermate.ui.designsystem.foundation.PromptTextScale
 import com.alexpo.grammermate.ui.designsystem.foundation.scaledSp
 import com.alexpo.grammermate.ui.features.training.components.TrainingPromptCard
+import com.alexpo.grammermate.ui.voice.SpeechRecognitionAttempt
+import com.alexpo.grammermate.ui.voice.rememberSpeechRecognitionAttempt
 
 /** Pre-compiled regex to strip parenthetical hints from card prompts. */
 private val ParentheticalRegex = Regex("\\s*\\([^)]+\\)")
@@ -141,8 +140,7 @@ fun TrainingScreen(
     baseDir: java.io.File? = null,
     grammarChip: com.alexpo.grammermate.data.GrammarChip? = null,
     lessonTitle: String? = null,
-    onBluetoothSetup: suspend () -> Boolean = { true },
-    onBluetoothCleanup: () -> Unit = {}
+    onAcquireSpeechRoute: suspend () -> SpeechRouteLease? = { SpeechRouteLease {} }
 ) {
     val hasCards = state.cardSession.currentCard != null
     val scrollState = rememberScrollState()
@@ -389,8 +387,7 @@ fun TrainingScreen(
                 clickableWordHints,
                 baseDir,
                 onTogglePause,
-                onBluetoothSetup,
-                onBluetoothCleanup
+                onAcquireSpeechRoute
             )
             TrainingResultBlock(isCorrect = state.cardSession.lastResult)
             UnifiedNavigationRow(
@@ -521,11 +518,10 @@ fun AnswerBox(
     clickableWordHints: Boolean = false,
     baseDir: java.io.File? = null,
     onTogglePause: () -> Unit = {},
-    onBluetoothSetup: suspend () -> Boolean = { true },
-    onBluetoothCleanup: () -> Unit = {}
+    onAcquireSpeechRoute: suspend () -> SpeechRouteLease? = { SpeechRouteLease {} }
 ) {
     val latestState by rememberUpdatedState(state)
-    val scope = rememberCoroutineScope()
+    val speechAttempt = rememberSpeechRecognitionAttempt(onAcquireSpeechRoute)
     val clipboardManager = LocalClipboardManager.current
     val context = LocalContext.current
     var showReportSheet by remember { mutableStateOf(false) }
@@ -541,6 +537,7 @@ fun AnswerBox(
     val speechLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
     ) { result ->
+        speechAttempt.finish()
         if (result.resultCode == Activity.RESULT_OK) {
             val matches = result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
             val spoken = matches?.firstOrNull()
@@ -582,7 +579,7 @@ fun AnswerBox(
                         isReviewMode = state.cardSession.isReviewMode
                     )
                 }
-                launchVoiceRecognition(state.navigation.selectedLanguageId?.value ?: "en", cleanPrompt, speechLauncher, context, onBluetoothSetup, scope)
+                launchVoiceRecognition(state.navigation.selectedLanguageId?.value ?: "en", cleanPrompt, speechLauncher, context, speechAttempt)
             }
         }
     }
@@ -703,8 +700,7 @@ fun AnswerBox(
         hintLevel = hintLevel,
         clickableWordHints = clickableWordHints,
         baseDir = baseDir,
-        onBluetoothSetup = onBluetoothSetup,
-        onBluetoothCleanup = onBluetoothCleanup
+        onAcquireSpeechRoute = onAcquireSpeechRoute
     )
 
     // Offline ASR indicator (Training-specific, not in UnifiedInputControlsBar)
@@ -726,16 +722,13 @@ private fun speedPerMinute(activeMs: Long, correct: Int): String {
     return String.format("%.1f", correct / minutes)
 }
 
-private fun launchVoiceRecognition(
+private suspend fun launchVoiceRecognition(
     languageId: String,
     prompt: String?,
     launcher: ActivityResultLauncher<Intent>,
     context: android.content.Context,
-    bluetoothSetup: suspend () -> Boolean = { true },
-    scope: CoroutineScope = CoroutineScope(Dispatchers.Main)
+    speechAttempt: SpeechRecognitionAttempt
 ) {
-    // Fire-and-forget: start SCO in background, don't block speech recognizer launch
-    scope.launch { bluetoothSetup() }
     val languageTag = when (languageId) {
         "it" -> "it-IT"
         "el" -> "el-GR"
@@ -747,5 +740,5 @@ private fun launchVoiceRecognition(
         putExtra(RecognizerIntent.EXTRA_LANGUAGE, languageTag)
         putExtra(RecognizerIntent.EXTRA_PROMPT, prompt ?: context.getString(R.string.training_say_the_translation))
     }
-    launcher.launch(intent)
+    speechAttempt.launch { launcher.launch(intent) }
 }

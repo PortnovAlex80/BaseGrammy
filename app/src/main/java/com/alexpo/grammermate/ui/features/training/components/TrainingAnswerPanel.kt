@@ -72,8 +72,7 @@ import com.alexpo.grammermate.ui.components.WordInfoPopup
  * - hint calculation for the voice-mode hint (passed resolved as
  *   [voiceModeHint]; `null` hides the line, `""` renders the empty line —
  *   matching the pre-extraction rendering exactly);
- * - Bluetooth setup/cleanup callbacks (row 5, D-C — cleanup stays threaded-but-
- *   unused at the adapter);
+ * - Bluetooth route acquisition and release (row 5; owned by the adapter);
  * - input-mode enum reading ([modeLabel] arrives pre-resolved; no `InputMode`
  *   import here).
  *

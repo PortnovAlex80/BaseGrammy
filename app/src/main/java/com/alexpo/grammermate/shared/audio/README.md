@@ -23,6 +23,12 @@ with core state in TrainingViewModel to produce the final TrainingUiState.
   readiness probes, and foreground/background scheduling. It publishes updates through
   the coordinator; it does not own another audio state flow.
 
+`SpeechRouteOwner` serializes Bluetooth setup and release across offline ASR and
+external recognizers. `acquireSpeechRoute()` returns one closeable lease or Busy
+(`null`); the recording owner closes its lease on result, cancellation, launch
+failure or UI disposal. Turning Bluetooth off releases routing while the current
+recognizer can finish with the device microphone.
+
 ## State owned
 - `StateFlow<AudioState>` — the single source of truth for all audio state
   (TTS state, ASR state, download states, model readiness, metered network flags)

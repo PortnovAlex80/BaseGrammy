@@ -66,6 +66,8 @@ import com.alexpo.grammermate.ui.components.QrShareDialog
 import com.alexpo.grammermate.ui.components.SharedReportSheet
 import com.alexpo.grammermate.feature.daily.BlockProgress
 import com.alexpo.grammermate.shared.AuditLogger
+import com.alexpo.grammermate.shared.audio.SpeechRouteLease
+import com.alexpo.grammermate.ui.voice.rememberSpeechRecognitionAttempt
 import com.alexpo.grammermate.ui.features.daily.components.DailyVocabCard
 import com.alexpo.grammermate.ui.features.daily.components.SrsRatingOption
 import com.alexpo.grammermate.ui.features.daily.components.SrsRatingRow
@@ -93,8 +95,7 @@ fun DailyPracticeScreen(
     hintLevel: com.alexpo.grammermate.data.HintLevel = com.alexpo.grammermate.data.HintLevel.EASY,
     textScale: Float = 1.0f,
     voiceAutoStart: Boolean = true,
-    onBluetoothSetup: suspend () -> Boolean = { true },
-    onBluetoothCleanup: () -> Unit = {},
+    onAcquireSpeechRoute: suspend () -> SpeechRouteLease? = { SpeechRouteLease {} },
     onClearBadSentences: (() -> Unit)? = null,
     badSentenceCount: Int = 0
 ) {
@@ -189,8 +190,7 @@ fun DailyPracticeScreen(
                     languageId = languageId,
                     textScale = textScale,
                     onComplete = onComplete,
-                    onBluetoothSetup = onBluetoothSetup,
-                    onBluetoothCleanup = onBluetoothCleanup,
+                    onAcquireSpeechRoute = onAcquireSpeechRoute,
                     onClearBadSentences = onClearBadSentences,
                     badSentenceCount = badSentenceCount
                 )
@@ -253,8 +253,7 @@ private fun ColumnScope.VocabFlashcardBlock(
     hintLevel: com.alexpo.grammermate.data.HintLevel = com.alexpo.grammermate.data.HintLevel.EASY,
     textScale: Float = 1.0f,
     onComplete: () -> Unit = {},
-    onBluetoothSetup: suspend () -> Boolean = { true },
-    onBluetoothCleanup: () -> Unit = {},
+    onAcquireSpeechRoute: suspend () -> SpeechRouteLease? = { SpeechRouteLease {} },
     onClearBadSentences: (() -> Unit)? = null,
     badSentenceCount: Int = 0
 ) {
@@ -267,6 +266,7 @@ private fun ColumnScope.VocabFlashcardBlock(
     var exportMessage by remember { mutableStateOf<String?>(null) }
     val clipboardManager = LocalClipboardManager.current
     val scope = rememberCoroutineScope()
+    val speechAttempt = rememberSpeechRecognitionAttempt(onAcquireSpeechRoute)
 
     val promptText = when (task.direction) {
         VocabDrillDirection.IT_TO_RU -> task.word.word
@@ -279,6 +279,7 @@ private fun ColumnScope.VocabFlashcardBlock(
     val isFlagged = isDailyBadSentence(task.word.id)
 
     val speechLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        speechAttempt.finish()
         isVoiceActive = false
         if (result.resultCode == Activity.RESULT_OK) {
             val spoken = result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.firstOrNull()
@@ -323,12 +324,14 @@ private fun ColumnScope.VocabFlashcardBlock(
                 AuditLogger.getInstanceOrNull()?.voiceStart(languageId, false)
                 isVoiceActive = true
                 val langTag = when (task.direction) { VocabDrillDirection.IT_TO_RU -> "ru-RU"; VocabDrillDirection.RU_TO_IT -> "it-IT" }
-                scope.launch { onBluetoothSetup() }
-                speechLauncher.launch(Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
                     putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
                     putExtra(RecognizerIntent.EXTRA_LANGUAGE, langTag)
                     putExtra(RecognizerIntent.EXTRA_PROMPT, "Say the translation")
-                })
+                }
+                scope.launch {
+                    if (!speechAttempt.launch { speechLauncher.launch(intent) }) isVoiceActive = false
+                }
             }
         },
         modifier = Modifier.align(Alignment.CenterHorizontally).size(64.dp)

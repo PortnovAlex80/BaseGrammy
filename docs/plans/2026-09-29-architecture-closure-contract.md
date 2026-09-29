@@ -71,6 +71,13 @@ The named test files are existing anchors, **not automatic passes**. Before clai
 | D4 | `onBluetoothCleanup` is threaded through training/daily/vocabulary but has no production invocation | Trace audio lifecycle and either call cleanup at the correct boundary or remove the unused callback after proving an existing owner performs it; test the chosen lifecycle path. |
 | D5 | Daily flashcard `onFlip` is a no-op while Daily entry is disabled | **Deferred by product reachability.** Record as `BLOCKED_BY_DESIGN`, not `PASS`. It becomes a blocker before any Daily entry is enabled; enabling Daily is outside this milestone. |
 
+The D4 implementation now routes offline ASR and all four external recognizers
+through one closeable audio lease. Cancellation, late setup, Busy, settings-off,
+result and disposal transitions have focused tests; debug assembly and the
+631-test unit gate pass. D4's code disposition is **fixed**. Actual headset
+routing remains `UNTESTED` until the final device gate (G5), so it is not
+counted as runtime hardware evidence.
+
 ## Stop rule and exclusions
 
 Work in bounded packets: dependency/owner map and guard (G1–G2), the fixed 14-file decomposition (G6) alongside named business transitions (G3), frozen defect dispositions (G4), then one final evidence run (G5). A packet closes only with its pass evidence. Once all six gates pass, **stop this refactoring** and mark the milestone closed, even if Atomic P5 still has open visual surfaces. A new finding expands this milestone only if it reproducibly breaks B1–B5/G1–G6, or is a regression **introduced by this milestone** that crashes the app, loses/corrupts saved progress, or blocks a currently reachable named route. Pre-existing unrelated findings go to a separate backlog.

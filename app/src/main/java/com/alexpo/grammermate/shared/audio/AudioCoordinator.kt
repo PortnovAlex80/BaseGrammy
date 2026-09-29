@@ -18,8 +18,10 @@ import com.alexpo.grammermate.data.TtsModelRegistry
 import com.alexpo.grammermate.data.TtsState
 import com.alexpo.grammermate.shared.TrainingStateAccess
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -27,7 +29,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import com.alexpo.grammermate.shared.audio.BluetoothAudioRouter
 
 /**
  * Stateful module managing all audio: TTS playback, ASR recognition, SoundPool effects.
@@ -108,7 +109,14 @@ class AudioCoordinator(
     )
     val asrModelManager = asrModelManagerProvider(appContext)
     val asrEngine: AsrEngine? = asrEngineProvider(appContext)
-    val bluetoothRouter = BluetoothAudioRouter(appContext, coroutineScope)
+    private val bluetoothRouter = BluetoothAudioRouter(appContext, coroutineScope)
+    private val speechRoutes = SpeechRouteOwner(
+        connect = bluetoothRouter::startBluetoothAudio,
+        disconnect = bluetoothRouter::stopBluetoothAudio,
+        publishConnected = { connected ->
+            _audioState.update { it.copy(bluetoothMicConnected = connected) }
+        }
+    )
 
     // ── Download jobs ──────────────────────────────────────────────────────
 
@@ -154,6 +162,7 @@ class AudioCoordinator(
 
         // Seed audio state from config (replaces TrainingViewModel init seeding)
         val config = configStore.load()
+        speechRoutes.setBluetoothEnabled(config.useBluetoothMic)
         _audioState.update {
             it.copy(
                 useOfflineAsr = config.useOfflineAsr,
@@ -444,9 +453,12 @@ class AudioCoordinator(
 
     fun startOfflineRecognition(onResult: (String) -> Unit) {
         // Cancel any previous recognition before starting new one
-        asrRecognitionJob?.cancel()
-        asrRecognitionJob = coroutineScope.launch {
+        val previous = asrRecognitionJob
+        previous?.cancel()
+        if (previous != null) asrEngine?.stopRecording()
+        val job = coroutineScope.launch(start = CoroutineStart.LAZY) {
             try {
+                previous?.join()
                 val result = transcribeWithOfflineAsr()
                 if (result.isNotBlank()) {
                     onResult(result)
@@ -456,9 +468,11 @@ class AudioCoordinator(
                     Log.e(TAG, "Offline recognition failed", e)
                 }
             } finally {
-                asrRecognitionJob = null
+                if (asrRecognitionJob === currentCoroutineContext()[Job]) asrRecognitionJob = null
             }
         }
+        asrRecognitionJob = job
+        job.start()
     }
 
     fun stopAsr() {
@@ -482,24 +496,13 @@ class AudioCoordinator(
     }
 
     fun setUseBluetoothMic(enabled: Boolean) {
+        speechRoutes.setBluetoothEnabled(enabled)
         _audioState.update { it.copy(useBluetoothMic = enabled) }
         val config = configStore.load()
         configStore.save(config.copy(useBluetoothMic = enabled))
     }
 
-    suspend fun startBluetoothMicIfNeeded(): Boolean {
-        if (!_audioState.value.useBluetoothMic) return true
-        val connected = bluetoothRouter.startBluetoothAudio()
-        _audioState.update { it.copy(bluetoothMicConnected = connected) }
-        return connected
-    }
-
-    fun stopBluetoothMicIfNeeded() {
-        if (_audioState.value.useBluetoothMic) {
-            bluetoothRouter.stopBluetoothAudio()
-            _audioState.update { it.copy(bluetoothMicConnected = false) }
-        }
-    }
+    suspend fun acquireSpeechRoute(): SpeechRouteLease? = speechRoutes.acquire()
 
     fun checkAsrModel() {
         val ready = asrModelManager.isReady()
@@ -561,6 +564,7 @@ class AudioCoordinator(
         ttsDownloads.cancel()
         asrRecognitionJob?.cancel()
         asrRecognitionJob = null
+        speechRoutes.shutdown()
         ttsEngine.release()
         asrEngine?.release()
         bluetoothRouter.release()
@@ -632,22 +636,19 @@ class AudioCoordinator(
 
         _audioState.update { it.copy(asrState = engine.state.value, asrErrorMessage = null) }
 
-        // Collect state updates from ASR engine
+        val route = acquireSpeechRoute() ?: return ""
+        // Collect state updates only while this recording owns the route.
         val stateJob = coroutineScope.launch {
             engine.state.collect { asrState ->
                 _audioState.update { it.copy(asrState = asrState) }
             }
         }
-
-        // Route to Bluetooth microphone if enabled
-        try {
-            startBluetoothMicIfNeeded()
-        } catch (_: Exception) {}
-
-        val result = engine.recordAndTranscribe()
-        stateJob.cancel()
-
-        stopBluetoothMicIfNeeded()
+        val result = try {
+            engine.recordAndTranscribe()
+        } finally {
+            stateJob.cancel()
+            route.close()
+        }
 
         // Check for errors after recording/transcription
         val finalState = engine.state.value

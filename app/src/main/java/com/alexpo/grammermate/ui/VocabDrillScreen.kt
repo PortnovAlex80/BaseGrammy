@@ -61,6 +61,8 @@ import com.alexpo.grammermate.ui.features.vocab.components.VocabRatingOption
 import com.alexpo.grammermate.ui.features.vocab.components.VocabSpeakerState
 import com.alexpo.grammermate.ui.features.vocab.components.VocabVoiceOutcome
 import com.alexpo.grammermate.shared.AuditLogger
+import com.alexpo.grammermate.shared.audio.SpeechRouteLease
+import com.alexpo.grammermate.ui.voice.rememberSpeechRecognitionAttempt
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.rememberCoroutineScope
@@ -74,13 +76,13 @@ fun VocabDrillScreen(
     hintLevel: com.alexpo.grammermate.data.HintLevel = com.alexpo.grammermate.data.HintLevel.EASY,
     textScale: Float = 1.0f,
     voiceAutoStart: Boolean = true,
-    onBluetoothSetup: suspend () -> Boolean = { true },
-    onBluetoothCleanup: () -> Unit = {},
+    onAcquireSpeechRoute: suspend () -> SpeechRouteLease? = { SpeechRouteLease {} },
     onClearBadSentences: (() -> Unit)? = null,
     badSentenceCount: Int = 0
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
+    val speechAttempt = rememberSpeechRecognitionAttempt(onAcquireSpeechRoute)
 
     // Track whether RecognizerIntent is currently active (to prevent double-launch)
     var isVoiceActive by remember { mutableStateOf(false) }
@@ -89,6 +91,7 @@ fun VocabDrillScreen(
     val speechLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
     ) { result ->
+        speechAttempt.finish()
         isVoiceActive = false
         if (result.resultCode == Activity.RESULT_OK) {
             val spoken = result.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.firstOrNull()
@@ -112,8 +115,9 @@ fun VocabDrillScreen(
                 putExtra(RecognizerIntent.EXTRA_LANGUAGE, langTag)
                 putExtra(RecognizerIntent.EXTRA_PROMPT, "Say the translation")
             }
-            scope.launch { onBluetoothSetup() }
-            speechLauncher.launch(intent)
+            scope.launch {
+                if (!speechAttempt.launch { speechLauncher.launch(intent) }) isVoiceActive = false
+            }
         }
     }
 

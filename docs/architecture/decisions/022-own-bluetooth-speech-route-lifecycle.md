@@ -1,6 +1,6 @@
 # 022. Own the Bluetooth speech route across recognizer lifecycles
 
-- **Status:** Proposed; D4 remains open until code and lifecycle tests pass
+- **Status:** Accepted and implemented; hardware smoke remains under G5
 - **Date:** 2026-09-29
 - **Decision-maker:** architecture review under ADR-009
 - **Scope:** external `RecognizerIntent`, offline ASR and Bluetooth mic routing
@@ -52,5 +52,23 @@ for the final device gate.
 
 B is smaller but leaves route ownership split across four screens and cannot
 by itself serialize shared router effects. C fixes only the ordinary result path
-and fails the delayed-start case. No D4 behavior is changed by this decision
-record; the issue remains open in the architecture closure contract.
+and fails the delayed-start case.
+
+## Implementation evidence
+
+`SpeechRouteOwner` owns one route lease and returns Busy while a recording is
+preparing or active. `AudioCoordinator` uses it for offline ASR and exposes the
+same acquisition to the four external recognizer launchers. The UI's
+`SpeechRecognitionAttempt` waits for the lease and closes it before processing
+every result, on launch failure, or when its composable leaves composition.
+The old setup/cleanup callback pair has no production caller. Router failure
+and cancellation clean partial SCO state; disabling Bluetooth and releasing
+the coordinator revoke the active route. Offline ASR closes its lease and
+state collector in `finally`, and a restarted job waits for its predecessor.
+
+Route-owner tests cover exclusivity, stale callbacks, delayed setup, settings
+disable, cancellation, shutdown and fallback. UI-attempt tests cover result,
+cancellation, launch failure, Busy and disposal during setup. The regular
+lesson, vocabulary and daily click suites pass; debug assembly, all 631 unit
+tests and Android-test source compilation pass. A device-level Bluetooth route
+check is still required by G5.
