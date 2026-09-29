@@ -9,7 +9,7 @@ import java.util.Calendar
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
-import com.alexpo.grammermate.data.validation.DataValidator
+import com.alexpo.grammermate.data.validation.StreakDataValidator
 
 interface StreakStore {
 
@@ -78,7 +78,7 @@ class StreakStoreImpl(private val context: Context) : StreakStore {
 
         // Validate streak data before using it
         @Suppress("UNCHECKED_CAST")
-        val validationResult = DataValidator.validateStreakData(
+        val validationResult = StreakDataValidator.validateStreakData(
             languageId = languageId,
             data = data as? Map<String, Any>
         )

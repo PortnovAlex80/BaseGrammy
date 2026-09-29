@@ -7,7 +7,7 @@ import java.io.File
 import java.io.IOException
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
-import com.alexpo.grammermate.data.validation.DataValidator
+import com.alexpo.grammermate.data.validation.TrainingProgressValidator
 
 interface ProgressStore {
 
@@ -40,7 +40,7 @@ class ProgressStoreImpl(private val context: Context) : ProgressStore {
 
         // Validate training progress before using it
         @Suppress("UNCHECKED_CAST")
-        val validationResult = DataValidator.validateTrainingProgress(payload as? Map<String, Any>)
+        val validationResult = TrainingProgressValidator.validateTrainingProgress(payload as? Map<String, Any>)
 
         return when (validationResult) {
             is com.alexpo.grammermate.data.validation.ValidationResult.Valid -> validationResult.data

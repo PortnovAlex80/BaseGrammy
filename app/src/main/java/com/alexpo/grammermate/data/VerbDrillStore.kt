@@ -8,7 +8,7 @@ import java.io.IOException
 import java.time.LocalDate
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
-import com.alexpo.grammermate.data.validation.DataValidator
+import com.alexpo.grammermate.data.validation.VerbDrillStateValidator
 
 interface VerbDrillStore {
 
@@ -106,7 +106,7 @@ class VerbDrillStoreImpl(
 
             // Validate VerbDrill combo progress before using it
             @Suppress("UNCHECKED_CAST")
-            val validationResult = DataValidator.validateVerbDrillComboProgress(
+            val validationResult = VerbDrillStateValidator.validateVerbDrillComboProgress(
                 key = comboKey,
                 data = entry as? Map<String, Any>
             )
@@ -260,7 +260,7 @@ class VerbDrillStoreImpl(
 
         // Validate last session data before using it
         @Suppress("UNCHECKED_CAST")
-        val validationResult = DataValidator.validateVerbDrillLastSession(data as? Map<String, Any>)
+        val validationResult = VerbDrillStateValidator.validateVerbDrillLastSession(data as? Map<String, Any>)
 
         return when (validationResult) {
             is com.alexpo.grammermate.data.validation.ValidationResult.Valid -> validationResult.data
