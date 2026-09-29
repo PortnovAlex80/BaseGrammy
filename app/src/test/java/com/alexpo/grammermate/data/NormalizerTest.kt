@@ -305,4 +305,14 @@ class NormalizerTest {
             assertEquals(expected, Normalizer.normalize(variant))
         }
     }
+
+    @Test
+    fun autoSubmitWaitsForLiteralAnswerWhileCheckCanNormalizePunctuation() {
+        val accepted = listOf("one one two")
+
+        assertTrue(Normalizer.isExactMatch("  ONE ONE TWO  ", accepted))
+        assertFalse(Normalizer.isExactMatch("ONE, one two", accepted))
+        assertFalse(Normalizer.isExactMatch("ONE, one two!", accepted))
+        assertEquals(Normalizer.normalize(accepted.single()), Normalizer.normalize("ONE, one two!"))
+    }
 }

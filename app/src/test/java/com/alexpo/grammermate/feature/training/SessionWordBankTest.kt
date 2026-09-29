@@ -2,6 +2,7 @@ package com.alexpo.grammermate.feature.training
 
 import com.alexpo.grammermate.data.CardSessionState
 import com.alexpo.grammermate.data.HintLevel
+import com.alexpo.grammermate.data.InputMode
 import com.alexpo.grammermate.data.SentenceCard
 import com.alexpo.grammermate.data.TrainingUiState
 import com.alexpo.grammermate.testharness.FakeTrainingStateAccess
@@ -16,7 +17,8 @@ class SessionWordBankTest {
     @Test
     fun selectionAndUndoKeepTypedInputInSync() {
         val state = FakeTrainingStateAccess(TrainingUiState(cardSession = CardSessionState(
-            currentCard = card, hintLevel = HintLevel.EASY
+            currentCard = card, hintLevel = HintLevel.EASY,
+            wordBankWords = listOf("one", "two")
         )))
         val input = MutableStateFlow("")
         val bank = SessionWordBank(state, input, WordBankGenerator) { listOf(card) }
@@ -32,9 +34,32 @@ class SessionWordBankTest {
     }
 
     @Test
-    fun regenerationClearsInputButNoCardBranchPreservesExistingText() {
+    fun selectionCannotUseMoreCopiesThanTheBankContains() {
         val state = FakeTrainingStateAccess(TrainingUiState(cardSession = CardSessionState(
-            currentCard = card, hintLevel = HintLevel.EASY,
+            currentCard = card,
+            hintLevel = HintLevel.EASY,
+            wordBankWords = listOf("one", "one", "two")
+        )))
+        val input = MutableStateFlow("")
+        val bank = SessionWordBank(state, input, WordBankGenerator) { listOf(card) }
+
+        bank.select("one")
+        bank.select("one")
+        bank.select("one")
+        bank.select("missing")
+        assertEquals(listOf("one", "one"), state.uiState.value.cardSession.selectedWords)
+        assertEquals("one one", input.value)
+
+        bank.removeLast()
+        bank.select("one")
+        assertEquals(listOf("one", "one"), state.uiState.value.cardSession.selectedWords)
+        assertEquals("one one", input.value)
+    }
+
+    @Test
+    fun regenerationClearsWordBankInputButNoCardBranchPreservesExistingText() {
+        val state = FakeTrainingStateAccess(TrainingUiState(cardSession = CardSessionState(
+            currentCard = card, hintLevel = HintLevel.EASY, inputMode = InputMode.WORD_BANK,
             selectedWords = listOf("old")
         )))
         val input = MutableStateFlow("old")
@@ -50,5 +75,19 @@ class SessionWordBankTest {
         assertEquals("pending", input.value)
         assertTrue(state.uiState.value.cardSession.selectedWords.isEmpty())
         assertTrue(state.uiState.value.cardSession.wordBankWords.isEmpty())
+    }
+
+    @Test
+    fun regenerationKeepsKeyboardDraftOnTheSameCard() {
+        val state = FakeTrainingStateAccess(TrainingUiState(cardSession = CardSessionState(
+            currentCard = card, hintLevel = HintLevel.EASY, inputMode = InputMode.KEYBOARD
+        )))
+        val input = MutableStateFlow("partial answer")
+        val bank = SessionWordBank(state, input, WordBankGenerator) { listOf(card) }
+
+        bank.update()
+
+        assertEquals("partial answer", input.value)
+        assertTrue(state.uiState.value.cardSession.wordBankWords.isNotEmpty())
     }
 }

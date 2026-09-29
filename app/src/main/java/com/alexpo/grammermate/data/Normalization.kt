@@ -71,15 +71,15 @@ object Normalizer {
     }
 
     /**
-     * Check whether [input] is a complete, exact match against any of [acceptedAnswers]
-     * after normalization. Used for auto-submit: only returns true when the user has
-     * typed the full answer (not just a prefix).
+     * Check whether [input] literally completes an accepted answer for auto-submit.
+     * Keep punctuation and internal spacing: normalization belongs to explicit Check,
+     * otherwise a still-growing answer can match early and grade the next card too.
      */
     fun isExactMatch(input: String, acceptedAnswers: List<String>, minLength: Int = 2): Boolean {
-        val normalizedInput = normalize(input)
-        if (normalizedInput.length < minLength) return false
+        val trimmedInput = input.trim()
+        if (normalize(trimmedInput).length < minLength) return false
         return acceptedAnswers.any { ans ->
-            normalizedInput == normalize(ans)
+            trimmedInput.equals(ans.trim(), ignoreCase = true)
         }
     }
 }

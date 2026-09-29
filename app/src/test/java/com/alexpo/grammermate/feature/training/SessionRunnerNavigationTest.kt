@@ -36,7 +36,12 @@ class SessionRunnerNavigationTest {
             currentIndex = index,
             currentCard = cards[index],
             inputMode = inputMode,
-            hintLevel = HintLevel.EASY
+            hintLevel = HintLevel.EASY,
+            wordBankWords = if (inputMode == InputMode.WORD_BANK) {
+                listOf(cards[index].acceptedAnswers.first())
+            } else {
+                emptyList()
+            }
         )))
         val input = MutableStateFlow("pending")
         val runner = SessionRunner(
@@ -100,5 +105,20 @@ class SessionRunnerNavigationTest {
         assertEquals(listOf("two"), state.uiState.value.cardSession.wordBankWords)
         assertEquals(emptyList<String>(), state.uiState.value.cardSession.selectedWords)
         assertEquals("", input.value)
+    }
+
+    @Test
+    fun manualPauseAndResumePreservesPartiallyTypedKeyboardAnswer() {
+        val (runner, state, input) = harness()
+        input.value = "partially typed"
+
+        runner.togglePause()
+        assertEquals(SessionState.PAUSED, state.uiState.value.cardSession.sessionState)
+        assertEquals("partially typed", input.value)
+
+        runner.togglePause()
+        assertEquals(SessionState.ACTIVE, state.uiState.value.cardSession.sessionState)
+        assertEquals("partially typed", input.value)
+        assertEquals(cards[0], state.uiState.value.cardSession.currentCard)
     }
 }

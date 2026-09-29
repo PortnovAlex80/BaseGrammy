@@ -1,20 +1,24 @@
 package com.alexpo.grammermate.ui
 
 import android.app.Application
+import android.os.Looper
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.alexpo.grammermate.R
 import com.alexpo.grammermate.data.InputMode
 import com.alexpo.grammermate.data.SessionState
 import com.alexpo.grammermate.data.TrainingMode
@@ -34,8 +38,10 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RuntimeEnvironment
+import org.robolectric.Shadows
 import org.robolectric.annotation.Config
 import java.io.File
+import java.util.concurrent.atomic.AtomicInteger
 
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [33])
@@ -104,13 +110,17 @@ class VerbDrillSessionCardRegressionTest {
         val harness = renderPreparedHarness()
 
         startVerbSessionThroughUi(harness)
+        val batch = verbSessionIds(harness.verbVm)
         repeat(2) {
             answerCurrentCardCorrectly(harness.trainingVm)
         }
 
         val navigationOnlyCardId = currentTrainingCardId(harness.trainingVm)
-        composeRule.onNodeWithTag("next_button").performClick()
-        composeRule.waitForIdle()
+        clickNext()
+        composeRule.waitUntil(timeoutMillis = 5_000) {
+            Shadows.shadowOf(Looper.getMainLooper()).idle()
+            currentTrainingCardId(harness.trainingVm) == batch[3]
+        }
 
         val shownAfterNavigation = store.loadLastSession()!!.todayShownCardIds
         assertEquals("Only checked cards should be counted as shown", 2, shownAfterNavigation.size)
@@ -152,8 +162,11 @@ class VerbDrillSessionCardRegressionTest {
         val navigationOnlyCardId = currentTrainingCardId(harness.trainingVm)
         assertEquals("test_verb_3", navigationOnlyCardId)
 
-        composeRule.onNodeWithTag("next_button").performClick()
-        composeRule.waitForIdle()
+        clickNext()
+        composeRule.waitUntil(timeoutMillis = 5_000) {
+            Shadows.shadowOf(Looper.getMainLooper()).idle()
+            currentTrainingCardId(harness.trainingVm) == "test_verb_4"
+        }
 
         exitTrainingThroughUi()
         composeRule.onNodeWithTag("session_card").assertIsDisplayed()
@@ -179,26 +192,35 @@ class VerbDrillSessionCardRegressionTest {
         composeRule.onNodeWithTag("show_answer_button").performScrollTo().performClick()
         composeRule.waitForIdle()
         assertNotNull(harness.trainingVm.uiState.value.cardSession.answerText)
-        composeRule.onNodeWithTag("next_button").performClick()
+        assertEquals(5, harness.trainingVm.training.getSessionCards().size)
+        clickNext()
         composeRule.waitForIdle()
+        assertEquals("Next click must reach the production callback", 1, harness.nextClickCount.get())
+        composeRule.waitUntil(timeoutMillis = 5_000) {
+            Shadows.shadowOf(Looper.getMainLooper()).idle()
+            currentTrainingCardId(harness.trainingVm) == batch[1]
+        }
         assertEquals(batch[1], currentTrainingCardId(harness.trainingVm))
         assertEquals(setOf(batch[0]), store.loadLastSession()!!.todayShownCardIds)
 
         // A wrong Check followed by Next is an explicit skip, not mere browsing.
-        composeRule.onNodeWithTag("pause_button").performClick()
+        clickPause()
         composeRule.waitForIdle()
         composeRule.onNodeWithTag("input_field").performTextInput("definitely wrong")
         composeRule.onNodeWithTag("check_button").performScrollTo().performClick()
         composeRule.waitForIdle()
         assertEquals(false, harness.trainingVm.uiState.value.cardSession.lastResult)
-        composeRule.onNodeWithTag("next_button").performClick()
-        composeRule.waitForIdle()
+        clickNext()
+        composeRule.waitUntil(timeoutMillis = 5_000) {
+            Shadows.shadowOf(Looper.getMainLooper()).idle()
+            currentTrainingCardId(harness.trainingVm) == batch[2]
+        }
         assertEquals(batch[2], currentTrainingCardId(harness.trainingVm))
         assertEquals(setOf(batch[0], batch[1]), store.loadLastSession()!!.todayShownCardIds)
         assertEquals(2, harness.verbVm.uiState.value.session!!.incorrectCount)
 
         // Browsing past card 3 without Check or hint must leave it eligible.
-        composeRule.onNodeWithTag("next_button").performClick()
+        clickNext()
         composeRule.waitForIdle()
         assertEquals(setOf(batch[0], batch[1]), store.loadLastSession()!!.todayShownCardIds)
 
@@ -254,7 +276,12 @@ class VerbDrillSessionCardRegressionTest {
     }
 
     private fun renderPreparedHarness(): Harness {
-        val cards = createTestVerbCards(12)
+        // The session uses the real CSV-style alternatives supported by the validator.
+        // Entering one alternative keeps the explicit Check action available: keyboard
+        // auto-submit compares against the unsplit source answer.
+        val cards = createTestVerbCards(12).map { card ->
+            card.copy(answer = "${card.answer}+${card.answer} alternate")
+        }
         store.setCards(packId, "it", cards)
 
         val verbVm = VerbDrillViewModel(application, store)
@@ -264,7 +291,8 @@ class VerbDrillSessionCardRegressionTest {
 
         val trainingVm = TrainingViewModel(application)
         val route = mutableStateOf(TestRoute.VERB)
-        val harness = Harness(verbVm, trainingVm, route)
+        val nextClickCount = AtomicInteger(0)
+        val harness = Harness(verbVm, trainingVm, route, nextClickCount)
 
         composeRule.setContent {
             MaterialTheme {
@@ -282,6 +310,7 @@ class VerbDrillSessionCardRegressionTest {
 
                     TestRoute.TRAINING -> TrainingScreen(
                         state = trainingVm.uiState.collectAsState().value,
+                        inputText = trainingVm.inputText.collectAsState().value,
                         onInputChange = trainingVm.training::onInputChanged,
                         onSubmit = {
                             val result = trainingVm.submitAnswer()
@@ -297,6 +326,7 @@ class VerbDrillSessionCardRegressionTest {
                             trainingVm.navigatePrev()
                         },
                         onNext = {
+                            nextClickCount.incrementAndGet()
                             val state = trainingVm.uiState.value.cardSession
                             if (
                                 state.currentCard is VerbDrillCard &&
@@ -376,11 +406,28 @@ class VerbDrillSessionCardRegressionTest {
 
     private fun answerCurrentCardCorrectly(trainingVm: TrainingViewModel) {
         val card = trainingVm.uiState.value.cardSession.currentCard
+        val previousIndex = trainingVm.uiState.value.cardSession.currentIndex
         assertNotNull("No current card on TrainingScreen", card)
         composeRule.onNodeWithTag("input_field").performTextClearance()
-        composeRule.onNodeWithTag("input_field").performTextInput(card!!.acceptedAnswers.first())
-        composeRule.onNodeWithTag("check_button").performClick()
-        composeRule.waitForIdle()
+        composeRule.onNodeWithTag("input_field").performTextInput(card!!.acceptedAnswers.first().substringBefore('+'))
+        composeRule.onNodeWithTag("check_button").performScrollTo().performClick()
+        composeRule.waitUntil(timeoutMillis = 5_000) {
+            Shadows.shadowOf(Looper.getMainLooper()).idle()
+            val session = trainingVm.uiState.value.cardSession
+            session.currentIndex > previousIndex || session.sessionState == SessionState.PAUSED
+        }
+    }
+
+    private fun clickNext() {
+        composeRule.onNodeWithTag("next_button").performScrollTo()
+        composeRule.onNodeWithContentDescription(application.getString(R.string.content_desc_next))
+            .assertIsEnabled().performClick()
+    }
+
+    private fun clickPause() {
+        composeRule.onNodeWithTag("pause_button").performScrollTo()
+        composeRule.onNodeWithContentDescription(application.getString(R.string.content_desc_play))
+            .assertIsEnabled().performClick()
     }
 
     private fun exitTrainingThroughUi() {
@@ -409,7 +456,8 @@ class VerbDrillSessionCardRegressionTest {
     private data class Harness(
         val verbVm: VerbDrillViewModel,
         val trainingVm: TrainingViewModel,
-        val route: MutableState<TestRoute>
+        val route: MutableState<TestRoute>,
+        val nextClickCount: AtomicInteger
     )
 
     private enum class TestRoute {

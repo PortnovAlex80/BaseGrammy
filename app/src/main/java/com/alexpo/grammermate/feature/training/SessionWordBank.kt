@@ -1,6 +1,7 @@
 package com.alexpo.grammermate.feature.training
 
 import com.alexpo.grammermate.data.HintLevel
+import com.alexpo.grammermate.data.InputMode
 import com.alexpo.grammermate.data.SessionCard
 import com.alexpo.grammermate.data.TrainingScreenMode
 import com.alexpo.grammermate.shared.AuditLogger
@@ -19,12 +20,15 @@ internal class SessionWordBank(
     private fun currentCardId(): String {
         val cards = sessionCards()
         if (cards.isEmpty()) return ""
-        val index = stateAccess.uiState.value.cardSession.currentIndex.coerceIn(0, cards.lastIndex)
+        val index = stateAccess.currentState.cardSession.currentIndex.coerceIn(0, cards.lastIndex)
         return cards.getOrNull(index)?.id ?: ""
     }
 
     fun select(word: String) {
-        val currentSelected = stateAccess.uiState.value.cardSession.selectedWords
+        val cardSession = stateAccess.currentState.cardSession
+        val currentSelected = cardSession.selectedWords
+        val availableCount = cardSession.wordBankWords.count { it == word }
+        if (availableCount == 0 || currentSelected.count { it == word } >= availableCount) return
         val newSelected = currentSelected + word
         audit?.wordBankSelect(word, newSelected.size, currentCardId())
         inputTextFlow.value = newSelected.joinToString(" ")
@@ -34,7 +38,7 @@ internal class SessionWordBank(
     }
 
     fun removeLast() {
-        val currentSelected = stateAccess.uiState.value.cardSession.selectedWords
+        val currentSelected = stateAccess.currentState.cardSession.selectedWords
         if (currentSelected.isEmpty()) return
         val newSelected = currentSelected.dropLast(1)
         audit?.wordBankRemove(newSelected.size, currentCardId())
@@ -45,7 +49,7 @@ internal class SessionWordBank(
     }
 
     fun update() {
-        val state = stateAccess.uiState.value
+        val state = stateAccess.currentState
         if (state.cardSession.hintLevel != HintLevel.EASY) return
         val card = state.cardSession.currentCard
         if (card == null) {
@@ -68,7 +72,9 @@ internal class SessionWordBank(
             generator.generateForSentence(correctAnswer, allCards)
         }
 
-        inputTextFlow.value = ""
+        // Rebuilding bank choices on resume must not erase a typed answer in
+        // keyboard/voice mode. Card navigation clears input in its own transition.
+        if (state.cardSession.inputMode == InputMode.WORD_BANK) inputTextFlow.value = ""
         stateAccess.updateState {
             it.copy(cardSession = it.cardSession.copy(wordBankWords = words, selectedWords = emptyList()))
         }
