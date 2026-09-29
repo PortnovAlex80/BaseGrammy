@@ -27,7 +27,6 @@ import com.alexpo.grammermate.data.TrainingUiState
 import com.alexpo.grammermate.data.PracticeType
 import com.alexpo.grammermate.data.StreakData
 import com.alexpo.grammermate.data.StreakStore
-import com.alexpo.grammermate.data.VerbDrillCsvParser
 import com.alexpo.grammermate.feature.progress.StreakManager
 import com.alexpo.grammermate.feature.training.AnswerValidator
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -80,6 +79,7 @@ class DailyPracticeCoordinator(
 ) {
 
     private val logTag = "GrammarMate"
+    private val cursorController = DailyCursorController(packDailyCursorStore, lessonStore)
 
     // ── Owned state flow ─────────────────────────────────────────────────
     private val _state = MutableStateFlow(DailyPracticeState())
@@ -103,9 +103,6 @@ class DailyPracticeCoordinator(
     /** Per-block VOICE/KEYBOARD answered card counts for cursor advancement. */
     private var dailyPracticeAnsweredCounts: MutableMap<DailyBlockType, Int> = mutableMapOf()
 
-    /** Cursor state saved at session start; used to roll back on cancel. */
-    private var dailyCursorAtSessionStart: DailyCursorState = DailyCursorState()
-
     /** Get the current active pack ID dynamically (not cached). */
     private fun getCurrentActivePackId(): String? {
         return stateAccess.uiState.value.navigation.activePackId?.value
@@ -121,61 +118,12 @@ class DailyPracticeCoordinator(
      * Get the current pack's daily cursor state.
      * Each pack maintains its own cursor to prevent cross-pack contamination.
      */
-    fun getCurrentPackCursor(): PackDailyCursorState {
-        val packId = stateAccess.uiState.value.navigation.activePackId?.value
-            ?: return PackDailyCursorState.forPack("unknown")
-        return packDailyCursorStore.loadPackCursor(packId) ?: PackDailyCursorState.forPack(packId)
-    }
+    fun getCurrentPackCursor(): PackDailyCursorState = cursorController.getPackCursor(getCurrentActivePackId())
 
-    /**
-     * Save cursor state for the current pack.
-     */
-    private fun saveCurrentPackCursor(cursor: PackDailyCursorState) {
-        packDailyCursorStore.savePackCursor(cursor)
-    }
-
-    private fun PackDailyCursorState.toDailyCursor(): DailyCursorState {
-        return DailyCursorState(
-            sentenceOffset = sentenceOffset,
-            currentLessonIndex = currentLessonIndex,
-            lastSessionHash = lastSessionHash,
-            firstSessionDate = firstSessionDate,
-            firstSessionSentenceCardIds = firstSessionSentenceCardIds,
-            firstSessionVerbCardIds = firstSessionVerbCardIds,
-            firstSessionLessonId = firstSessionLessonId,
-            verbOffset = verbOffset
-        )
-    }
-
-    private fun DailyCursorState.hasMeaningfulData(): Boolean {
-        return sentenceOffset > 0 ||
-            currentLessonIndex > 0 ||
-            lastSessionHash != 0 ||
-            firstSessionDate.isNotEmpty() ||
-            firstSessionSentenceCardIds.isNotEmpty() ||
-            firstSessionVerbCardIds.isNotEmpty() ||
-            verbOffset > 0
-    }
-
-    /**
-     * Initialize in-memory cursor from the active pack. Legacy global progress is used
-     * only when the pack-scoped cursor does not exist yet.
-     */
     fun initializeCursor(legacyCursor: DailyCursorState = DailyCursorState()) {
-        val packId = stateAccess.uiState.value.navigation.activePackId?.value ?: return
-        val stored = packDailyCursorStore.loadPackCursor(packId)
-        val cursor = when {
-            stored != null -> stored.toDailyCursor()
-            legacyCursor.hasMeaningfulData() -> {
-                updateCursor(legacyCursor)
-                return
-            }
-            else -> DailyCursorState()
-        }
+        val cursor = cursorController.initialize(getCurrentActivePackId(), legacyCursor) ?: return
         _state.update { it.copy(dailyCursor = cursor) }
     }
-
-    // ── Session lifecycle ────────────────────────────────────────────────
 
     internal fun startDailySession(blocks: List<DailyBlock>, lessonLevel: Int, packId: String) {
         if (blocks.isEmpty()) return
@@ -360,7 +308,6 @@ class DailyPracticeCoordinator(
     ): Boolean {
         val cursor = getCursor()
         _state.update { it.copy(dailyCursor = cursor) }
-        dailyCursorAtSessionStart = cursor
         dailyPracticeAnsweredCounts = mutableMapOf()
 
         val state = stateAccess.uiState.value
@@ -838,11 +785,7 @@ class DailyPracticeCoordinator(
         dailyPracticeAnsweredCounts.clear()
         _state.update { DailyPracticeState() }
         // Delete pack cursor from disk so stale card IDs don't resurface on restart
-        val packId = stateAccess.uiState.value.navigation.activePackId?.value
-        if (packId != null) {
-            packDailyCursorStore.deletePackCursor(packId)
-            packDailyCursorStore.invalidateCache()
-        }
+        cursorController.delete(getCurrentActivePackId())
     }
 
     /**
@@ -858,28 +801,11 @@ class DailyPracticeCoordinator(
     // ── Cursor management (called by ViewModel) ──────────────────────────
 
     fun updateCursor(cursor: DailyCursorState) {
-        // Convert to pack-scoped cursor and save
-        val packId = stateAccess.uiState.value.navigation.activePackId?.value ?: return
-        val packCursor = PackDailyCursorState(
-            packId = packId,
-            sentenceOffset = cursor.sentenceOffset,
-            currentLessonIndex = cursor.currentLessonIndex,
-            lastSessionHash = cursor.lastSessionHash,
-            firstSessionDate = cursor.firstSessionDate,
-            firstSessionSentenceCardIds = cursor.firstSessionSentenceCardIds,
-            firstSessionVerbCardIds = cursor.firstSessionVerbCardIds,
-            firstSessionLessonId = cursor.firstSessionLessonId,
-            verbOffset = cursor.verbOffset
-        )
-        saveCurrentPackCursor(packCursor)
+        if (!cursorController.save(getCurrentActivePackId(), cursor)) return
         _state.update { it.copy(dailyCursor = cursor) }
     }
 
-    fun getCursor(): DailyCursorState {
-        // Return pack-scoped cursor as legacy DailyCursorState for compatibility
-        val packCursor = getCurrentPackCursor()
-        return packCursor.toDailyCursor()
-    }
+    fun getCursor(): DailyCursorState = cursorController.getCursor(getCurrentActivePackId())
 
     /** Test-only accessor to inspect internal state. */
     internal fun getDailyState(): DailyPracticeState = _state.value
@@ -900,97 +826,17 @@ class DailyPracticeCoordinator(
      * @param languageId the active language (for looking up lesson card counts).
      * @return the updated cursor state (caller must apply via updateCursor).
      */
-    fun advanceDailyCursor(
-        sentenceCount: Int,
-        languageId: String
-    ): DailyCursorState {
+    fun advanceDailyCursor(sentenceCount: Int, languageId: String): DailyCursorState {
         val cursor = getCursor()
         _state.update { it.copy(dailyCursor = cursor) }
-        val nav = stateAccess.uiState.value.navigation
-        val packId = nav.activePackId
-        Log.d(logTag, "DailyPractice: advanceDailyCursor sentenceCount=$sentenceCount, currentLessonIndex=${cursor.currentLessonIndex}, sentenceOffset=${cursor.sentenceOffset}, verbOffset=${cursor.verbOffset}")
-        val totalLessonCount = if (packId != null) {
-            lessonStore.getLessonCount(packId.value, languageId)
-        } else {
-            0
-        }
-        if (totalLessonCount == 0) return cursor
-
-        var sentenceOffset = cursor.sentenceOffset + sentenceCount
-        var currentLessonIndex = cursor.currentLessonIndex
-
-        val currentLessonId = if (packId != null) {
-            lessonStore.getLessonIdAtIndex(packId.value, languageId, currentLessonIndex)
-        } else {
-            null
-        }
-        if (currentLessonId != null && packId != null) {
-            val cardCount = lessonStore.getCardsForLesson(packId.value, languageId, currentLessonId).size
-            if (sentenceOffset >= cardCount) {
-                currentLessonIndex++
-                sentenceOffset = 0
-                if (currentLessonIndex >= totalLessonCount) {
-                    currentLessonIndex = 0
-                }
-            }
-        }
-
-        // Advance verbOffset with cycling
-        val state = stateAccess.uiState.value
-        val activePackIdStr = state.navigation.activePackId?.value
-        val newVerbOffset = if (activePackIdStr != null) {
-            val effectiveLevel = currentLessonIndex + 1
-            val cumulativeTenses = lessonStore.getCumulativeTenses(activePackIdStr, effectiveLevel)
-            val totalVerbPoolSize = getTotalVerbPoolSize(activePackIdStr, languageId, cumulativeTenses)
-            val incremented = cursor.verbOffset + sessionSize
-            if (totalVerbPoolSize > 0 && incremented >= totalVerbPoolSize) 0 else incremented
-        } else {
-            cursor.verbOffset
-        }
-
-        val result = cursor.copy(
-            currentLessonIndex = currentLessonIndex,
-            sentenceOffset = sentenceOffset,
-            verbOffset = newVerbOffset
+        val result = cursorController.advance(
+            cursor, getCurrentActivePackId(), languageId, sentenceCount, sessionSize
         )
-        Log.d(logTag, "DailyPractice: advanceDailyCursor result: newLessonIndex=$currentLessonIndex, newSentenceOffset=$sentenceOffset, newVerbOffset=$newVerbOffset")
+        Log.d(logTag, "DailyPractice: advanceDailyCursor result: newLessonIndex=${result.currentLessonIndex}, newSentenceOffset=${result.sentenceOffset}, newVerbOffset=${result.verbOffset}")
         return result
     }
 
-    /**
-     * Get the total number of verb cards filtered by active tenses.
-     * Used for cycling the verbOffset in advanceDailyCursor.
-     */
-    private fun getTotalVerbPoolSize(
-        packId: String,
-        languageId: String,
-        activeTenses: List<String>
-    ): Int {
-        if (activeTenses.isEmpty()) return 0
-        val files = lessonStore.getVerbDrillFiles(packId, languageId)
-        var count = 0
-        for (file in files) {
-            try {
-                val parseResult = file.bufferedReader().use { reader ->
-                    VerbDrillCsvParser.parse(reader)
-                }
-                // Only count successfully parsed cards
-                val parsed = parseResult.data ?: continue
-                // Count cards matching active tenses
-                count += parsed.count { it.tense != null && it.tense in activeTenses }
-            } catch (_: Exception) {
-                // Skip unreadable files
-            }
-        }
-        return count
-    }
-
-    // ── Convenience: get cards for current TRANSLATE or VERBS block ────
-
-    /**
-     * Get the SessionCard list for the current TRANSLATE block.
-     * Used by GrammarMateApp to pass to TrainingScreen.
-     */
+    /** Get the SessionCard list for the current TRANSLATE block. */
     fun getCurrentTranslateCards(): List<com.alexpo.grammermate.data.SessionCard> {
         val ds = _state.value.dailySession
         val block = ds.blocks.getOrNull(ds.blockIndex) ?: return emptyList()
