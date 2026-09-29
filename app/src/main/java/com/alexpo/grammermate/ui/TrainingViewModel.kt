@@ -933,16 +933,20 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         rebindWordMasteryStore(resolvedPackId)
         rebindVocabProgressStore(resolvedPackId)
 
-        // Rebuild schedules BEFORE reading them (filtered to active pack)
-        rebuildSchedules(filterLessonsForActivePack(_coreState.value.navigation.lessons))
+        // Use the requested pack's IDs; the previous navigation snapshot may
+        // still belong to another pack while this selection is in progress.
+        val navigationLessons = _coreState.value.navigation.lessons
+        val scheduleLessons = resolvedPackId?.let {
+            PackSelectionPlan(com.alexpo.grammermate.data.PackId(it), navigationLessons, packLessonIds.orEmpty())
+                .scheduleLessons()
+        } ?: navigationLessons
+        rebuildSchedules(scheduleLessons)
 
         // Calculate active sub-lesson index based on completed count
         val typedLessonId = com.alexpo.grammermate.data.LessonId(lessonId)
         val schedule = lessonSchedules[typedLessonId]
         val subLessons = schedule?.subLessons.orEmpty()
-        val mastery = _coreState.value.navigation.let { nav ->
-            nav.activePackId?.let { pid -> masteryStore.getForPack(pid.value, lessonId) }
-        }
+        val mastery = resolvedPackId?.let { masteryStore.getForPack(it, lessonId) }
         val hiddenIds = hiddenCardStore.getHiddenCardIds()
         val completedCount = progressTracker.calculateCompletedSubLessons(
             subLessons = subLessons,
@@ -1046,16 +1050,11 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             )
         }
 
-        // Update navigation.lessons with pack-scoped data so selectLesson/buildSessionCards
-        // use the correct pack's lesson content (not the previously selected pack's).
-        _coreState.update {
-            it.copy(navigation = it.navigation.copy(
-                lessons = packLessons,
-                activePackId = com.alexpo.grammermate.data.PackId(packId)
-            ))
-        }
-
         val packLessonIds = lessonStore.getLessonIdsForPack(packId)
+        // Publish the target lessons and IDs together: selectLesson rebuilds
+        // schedules before its own navigation update.
+        val selection = PackSelectionPlan(com.alexpo.grammermate.data.PackId(packId), packLessons, packLessonIds)
+        _coreState.update { it.copy(navigation = selection.navigationFrom(it.navigation)) }
         if (packLessonIds.isNotEmpty()) {
             val currentLessonId = _coreState.value.navigation.selectedLessonId
             val lessonId = if (currentLessonId != null && currentLessonId.value in packLessonIds) currentLessonId.value else packLessonIds.first()
@@ -2291,7 +2290,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     }
 
     private fun rebuildSchedules(lessons: List<Lesson>) {
-        lessonSchedules = cardProvider.buildSchedules(lessons, lessonSchedules)
+        lessonSchedules = cardProvider.buildSchedules(lessons)
     }
 
     /**

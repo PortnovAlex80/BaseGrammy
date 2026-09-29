@@ -21,7 +21,7 @@ import com.alexpo.grammermate.feature.progress.ProgressTracker
  * Handles sub-lesson scheduling, card selection for all training modes
  * (LESSON, ALL_SEQUENTIAL, ALL_MIXED), and boss battle card building.
  * Wraps [MixedReviewScheduler] for schedule construction and provides
- * a cache key to avoid redundant rebuilds.
+ * a content-aware cache to avoid redundant rebuilds.
  *
  * No Android dependencies — suitable for unit testing without Robolectric.
  */
@@ -34,7 +34,9 @@ class CardProvider(
     private val progressTracker: ProgressTracker? = null
 ) {
 
-    private var cachedScheduleKey: String = ""
+    private var cachedLessons: List<Lesson>? = null
+    private var cachedScheduleSize: Int = subLessonSize
+    private var cachedSchedules: Map<LessonId, LessonSchedule> = emptyMap()
 
     // ── Schedules ──────────────────────────────────────────────────────
 
@@ -45,27 +47,25 @@ class CardProvider(
     fun setSubLessonSize(size: Int) {
         if (subLessonSize != size) {
             subLessonSize = size
-            cachedScheduleKey = ""
+            cachedLessons = null
+            cachedSchedules = emptyMap()
         }
     }
 
     /**
      * Build sub-lesson schedules for all lessons using [MixedReviewScheduler].
-     * Results are cached by a composite key derived from lesson IDs, card counts,
-     * and block size. Calling again with the same inputs is a no-op.
+     * Cache equality includes lesson content: packs may share lesson/card IDs and
+     * counts while containing different cards. Calling with unchanged content
+     * and block size returns the previous derived schedule.
      *
      * @return the updated (or existing) schedule map.
      */
-    fun buildSchedules(
-        lessons: List<Lesson>,
-        existingSchedules: Map<LessonId, LessonSchedule>
-    ): Map<LessonId, LessonSchedule> {
-        val lessonKey = lessons.joinToString("|") { "${it.id}:${it.cards.size}" }
-        val blockSize = subLessonSize
-        val key = "${lessonKey}|${blockSize}"
-        if (key == cachedScheduleKey) return existingSchedules
-        cachedScheduleKey = key
-        return MixedReviewScheduler(blockSize).build(lessons)
+    fun buildSchedules(lessons: List<Lesson>): Map<LessonId, LessonSchedule> {
+        if (cachedScheduleSize == subLessonSize && cachedLessons == lessons) return cachedSchedules
+        cachedSchedules = MixedReviewScheduler(subLessonSize).build(lessons)
+        cachedLessons = lessons.map { it.copy(cards = it.cards.toList()) }
+        cachedScheduleSize = subLessonSize
+        return cachedSchedules
     }
 
     // ── Session cards ──────────────────────────────────────────────────
