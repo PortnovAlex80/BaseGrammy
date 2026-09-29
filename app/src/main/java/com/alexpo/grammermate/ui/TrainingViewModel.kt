@@ -1188,6 +1188,8 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 selectedLessonId = null
             ))
         }
+        loadChapters()
+        refreshPackTiles()
         dailyPracticeCoordinator.resetState()
         dailyPracticeCoordinator.initializeCursor()
         refreshDrillVisibility()
@@ -2678,19 +2680,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     fun getFirstIncompleteLesson(chapter: com.alexpo.grammermate.data.Chapter): String? {
         val nav = _coreState.value.navigation
         val selectedLanguageId = nav.selectedLanguageId?.value ?: return null
-        val activePackId = nav.activePackId?.value
-
-        for (lessonId in chapter.lessons) {
-            val masteryState = activePackId?.let { masteryStore.getForPack(it, lessonId) }
-                ?: LessonMasteryState(LessonId(lessonId), LanguageId(selectedLanguageId))
-            // THE completion rule (Phase 3, item 3.5): completedAtMs, not
-            // intervalStepIndex — the step threshold is a vocab/SRS signal.
-            if (masteryState.completedAtMs == null) {
-                return lessonId
-            }
-        }
-
-        return null
+        return chapterRepository.getFirstIncompleteLesson(chapter, nav.activePackId?.value, selectedLanguageId)
     }
 
     /**
@@ -2707,6 +2697,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                     activeChapterId = null
                 )
             }
+            _chapterCards.value = emptyList()
             Log.d(logTag, "loadChapters: no active pack, clearing chapters")
             return
         }
@@ -2720,6 +2711,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                     activeChapterId = null
                 )
             }
+            _chapterCards.value = emptyList()
             Log.d(logTag, "loadChapters: pack $activePackId has no chapters, clearing")
             return
         }
@@ -2733,7 +2725,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         val chapterProgresses = computeAllChapterProgress(chapters, activePackId)
 
         // Determine active chapter ID (first incomplete or first chapter)
-        val activeChapterId = determineActiveChapter(chapters, chapterProgresses)
+        val activeChapterId = chapterRepository.determineActiveChapter(chapters, chapterProgresses)
 
         Log.d(logTag, "loadChapters: updating state with ${chapters.size} chapters, activeChapterId=$activeChapterId")
 
@@ -2745,28 +2737,6 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             )
         }
         refreshChapterCards()
-    }
-
-    /**
-     * Determine the active chapter ID based on progress.
-     * Returns the first incomplete chapter, or the last chapter if all are complete.
-     */
-    private fun determineActiveChapter(
-        chapters: List<Chapter>,
-        chapterProgresses: Map<String, ChapterProgress>
-    ): String? {
-        if (chapters.isEmpty()) return null
-
-        // Find first incomplete chapter
-        for (chapter in chapters) {
-            val progress = chapterProgresses[chapter.chapterId]
-            if (progress == null || progress.lessonsCompleted < chapter.lessons.size) {
-                return chapter.chapterId
-            }
-        }
-
-        // All chapters complete - return the last one
-        return chapters.lastOrNull()?.chapterId
     }
 
     /**
@@ -2785,22 +2755,14 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
 
         val chapters = lessonStore.getChapters(activePackId)
 
-        // Find which chapter(s) contain this lesson
-        val affectedChapters = chapters.filter { chapter ->
-            lessonId in chapter.lessons
-        }
-
-        if (affectedChapters.isEmpty()) {
+        val affectedProgresses = chapterRepository.getAffectedChapterProgresses(
+            chapters, lessonId, activePackId, selectedLanguageId
+        )
+        if (affectedProgresses.isEmpty()) {
             return
         }
 
-        // Recompute LIVE progress for each affected chapter
-        val allLessonMasteryStates = buildPackMasteryStates(activePackId, selectedLanguageId)
-        for (chapter in affectedChapters) {
-            val newProgress = ChapterProgressCalculator.calculateChapterProgress(
-                chapter = chapter,
-                masteryStates = allLessonMasteryStates
-            )
+        for (newProgress in affectedProgresses) {
             _coreState.update {
                 it.copy(
                     chapterProgresses = it.chapterProgresses.toMutableMap().apply {
@@ -2812,35 +2774,15 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         refreshChapterCards()
     }
 
-    /** Mastery snapshot for every lesson of the pack (memory-only reads). */
-    private fun buildPackMasteryStates(
-        packId: String,
-        languageId: String
-    ): Map<String, LessonMasteryState> {
-        val states = mutableMapOf<String, LessonMasteryState>()
-        for (lid in lessonStore.getLessonIdsForPack(packId)) {
-            states[lid] = masteryStore.getForPack(packId, lid)
-                ?: LessonMasteryState(LessonId(lid), LanguageId(languageId))
-        }
-        return states
-    }
-
     private fun computeAllChapterProgress(chapters: List<Chapter>, packId: String): Map<String, ChapterProgress> {
         val langId = _coreState.value.navigation.selectedLanguageId?.value ?: ""
-        val masteryStates = buildPackMasteryStates(packId, langId)
-        return chapters.associate { ch ->
-            ch.chapterId to ChapterProgressCalculator.calculateChapterProgress(ch, masteryStates)
-        }
+        return chapterRepository.computeAllChapterProgress(chapters, packId, langId)
     }
 
     fun getCompletedLessonIds(chapter: Chapter): Set<String> {
         val nav = _coreState.value.navigation
-        val languageId = nav.selectedLanguageId?.value ?: return emptySet()
-        val activePackId = nav.activePackId?.value
-        return chapter.lessons.filter { lessonId ->
-            val mastery = activePackId?.let { masteryStore.getForPack(it, lessonId) }
-            mastery?.completedAtMs != null // Lesson explicitly completed
-        }.toSet()
+        if (nav.selectedLanguageId == null) return emptySet()
+        return chapterRepository.getCompletedLessonIds(chapter, nav.activePackId?.value)
     }
 }
 

@@ -14,8 +14,8 @@ import com.alexpo.grammermate.data.MasteryStore
  * THE home of chapter/roadmap reads (Phase 4, item 4.5 — extracted from
  * TrainingViewModel): computes chapter cards, chapter progress maps, status,
  * completion sets and the first-incomplete cursor from pack-scoped mastery.
- * All functions are pure over their inputs — the ViewModel supplies the
- * active pack/language and forwards the results into state.
+ * Reads are pack-scoped and return projections; the ViewModel owns UI state
+ * and decides when to refresh it.
  *
  * THE completion rule (Phase 3): a lesson is completed iff its mastery row
  * has completedAtMs stamped (uniqueCardShows >= min(effectiveCardCount, 150)).
@@ -59,6 +59,31 @@ class ChapterRepository(
         return chapters.associate { ch ->
             ch.chapterId to ChapterProgressCalculator.calculateChapterProgress(ch, masteryStates)
         }
+    }
+
+    /** Preserve chapter order when refreshing only the chapters containing a lesson. */
+    fun getAffectedChapterProgresses(
+        chapters: List<Chapter>,
+        lessonId: String,
+        packId: String,
+        languageId: String
+    ): List<ChapterProgress> {
+        val affected = chapters.filter { lessonId in it.lessons }
+        if (affected.isEmpty()) return emptyList()
+        val masteryStates = buildPackMasteryStates(packId, languageId)
+        return affected.map { ChapterProgressCalculator.calculateChapterProgress(it, masteryStates) }
+    }
+
+    /** First incomplete chapter, or the last one when all have completed. */
+    fun determineActiveChapter(
+        chapters: List<Chapter>,
+        chapterProgresses: Map<String, ChapterProgress>
+    ): String? {
+        for (chapter in chapters) {
+            val progress = chapterProgresses[chapter.chapterId]
+            if (progress == null || progress.lessonsCompleted < chapter.lessons.size) return chapter.chapterId
+        }
+        return chapters.lastOrNull()?.chapterId
     }
 
     /** DONE only when every lesson of the chapter is stamped completed. */

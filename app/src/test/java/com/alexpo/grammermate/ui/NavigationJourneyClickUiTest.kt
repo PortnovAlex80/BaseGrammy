@@ -18,6 +18,7 @@ import androidx.compose.ui.test.performScrollToNode
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.alexpo.grammermate.R
 import org.junit.Before
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -149,6 +150,12 @@ class NavigationJourneyClickUiTest {
                     hasAnyDescendant(hasTextExactly(newLabel)),
                 useUnmergedTree = true
             ).fetchSemanticsNodes().isNotEmpty()
+        }
+        assertTrue(vm.chapterCards.value.isNotEmpty())
+        rule.runOnUiThread { vm.clearActivePack() }
+        rule.waitUntil(5_000) {
+            org.robolectric.Shadows.shadowOf(android.os.Looper.getMainLooper()).idle()
+            vm.chapterCards.value.isEmpty() && vm.uiState.value.chapters.isEmpty()
         }
     }
 
