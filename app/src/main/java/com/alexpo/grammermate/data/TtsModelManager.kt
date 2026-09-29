@@ -3,8 +3,10 @@ package com.alexpo.grammermate.data
 import android.content.Context
 import android.os.StatFs
 import android.util.Log
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.isActive
@@ -141,8 +143,7 @@ class TtsModelManager(private val context: Context) {
                         while (true) {
                             if (!currentCoroutineContext().isActive) {
                                 currentConnection.disconnect()
-                                emit(DownloadState.Error("Download cancelled"))
-                                return@flow
+                                throw CancellationException("TTS download cancelled")
                             }
                             val read = input.read(buffer)
                             if (read == -1) break
@@ -160,6 +161,9 @@ class TtsModelManager(private val context: Context) {
 
                 lastException = null
                 break
+            } catch (cancelled: CancellationException) {
+                archive.delete()
+                throw cancelled
             } catch (e: Exception) {
                 Log.e(TAG, "Download attempt $attempt failed", e)
                 lastException = e
@@ -177,7 +181,12 @@ class TtsModelManager(private val context: Context) {
         try {
             emit(DownloadState.Extracting(0))
             extractTarBz2(archive, dir, this@flow, spec.archivePrefix)
+            currentCoroutineContext().ensureActive()
             emit(DownloadState.Extracting(100))
+        } catch (cancelled: CancellationException) {
+            dir.deleteRecursively()
+            archive.delete()
+            throw cancelled
         } catch (e: Exception) {
             Log.e(TAG, "Extraction failed", e)
             dir.deleteRecursively()
@@ -224,7 +233,7 @@ class TtsModelManager(private val context: Context) {
                     TarArchiveInputStream(bzIn).use { tarIn ->
                         var entry = tarIn.nextTarEntry
                         while (entry != null) {
-                            if (!currentCoroutineContext().isActive) return
+                            currentCoroutineContext().ensureActive()
                             val entryName = entry.name
                             val relativePath = entryName.removePrefix(archivePrefix)
                             if (relativePath.isEmpty()) {
@@ -243,7 +252,10 @@ class TtsModelManager(private val context: Context) {
                                 FileOutputStream(outputFile).use { out ->
                                     val buffer = ByteArray(8192)
                                     var len: Int
-                                    while (tarIn.read(buffer).also { len = it } != -1) {
+                                    while (true) {
+                                        currentCoroutineContext().ensureActive()
+                                        len = tarIn.read(buffer)
+                                        if (len == -1) break
                                         out.write(buffer, 0, len)
                                         bytesRead += len
                                     }

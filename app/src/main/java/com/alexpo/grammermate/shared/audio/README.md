@@ -7,7 +7,7 @@ with core state in TrainingViewModel to produce the final TrainingUiState.
 
 ## API Surface
 
-- **AudioCoordinator** — Single class owning all audio infrastructure.
+- **AudioCoordinator** — Public audio facade and the only owner of `StateFlow<AudioState>`.
   Constructor takes `TrainingStateAccess`, `Application`, `CoroutineScope`, `AppConfigStore`.
   Key methods:
   - Sound effects: `playSuccessSound()`, `playErrorSound()`
@@ -19,6 +19,9 @@ with core state in TrainingViewModel to produce the final TrainingUiState.
   - Config: `setVoiceAutoStart(enabled)` (persists to AppConfigStore)
   - Lifecycle: `startTtsStateCollection()`, `release()`
   - Metered network: `confirmTtsDownloadOnMetered()`, `dismissMeteredWarning()`
+- **TtsModelDownloadController** — Owns TTS transfer jobs, metered request identity,
+  readiness probes, and foreground/background scheduling. It publishes updates through
+  the coordinator; it does not own another audio state flow.
 
 ## State owned
 - `StateFlow<AudioState>` — the single source of truth for all audio state
@@ -33,8 +36,8 @@ with core state in TrainingViewModel to produce the final TrainingUiState.
 
 ## Edit scope warnings
 - AudioCoordinator owns its StateFlow -- do not duplicate audio fields in core TrainingUiState
-- Download jobs (ttsDownloadJob, asrDownloadJob, bgDownloadJob) are tracked for deduplication;
-  adding new download flows must follow the same pattern
+- TTS download jobs live in `TtsModelDownloadController`; all TTS model-file writers must
+  pass through its foreground/background scheduler. ASR jobs remain in `AudioCoordinator`.
 - TTS engine auto-recovery from ERROR/IDLE state is wired into download completion callbacks
 - release() must be called on ViewModel onCleared to free SoundPool, TTS, and ASR resources
 - SoundPool load is async (onLoadCompleteListener) -- sounds may not play on first frame
