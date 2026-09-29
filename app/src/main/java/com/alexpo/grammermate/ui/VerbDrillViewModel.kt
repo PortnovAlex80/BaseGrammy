@@ -464,24 +464,15 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
     }
 
     private fun updateProgressDisplay() {
-        val state = _uiState.value
-        val comboKey = "${state.selectedGroup ?: ""}|${state.selectedTense ?: ""}|${state.selectedPerson ?: ""}"
-
-        val filtered = allCards.filter { card ->
-            (state.selectedTense == null || card.tense == state.selectedTense) &&
-            (state.selectedGroup == null || card.group == state.selectedGroup) &&
-            (state.selectedPerson == null || card.person == state.selectedPerson)
-        }
-
-        val progress = progressMap[comboKey]
-        val everShownCount = progress?.everShownCardIds?.size ?: 0
-        val todayShownCount = progress?.todayShownCardIds?.size ?: 0
+        val summary = VerbDrillDeckPlanner.progressSummary(
+            allCards, progressMap, VerbDrillDeckPlanner.Selection(_uiState.value)
+        )
 
         _uiState.update {
             it.copy(
-                totalCards = filtered.size,
-                everShownCount = everShownCount,
-                todayShownCount = todayShownCount
+                totalCards = summary.totalCards,
+                everShownCount = summary.everShownCount,
+                todayShownCount = summary.todayShownCount
             )
         }
     }
@@ -491,41 +482,21 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
         ignoreTodayShown: Boolean = false
     ) {
         val state = _uiState.value
-        val comboKey = "${state.selectedGroup ?: ""}|${state.selectedTense ?: ""}|${state.selectedPerson ?: ""}"
-
-        val filtered = allCards.filter { card ->
-            (state.selectedTense == null || card.tense == state.selectedTense) &&
-            (state.selectedGroup == null || card.group == state.selectedGroup) &&
-            (state.selectedPerson == null || card.person == state.selectedPerson)
-        }
-
-        if (filtered.isEmpty()) {
+        val batch = VerbDrillDeckPlanner.planBatch(
+            cards = allCards,
+            progressMap = progressMap,
+            selection = VerbDrillDeckPlanner.Selection(state),
+            additionalShownCardIds = additionalShownCardIds,
+            ignoreTodayShown = ignoreTodayShown,
+            sortByFrequency = state.sortByFrequency,
+            sessionSize = sessionSize
+        )
+        if (batch.cards.isEmpty()) {
             _uiState.update { it.copy(session = null, allDoneToday = true) }
             return
         }
 
-        val progress = progressMap[comboKey]
-        val progressTodayShownCardIds = if (ignoreTodayShown) {
-            emptySet()
-        } else {
-            progress?.todayShownCardIds ?: emptySet()
-        }
-
-        // Merge todayShownCardIds from progress and additional shown cards (from last session)
-        val allShownCardIds = progressTodayShownCardIds + additionalShownCardIds
-
-        val remaining = filtered.filter { it.id !in allShownCardIds }
-
-        if (remaining.isEmpty()) {
-            _uiState.update { it.copy(session = null, allDoneToday = true) }
-            return
-        }
-
-        val selected = if (state.sortByFrequency) {
-            remaining.sortedBy { it.rank ?: Int.MAX_VALUE }.take(sessionSize)
-        } else {
-            remaining.shuffled().take(sessionSize)
-        }
+        val selected = batch.cards
 
         val session = VerbDrillSessionState(cards = selected)
         val firstCard = selected.firstOrNull()
@@ -545,13 +516,13 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
             selectedGroup = state.selectedGroup,
             selectedPerson = state.selectedPerson,
             sortByFrequency = state.sortByFrequency,
-            todayShownCardIds = allShownCardIds,
+            todayShownCardIds = batch.excludedCardIds,
             sessionCardIds = selected.map { it.id },
             currentIndex = 0,
             packId = currentPackId
         )
         verbDrillStore.saveLastSession(lastSessionState)
-        Log.d(logTag, "startSession: saved lastSession with ${allShownCardIds.size} shown cards and ${selected.size} session cards")
+        Log.d(logTag, "startSession: saved lastSession with ${batch.excludedCardIds.size} shown cards and ${selected.size} session cards")
 
         // Reset speed tracking for new session
         totalAnswerTimeMs = 0L
@@ -645,15 +616,12 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
      */
     private fun persistCardProgress(card: VerbDrillCard) {
         val uiState = _uiState.value
-        val comboKey = "${uiState.selectedGroup ?: ""}|${uiState.selectedTense ?: ""}|${uiState.selectedPerson ?: ""}"
+        val selection = VerbDrillDeckPlanner.Selection(uiState)
+        val comboKey = selection.comboKey
         val existing = progressMap[comboKey]
         val everShown = (existing?.everShownCardIds ?: emptySet()) + card.id
         val todayShown = (existing?.todayShownCardIds ?: emptySet()) + card.id
-        val totalCards = allCards.count { c ->
-            (uiState.selectedTense == null || c.tense == uiState.selectedTense) &&
-            (uiState.selectedGroup == null || c.group == uiState.selectedGroup) &&
-            (uiState.selectedPerson == null || c.person == uiState.selectedPerson)
-        }
+        val totalCards = VerbDrillDeckPlanner.filteredCards(allCards, selection).size
 
         val updatedProgress = VerbDrillComboProgress(
             group = uiState.selectedGroup ?: "",
@@ -746,7 +714,7 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
      */
     fun saveLastSessionState(session: VerbDrillSessionState) {
         val state = _uiState.value
-        val comboKey = "${state.selectedGroup ?: ""}|${state.selectedTense ?: ""}|${state.selectedPerson ?: ""}"
+        val comboKey = VerbDrillDeckPlanner.Selection(state).comboKey
         val progress = progressMap[comboKey]
         val todayShownCardIds = progress?.todayShownCardIds ?: emptySet()
 
