@@ -68,9 +68,7 @@ class VerbDrillSessionCardRegressionTest {
         repeat(4) { answerCurrentCardCorrectly(harness.trainingVm) }
         val backupMetadata = File(application.filesDir, "grammarmate/backups/backup_latest/metadata.txt")
         backupMetadata.delete()
-        val finalCard = requireNotNull(harness.trainingVm.uiState.value.cardSession.currentCard)
-        harness.trainingVm.training.onInputChanged(finalCard.acceptedAnswers.first())
-        assertTrue(harness.trainingVm.submitAnswer().accepted)
+        answerCurrentCardCorrectly(harness.trainingVm)
 
         assertEquals(SessionState.PAUSED, harness.trainingVm.uiState.value.cardSession.sessionState)
         composeRule.waitUntil(timeoutMillis = 5_000) { backupMetadata.exists() }
@@ -165,6 +163,53 @@ class VerbDrillSessionCardRegressionTest {
         assertEquals(
             "Frequency Continue should exclude only checked cards and keep ranked order",
             listOf("test_verb_3", "test_verb_4", "test_verb_5", "test_verb_6", "test_verb_7"),
+            verbSessionIds(harness.verbVm)
+        )
+    }
+
+    @Test
+    fun continue_excludes_hint_and_wrong_then_next_but_keeps_navigation_only_card() {
+        val harness = renderPreparedHarness()
+        enableSortByFrequencyThroughUi(harness.verbVm)
+        startVerbSessionThroughUi(harness)
+        val batch = verbSessionIds(harness.verbVm)
+        assertEquals(listOf("test_verb_1", "test_verb_2", "test_verb_3", "test_verb_4", "test_verb_5"), batch)
+
+        // Showing an answer and then choosing Next explicitly completes card 1.
+        composeRule.onNodeWithTag("show_answer_button").performScrollTo().performClick()
+        composeRule.waitForIdle()
+        assertNotNull(harness.trainingVm.uiState.value.cardSession.answerText)
+        composeRule.onNodeWithTag("next_button").performClick()
+        composeRule.waitForIdle()
+        assertEquals(batch[1], currentTrainingCardId(harness.trainingVm))
+        assertEquals(setOf(batch[0]), store.loadLastSession()!!.todayShownCardIds)
+
+        // A wrong Check followed by Next is an explicit skip, not mere browsing.
+        composeRule.onNodeWithTag("pause_button").performClick()
+        composeRule.waitForIdle()
+        composeRule.onNodeWithTag("input_field").performTextInput("definitely wrong")
+        composeRule.onNodeWithTag("check_button").performScrollTo().performClick()
+        composeRule.waitForIdle()
+        assertEquals(false, harness.trainingVm.uiState.value.cardSession.lastResult)
+        composeRule.onNodeWithTag("next_button").performClick()
+        composeRule.waitForIdle()
+        assertEquals(batch[2], currentTrainingCardId(harness.trainingVm))
+        assertEquals(setOf(batch[0], batch[1]), store.loadLastSession()!!.todayShownCardIds)
+        assertEquals(2, harness.verbVm.uiState.value.session!!.incorrectCount)
+
+        // Browsing past card 3 without Check or hint must leave it eligible.
+        composeRule.onNodeWithTag("next_button").performClick()
+        composeRule.waitForIdle()
+        assertEquals(setOf(batch[0], batch[1]), store.loadLastSession()!!.todayShownCardIds)
+
+        exitTrainingThroughUi()
+        composeRule.onNodeWithTag("session_card").assertIsDisplayed()
+        composeRule.onNodeWithTag("continue_button").performClick()
+        waitForTrainingRoute(harness)
+
+        assertEquals(
+            "Continue excludes completed cards while retaining navigation-only visits",
+            listOf(batch[2], batch[3], batch[4], "test_verb_6", "test_verb_7"),
             verbSessionIds(harness.verbVm)
         )
     }
