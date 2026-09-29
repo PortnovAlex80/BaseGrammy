@@ -80,7 +80,7 @@ class ProgressTracker(
         }
 
         Log.d(logTag, "Recording card show: lessonId=${lessonId.value}, cardId=${card.id}, mode=$inputMode")
-        val packId = stateAccess.uiState.value.navigation.activePackId?.value
+        val packId = stateAccess.currentState.navigation.activePackId?.value
             ?: return  // Pack-scoped mastery only; no pack = no-op
         masteryStore.recordCardShowForPack(packId, lessonId.value, card.id)
         val mastery = masteryStore.getForPack(packId, lessonId.value)

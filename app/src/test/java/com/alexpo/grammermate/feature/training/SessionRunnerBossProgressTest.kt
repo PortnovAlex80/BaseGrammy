@@ -136,7 +136,7 @@ class SessionRunnerBossProgressTest {
         // advance here; the last-card path is covered by existing boss tests.
         assertTrue(
             "currentIndex advanced to 1 after first correct mid-card answer",
-            stateAccess.uiState.value.cardSession.currentIndex == 1
+            stateAccess.currentState.cardSession.currentIndex == 1
         )
     }
 }

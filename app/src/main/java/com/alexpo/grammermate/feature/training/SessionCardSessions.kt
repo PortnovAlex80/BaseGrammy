@@ -30,7 +30,7 @@ internal class SessionCardSessions(
         stateMachine.reset()
         deck.replace(cards)
         val firstCard = cards.firstOrNull()
-        if (stateAccess.uiState.value.cardSession.inputMode == InputMode.VOICE) {
+        if (stateAccess.currentState.cardSession.inputMode == InputMode.VOICE) {
             stateMachine.triggerVoice()
         }
         updateStateAndClearInput {
@@ -58,7 +58,7 @@ internal class SessionCardSessions(
         deck.replace(cards)
         val firstCard = cards.firstOrNull()
         audit?.reviewStart(
-            stateAccess.uiState.value.navigation.selectedLessonId?.value ?: "",
+            stateAccess.currentState.navigation.selectedLessonId?.value ?: "",
             hintLevel.name
         )
         if (ReviewSessionTransitions.defaultInputMode(hintLevel) == InputMode.VOICE) {
@@ -80,7 +80,7 @@ internal class SessionCardSessions(
         stateMachine.reset()
         deck.replace(cards)
         val firstCard = cards.firstOrNull()
-        if (stateAccess.uiState.value.cardSession.inputMode == InputMode.VOICE) {
+        if (stateAccess.currentState.cardSession.inputMode == InputMode.VOICE) {
             stateMachine.triggerVoice()
         }
         updateStateAndClearInput {
@@ -96,7 +96,7 @@ internal class SessionCardSessions(
 
     /** Advance after a correct non-final linear answer without lesson-level effects. */
     fun advanceLinearCard() {
-        val state = stateAccess.uiState.value
+        val state = stateAccess.currentState
         val nextIndex = state.cardSession.currentIndex + 1
         val nextCard = deck.cards.getOrNull(nextIndex)
         stateMachine.reset()

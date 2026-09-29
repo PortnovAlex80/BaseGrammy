@@ -3,10 +3,14 @@ package com.alexpo.grammermate.ui
 import com.alexpo.grammermate.data.MasteryStore
 import com.alexpo.grammermate.feature.progress.ProgressTracker
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
+import java.util.concurrent.ConcurrentHashMap
 
 /** Serializes progress and mastery writes and owns the pending-backup request. */
 internal class TrainingProgressWriter(
@@ -19,6 +23,7 @@ internal class TrainingProgressWriter(
 ) {
     // One lane keeps a timer checkpoint from overwriting a newer direct save.
     private val writeLane = Dispatchers.IO.limitedParallelism(1)
+    private val pendingTimerWrites = ConcurrentHashMap.newKeySet<Job>()
     @Volatile private var forceBackupOnSave = false
 
     fun requestBackup() {
@@ -29,6 +34,11 @@ internal class TrainingProgressWriter(
 
     /** Capture before scheduling I/O, while the caller's state is current. */
     fun saveFromTimer(): Unit = dispatch(async = true)
+
+    /** Stop an older timer checkpoint from overwriting newly restored files. */
+    fun drainTimerWrites() {
+        runBlocking { pendingTimerWrites.toList().joinAll() }
+    }
 
     private fun dispatch(async: Boolean) {
         val state = snapshots.capture()
@@ -46,7 +56,11 @@ internal class TrainingProgressWriter(
                 createBackup()
             }
         }
-        if (async) scope.launch(writeLane) { write() }
-        else runBlocking { withContext(writeLane) { write() } }
+        if (async) {
+            val job = scope.launch(writeLane, start = CoroutineStart.LAZY) { write() }
+            pendingTimerWrites.add(job)
+            job.invokeOnCompletion { pendingTimerWrites.remove(job) }
+            job.start()
+        } else runBlocking { withContext(writeLane) { write() } }
     }
 }

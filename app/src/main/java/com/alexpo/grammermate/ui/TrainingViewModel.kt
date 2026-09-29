@@ -90,21 +90,6 @@ import com.alexpo.grammermate.data.PackLessonProgressStore
 import com.alexpo.grammermate.data.Chapter
 import com.alexpo.grammermate.data.ChapterCardUi
 
-/**
- * Re-import every bundled pack from assets on each app start, ignoring pack versions.
- *
- * Keep this OFF. [LessonStore.updateDefaultPacksIfNeeded] already reinstalls a bundled
- * pack whenever its `packVersion` in the asset differs from the installed one, which is
- * the supported way to ship new lesson content.
- *
- * Forcing the reload costs a full remove + re-import of all bundled packs on every
- * launch: measured at 162 s / 1072 full rewrites of `it_index.yaml` with the Italian
- * packs installed (Express 63 + Full Course 63 + Imperial 439 lessons).
- *
- * Flip to `true` only for local content work where bumping `packVersion` on every lesson
- * edit is impractical — and flip it back before committing.
- */
-private const val FORCE_RELOAD_DEFAULT_PACKS_ON_START = false
 
 class TrainingViewModel(application: Application) : AndroidViewModel(application) {
     private val logTag = "GrammarMate"
@@ -126,6 +111,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     private val backupManager = container.backupManager
     private val profileStore = container.profileStore
     private val _coreState = MutableStateFlow(TrainingUiState(isLoading = true))
+    @Volatile private var runtimeOwnersReady = false
 
     // ── One-shot navigation events (Phase 2, item 2.2) ────────────────────
     // Consumed by a single LaunchedEffect collector in GrammarMateApp. The
@@ -180,8 +166,22 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     val pomodoroRemainingSeconds: StateFlow<Int> = _pomodoroRemainingSeconds.asStateFlow()
 
     // ── Shared stateAccess — single instance for all helpers ──────────────
-    private val stateAccess = object : TrainingStateAccess {
-        override val uiState: StateFlow<TrainingUiState> get() = this@TrainingViewModel.uiState
+    private val stateAccess: TrainingStateAccess = object : TrainingStateAccess {
+        override val currentState: TrainingUiState
+            get() {
+                val core = _coreState.value
+                // Owners are initialized after this bridge. A constructor-time
+                // read sees the core; command-time reads see every owner now.
+                if (!runtimeOwnersReady) return core
+                return core.copy(
+                    audio = audioCoordinator.audioState.value,
+                    story = storyRunner.stateFlow.value,
+                    vocabSprint = vocabSprintRunner.vocabState.value,
+                    daily = dailyPracticeCoordinator.dailyState.value,
+                    flowerDisplay = flowerRefresher.stateFlow.value,
+                    boss = bossOrchestrator.stateFlow.value
+                )
+            }
         override fun updateState(transform: (TrainingUiState) -> TrainingUiState) {
             _coreState.update(transform)
             AuditLogger.getInstanceOrNull()?.updateContext(_coreState.value)
@@ -192,6 +192,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     // ── Pack tile data for home screen ────────────────────────────────────
 
     private val packTileSource = PackTileSource(lessonStore, masteryStore)
+    private val contextResolver = TrainingContextResolver(lessonStore)
 
     fun getPackTiles(): List<PackTileUi> = packTileSource.getTiles(_coreState.value.navigation)
 
@@ -658,6 +659,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     }
 
     init {
+        runtimeOwnersReady = true
         AuditLogger.getInstanceOrNull()?.startWriter(viewModelScope)
         Log.d(logTag, "Update: duolingo sfx, prompt in speech UI, voice loop rules, stop resets progress")
 
@@ -756,68 +758,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 audioCoordinator.startTtsStateCollection()
             }
 
-            // Bundled packs are reinstalled by updateDefaultPacksIfNeeded() above, which is
-            // gated on packVersion. The unconditional force reload that used to run here cost
-            // a full remove + re-import of every bundled pack on each launch; it is now behind
-            // FORCE_RELOAD_DEFAULT_PACKS_ON_START (off by default — see the flag's docs).
-            // NOTE: We read _coreState.value INSIDE the update lambda to avoid a TOCTOU race
-            // where the user changes language/lesson on the main thread while we captured
-            // stale values on the IO thread.
-            val reloaded = FORCE_RELOAD_DEFAULT_PACKS_ON_START && lessonStore.forceReloadDefaultPacks()
-            if (reloaded) {
-                val reloadLanguages = lessonStore.getLanguagesWithPacks()
-                val reloadPacks = lessonStore.getInstalledPacks()
-                withContext(Dispatchers.Main) {
-                    _coreState.update { current ->
-                        val currentLang = current.navigation.selectedLanguageId
-                        val selectedLang = if (currentLang != null) {
-                            reloadLanguages.firstOrNull { it.id == currentLang }?.id
-                                ?: reloadLanguages.firstOrNull()?.id
-                        } else {
-                            null // Preserve zero state: no language selected yet
-                        }
-                        // Resolve packId BEFORE loading lessons so we can use pack-scoped getLessons.
-                        val reloadedPackIds = reloadPacks.map { it.packId }.toSet()
-                        val preResolvedPackId = if (current.navigation.activePackId != null && current.navigation.activePackId in reloadedPackIds) {
-                            current.navigation.activePackId
-                        } else {
-                            null // will be re-derived from selectedLessonId below
-                        }
-                        val reloadLessons = selectedLang?.let { lang ->
-                            preResolvedPackId?.let { pid -> lessonStore.getLessons(pid.value, lang.value) }
-                                ?: emptyList()
-                        } ?: emptyList()
-                        val currentLessonId = current.navigation.selectedLessonId
-                        val selectedLessonId = reloadLessons.firstOrNull { it.id == currentLessonId }?.id
-                            ?: reloadLessons.firstOrNull()?.id
-                        val updatedPackId = preResolvedPackId
-                            ?: selectedLessonId?.let { com.alexpo.grammermate.data.PackId(lessonStore.getPackIdForLesson(it.value) ?: return@let null) }
-                                ?: reloadPacks.firstOrNull { it.languageId == selectedLang }?.packId
-                        val updatedPackLessonIds = updatedPackId?.let { lessonStore.getLessonIdsForPack(it.value) }
-                        current.copy(navigation = current.navigation.copy(languages = reloadLanguages, installedPacks = reloadPacks, selectedLanguageId = selectedLang, activePackId = updatedPackId, activePackLessonIds = updatedPackLessonIds, lessons = reloadLessons, selectedLessonId = selectedLessonId), elite = current.elite.copy(eliteUnlocked = sessionRunner.resolveEliteUnlocked(reloadLessons, current.cardSession.testMode)))
-                    }
-                    refreshDrillVisibility()
-                    rebindWordMasteryStore(_coreState.value.navigation.activePackId?.value)
-                    rebindVocabProgressStore(_coreState.value.navigation.activePackId?.value)
-                    vocabSprintRunner.updateMasteredCount(wordMasteryStore.getMasteredCount())
-                    dailyPracticeCoordinator.resetState()
-                    dailyPracticeCoordinator.initializeCursor()
-                    val updatedLessons = _coreState.value.navigation.let { nav ->
-                        val langId = nav.selectedLanguageId
-                        val packId = nav.activePackId
-                        if (packId != null && langId != null) lessonStore.getLessons(packId.value, langId.value)
-                        else emptyList()
-                    }
-                    rebuildSchedules(filterLessonsForActivePack(updatedLessons))
-                    buildSessionCards()
-                    refreshFlowerStates()
-                    loadChapters()
-                    refreshProfileStats()
-                    refreshPomodoroHistory()
-                }
-            }
-
-            // Pre-build daily practice session AFTER forceReload completes.
+            // Pre-build daily practice after the validated startup context is published.
             // Uses progress-based lesson, NOT selectedLessonId, so that browsing
             // locked lessons does not affect the daily practice session.
             val state = _coreState.value
@@ -865,17 +806,30 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
+    private fun syncAudioLanguage(languageId: String) {
+        audioCoordinator.ttsModelManager.currentLanguageId = languageId
+        audioCoordinator.checkTtsModel()
+        // Native ASR rejects a language change before its engine is ready.
+        if (audioCoordinator.asrEngine?.isReady == true) {
+            audioCoordinator.asrEngine.setLanguage(languageId)
+        }
+    }
+
     fun selectLanguage(languageId: String) {
+        val target = contextResolver.forLanguage(LanguageId(languageId))
         sessionRunner.pauseTimer()
         vocabSession = emptyList()
         sessionRunner.clearAllCards()
-        val lessons = emptyList<com.alexpo.grammermate.data.Lesson>()
+        val lessons = target.lessons
         // No pack selected yet — user must pick a pack before lessons load.
         // Previously auto-selected first pack — caused pack confusion.
         rebindWordMasteryStore(null)
         rebindVocabProgressStore(null)
         _coreState.update {
-            it.resetAllSessionState().copy(navigation = it.navigation.copy(selectedLanguageId = com.alexpo.grammermate.data.LanguageId(languageId), lessons = lessons, selectedLessonId = null, activePackId = null, activePackLessonIds = emptyList()), elite = it.elite.copy(eliteUnlocked = sessionRunner.resolveEliteUnlocked(lessons, it.cardSession.testMode)))
+            it.resetAllSessionState().copy(
+                navigation = target.navigationFrom(it.navigation),
+                elite = it.elite.copy(eliteUnlocked = sessionRunner.resolveEliteUnlocked(lessons, it.cardSession.testMode))
+            )
         }
         // Load streak for the new language (resetAllSessionState zeroes streak data)
         val streakData = streakStore.getCurrentStreak(languageId)
@@ -902,34 +856,19 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         refreshProfileStats()
         refreshPomodoroHistory()
         saveProgress()
-        audioCoordinator.ttsModelManager.currentLanguageId = languageId
-        audioCoordinator.checkTtsModel()
-        // Only switch ASR language if engine is already initialized and ready.
-        // Calling setLanguage() when ASR is not ready crashes the native layer.
-        if (audioCoordinator.asrEngine?.isReady == true) {
-            audioCoordinator.asrEngine.setLanguage(languageId)
-        }
+        syncAudioLanguage(languageId)
     }
 
     fun selectLesson(lessonId: String, packId: String? = null) {
+        val target = contextResolver.forLesson(lessonId, packId, _coreState.value.navigation) ?: return
         sessionRunner.pauseTimer()
         vocabSession = emptyList()
         sessionRunner.clearAllCards()
 
-        // Use provided packId, or resolve from lesson if not specified
-        val resolvedPackId = packId ?: lessonStore.getPackIdForLesson(lessonId)
-        val packLessonIds = resolvedPackId?.let { lessonStore.getLessonIdsForPack(it) }
+        val resolvedPackId = target.packId?.value
         rebindWordMasteryStore(resolvedPackId)
         rebindVocabProgressStore(resolvedPackId)
-
-        // Use the requested pack's IDs; the previous navigation snapshot may
-        // still belong to another pack while this selection is in progress.
-        val navigationLessons = _coreState.value.navigation.lessons
-        val scheduleLessons = resolvedPackId?.let {
-            PackSelectionPlan(com.alexpo.grammermate.data.PackId(it), navigationLessons, packLessonIds.orEmpty())
-                .scheduleLessons()
-        } ?: navigationLessons
-        rebuildSchedules(scheduleLessons)
+        rebuildSchedules(target.scheduleLessons())
 
         // Calculate active sub-lesson index based on completed count
         val typedLessonId = com.alexpo.grammermate.data.LessonId(lessonId)
@@ -941,7 +880,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             subLessons = subLessons,
             mastery = mastery,
             lessonId = typedLessonId,
-            lessons = _coreState.value.navigation.lessons,
+            lessons = target.lessons,
             hiddenCardIds = hiddenIds
         )
         // If lesson is mastery-completed (completedAtMs set), clamp completedCount to total
@@ -957,12 +896,21 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         val nextActiveIndex = effectiveCompletedCount.coerceAtMost((subLessons.size - 1).coerceAtLeast(0))
 
         _coreState.update {
-            it.resetSessionState().copy(navigation = it.navigation.copy(selectedLessonId = typedLessonId, activePackId = resolvedPackId?.let { pid -> com.alexpo.grammermate.data.PackId(pid) }, activePackLessonIds = packLessonIds, mode = TrainingMode.LESSON), cardSession = it.cardSession.copy(activeSubLessonIndex = nextActiveIndex, completedSubLessonCount = effectiveCompletedCount, currentCard = null, hintSessionOffset = Random.nextInt(0, 100)))
+            it.resetSessionState().copy(
+                navigation = target.navigationFrom(it.navigation).copy(mode = TrainingMode.LESSON),
+                cardSession = it.cardSession.copy(
+                    activeSubLessonIndex = nextActiveIndex,
+                    completedSubLessonCount = effectiveCompletedCount,
+                    currentCard = null,
+                    hintSessionOffset = Random.nextInt(0, 100)
+                )
+            )
         }
         // Reset feature-owned state for session change
         bossOrchestrator.resetState()
         storyRunner.resetState()
         vocabSprintRunner.resetState()
+        vocabSprintRunner.updateMasteredCount(wordMasteryStore.getMasteredCount())
         dailyPracticeCoordinator.resetState()
         dailyPracticeCoordinator.initializeCursor()
         refreshDrillVisibility()
@@ -1001,65 +949,48 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun selectPack(packId: String) {
+        val target = contextResolver.forPack(packId, _coreState.value.navigation.selectedLessonId) ?: return
+        val packLanguageId = target.languageId?.value ?: return
+        val previousLanguageId = _coreState.value.navigation.selectedLanguageId?.value
         // Cancel any active daily session before switching packs
         if (_coreState.value.daily.dailySession.active) {
             cancelDailySession()
         }
 
         // Sync language to match the pack's language (fixes voice input language)
-        val packLanguageId = lessonStore.getInstalledPacks()
-            .firstOrNull { it.packId.value == packId }?.languageId?.value
-        if (packLanguageId != null && packLanguageId != _coreState.value.navigation.selectedLanguageId?.value) {
-            // Update language-dependent audio before continuing
-            audioCoordinator.ttsModelManager.currentLanguageId = packLanguageId
-            audioCoordinator.checkTtsModel()
-            if (audioCoordinator.asrEngine?.isReady == true) {
-                audioCoordinator.asrEngine.setLanguage(packLanguageId)
-            }
-            _coreState.update {
-                it.copy(navigation = it.navigation.copy(selectedLanguageId = com.alexpo.grammermate.data.LanguageId(packLanguageId)))
-            }
+        if (packLanguageId != previousLanguageId) {
+            syncAudioLanguage(packLanguageId)
         }
 
         // Load pack-scoped lessons and update state
-        val packLessons = if (packLanguageId != null) {
-            lessonStore.getLessons(packId, packLanguageId)
-        } else {
-            emptyList()
-        }
-
         // Migration: recalculate lesson completions excluding hidden/bad cards
-        if (packLanguageId != null && packLessons.isNotEmpty()) {
+        if (target.lessons.isNotEmpty()) {
             val hiddenIds = hiddenCardStore.getHiddenCardIds()
             progressTracker.recalculateCompletionsExcludingHidden(
-                lessons = packLessons,
-                languageId = com.alexpo.grammermate.data.LanguageId(packLanguageId),
+                lessons = target.lessons,
+                languageId = requireNotNull(target.languageId),
                 hiddenCardIds = hiddenIds,
                 packId = packId
             )
         }
 
-        val packLessonIds = lessonStore.getLessonIdsForPack(packId)
-        // Publish the target lessons and IDs together: selectLesson rebuilds
-        // schedules before its own navigation update.
-        val selection = PackSelectionPlan(com.alexpo.grammermate.data.PackId(packId), packLessons, packLessonIds)
-        _coreState.update { it.copy(navigation = selection.navigationFrom(it.navigation)) }
-        if (packLessonIds.isNotEmpty()) {
-            val currentLessonId = _coreState.value.navigation.selectedLessonId
-            val lessonId = if (currentLessonId != null && currentLessonId.value in packLessonIds) currentLessonId.value else packLessonIds.first()
-            // Pass packId explicitly to avoid relying on getPackIdForLesson()
-            selectLesson(lessonId, packId)
+        // Publish one coherent language/pack/content snapshot before schedules rebuild.
+        _coreState.update { it.copy(navigation = target.navigationFrom(it.navigation)) }
+        if (target.selectedLessonId != null) {
+            selectLesson(target.selectedLessonId.value, packId)
         } else {
+            sessionRunner.pauseTimer()
+            sessionRunner.clearAllCards()
+            _coreState.update { it.resetSessionState() }
             // Drill-only pack — set activePackId without selecting a lesson
             rebindWordMasteryStore(packId)
             rebindVocabProgressStore(packId)
-            _coreState.update {
-                it.copy(navigation = it.navigation.copy(activePackId = com.alexpo.grammermate.data.PackId(packId), activePackLessonIds = emptyList(), selectedLessonId = null))
-            }
+            vocabSprintRunner.updateMasteredCount(wordMasteryStore.getMasteredCount())
             dailyPracticeCoordinator.resetState()
             dailyPracticeCoordinator.initializeCursor()
             refreshDrillVisibility()
             loadChapters()
+            refreshPackTiles()
             refreshBadSentenceCount()
             saveProgress()
         }
@@ -1081,12 +1012,14 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             cancelDailySession()
         }
 
+        sessionRunner.pauseTimer()
+        sessionRunner.clearAllCards()
+        rebindWordMasteryStore(null)
+        rebindVocabProgressStore(null)
+        vocabSprintRunner.updateMasteredCount(wordMasteryStore.getMasteredCount())
+        val target = contextResolver.withoutPack(_coreState.value.navigation)
         _coreState.update {
-            it.copy(navigation = it.navigation.copy(
-                activePackId = null,
-                activePackLessonIds = emptyList(),
-                selectedLessonId = null
-            ))
+            it.resetSessionState().copy(navigation = target.navigationFrom(it.navigation))
         }
         loadChapters()
         refreshPackTiles()
@@ -1338,23 +1271,43 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         vocabSession = emptyList()
         try {
             val pack = lessonStore.importPackFromUri(uri, getApplication<Application>().contentResolver)
-            val lessons = lessonStore.getLessons(pack.packId.value, pack.languageId.value)
-            val selectedLessonId = lessons.firstOrNull()?.id
+            val target = requireNotNull(contextResolver.forPack(pack.packId.value)) {
+                "Imported pack ${pack.packId.value} is unavailable"
+            }
+            sessionRunner.pauseTimer()
+            sessionRunner.clearAllCards()
+            rebindWordMasteryStore(target.packId?.value)
+            rebindVocabProgressStore(target.packId?.value)
             _coreState.update {
-                it.resetAllSessionState().copy(navigation = it.navigation.copy(languages = lessonStore.getLanguagesWithPacks(), installedPacks = lessonStore.getInstalledPacks(), selectedLanguageId = pack.languageId, lessons = lessons, selectedLessonId = selectedLessonId, mode = TrainingMode.LESSON), elite = it.elite.copy(eliteUnlocked = sessionRunner.resolveEliteUnlocked(lessons, it.cardSession.testMode)))
+                it.resetAllSessionState().copy(
+                    navigation = target.navigationFrom(it.navigation).copy(
+                        languages = lessonStore.getLanguagesWithPacks(),
+                        installedPacks = lessonStore.getInstalledPacks(),
+                        mode = TrainingMode.LESSON
+                    ),
+                    elite = it.elite.copy(
+                        eliteUnlocked = sessionRunner.resolveEliteUnlocked(target.lessons, it.cardSession.testMode)
+                    )
+                )
             }
             // Reset feature-owned state
             bossOrchestrator.resetStateKeepRewards()
             storyRunner.resetState()
             vocabSprintRunner.resetState()
             dailyPracticeCoordinator.resetState()
+            dailyPracticeCoordinator.initializeCursor()
             refreshDrillVisibility()
-            rebuildSchedules(filterLessonsForActivePack(lessons))
+            rebuildSchedules(target.scheduleLessons())
             buildSessionCards()
             loadChapters()
             refreshPackTiles()
+            refreshFlowerStates()
+            refreshProfileStats()
             refreshBadSentenceCount()
             saveProgress()
+            if (audioCoordinator.ttsModelManager.currentLanguageId != pack.languageId.value) {
+                syncAudioLanguage(pack.languageId.value)
+            }
         } catch (e: Exception) {
             Log.e(logTag, "Lesson pack import failed", e)
         }
@@ -1414,22 +1367,39 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
 
     fun addLanguage(name: String) {
         val language = lessonStore.addLanguage(name)
+        val target = contextResolver.forLanguage(language.id)
         vocabSession = emptyList()
-        val lessons = emptyList<com.alexpo.grammermate.data.Lesson>()
-        val selectedLessonId = lessons.firstOrNull()?.id
+        sessionRunner.pauseTimer()
+        sessionRunner.clearAllCards()
+        rebindWordMasteryStore(null)
+        rebindVocabProgressStore(null)
         _coreState.update {
-            it.resetAllSessionState().copy(navigation = it.navigation.copy(languages = lessonStore.getLanguagesWithPacks(), installedPacks = lessonStore.getInstalledPacks(), selectedLanguageId = language.id, lessons = lessons, selectedLessonId = selectedLessonId, mode = TrainingMode.LESSON), elite = it.elite.copy(eliteUnlocked = sessionRunner.resolveEliteUnlocked(lessons, it.cardSession.testMode)))
+            it.resetAllSessionState().copy(
+                navigation = target.navigationFrom(it.navigation).copy(
+                    languages = lessonStore.getLanguagesWithPacks(),
+                    installedPacks = lessonStore.getInstalledPacks(),
+                    mode = TrainingMode.LESSON
+                ),
+                elite = it.elite.copy(
+                    eliteUnlocked = sessionRunner.resolveEliteUnlocked(target.lessons, it.cardSession.testMode)
+                )
+            )
         }
         // Reset feature-owned state
         bossOrchestrator.resetStateKeepRewards()
         storyRunner.resetState()
         vocabSprintRunner.resetState()
         dailyPracticeCoordinator.resetState()
+        dailyPracticeCoordinator.initializeCursor()
         refreshDrillVisibility()
-        rebuildSchedules(filterLessonsForActivePack(lessons))
+        rebuildSchedules(target.scheduleLessons())
         buildSessionCards()
         loadChapters()
+        refreshPackTiles()
+        refreshProfileStats()
+        refreshPomodoroHistory()
         saveProgress()
+        syncAudioLanguage(language.id.value)
     }
 
     fun deleteAllLessons() {
@@ -1459,7 +1429,9 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         val pack = lessonStore.getInstalledPacks().firstOrNull { it.packId.value == packId } ?: return
         val languageId = pack.languageId
         lessonStore.removeInstalledPackData(packId)
-        if (_coreState.value.navigation.selectedLanguageId == languageId) {
+        if (_coreState.value.navigation.activePackId?.value == packId ||
+            _coreState.value.navigation.selectedLanguageId == languageId
+        ) {
             refreshLessons(null)
         }
         _coreState.update { it.copy(navigation = it.navigation.copy(installedPacks = lessonStore.getInstalledPacks())) }
@@ -1950,8 +1922,40 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
      * Restore user progress from backup folder.
      */
     fun restoreBackup(backupUri: android.net.Uri) {
+        val wasActive = _coreState.value.cardSession.sessionState == SessionState.ACTIVE
+        sessionRunner.pauseTimer()
+        progressWriter.drainTimerWrites()
         val results = progressRestorer.restoreBackup(backupUri)
+        if (results.isEmpty()) {
+            if (wasActive) sessionRunner.resumeTimer()
+            return
+        }
+        sessionRunner.clearTransientAfterRestore()
+
+        // BackupManager invalidates factory-owned stores. These two references
+        // live in this ViewModel and need the same file-replacement barrier.
+        packLessonProgressStore.invalidateCache()
+        packDailyCursorStore.invalidateCache()
+        val restored = progressStore.load()
+        val selectedLanguage = restored.languageId.takeIf { it.value.isNotEmpty() }
+            ?: LanguageId("en")
+        val target = restored.activePackId?.let { contextResolver.forPack(it.value, restored.lessonId?.let(::LessonId)) }
+            ?: contextResolver.forLanguage(selectedLanguage)
+        _coreState.update { it.copy(navigation = target.navigationFrom(it.navigation)) }
+        rebindWordMasteryStore(target.packId?.value)
+        rebindVocabProgressStore(target.packId?.value)
+        dailyPracticeCoordinator.resetState()
+        dailyPracticeCoordinator.initializeCursor()
         handleProgressResults(results)
+        refreshDrillVisibility()
+        loadChapters()
+        refreshPackTiles()
+        refreshBadSentenceCount()
+        refreshProfileStats()
+        refreshVocabMasteryCount()
+        if (_coreState.value.cardSession.sessionState == SessionState.ACTIVE) {
+            sessionRunner.resumeTimer()
+        }
     }
 
     fun reloadFromDisk() {
@@ -2263,21 +2267,23 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         sessionRunner.pauseTimer()
         vocabSession = emptyList()
         val nav = _coreState.value.navigation
-        val languageId = nav.selectedLanguageId
-        val packId = nav.activePackId
-        val lessons = if (languageId != null && packId != null) {
-            lessonStore.getLessons(packId.value, languageId.value)
-        } else emptyList()
-        val selected = selectedLessonId?.let { com.alexpo.grammermate.data.LessonId(it) } ?: lessons.firstOrNull()?.id
+        val target = nav.activePackId?.let {
+            contextResolver.forPack(it.value, selectedLessonId?.let(::LessonId))
+        } ?: contextResolver.withoutPack(nav)
         _coreState.update {
-            it.resetSessionState().copy(navigation = it.navigation.copy(lessons = lessons, selectedLessonId = selected), elite = it.elite.copy(eliteUnlocked = sessionRunner.resolveEliteUnlocked(lessons, it.cardSession.testMode)))
+            it.resetSessionState().copy(
+                navigation = target.navigationFrom(it.navigation),
+                elite = it.elite.copy(
+                    eliteUnlocked = sessionRunner.resolveEliteUnlocked(target.lessons, it.cardSession.testMode)
+                )
+            )
         }
         // Reset feature-owned state for session change
         bossOrchestrator.resetState()
         storyRunner.resetState()
         vocabSprintRunner.resetState()
         dailyPracticeCoordinator.resetState()
-        rebuildSchedules(filterLessonsForActivePack(lessons))
+        rebuildSchedules(target.scheduleLessons())
         buildSessionCards()
         loadChapters() // reload chapter progress from disk (cleared after reset)
         // Progress resets clear mastery on disk — derived data must follow
@@ -2420,7 +2426,12 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     private fun handleProgressResults(results: List<ProgressResult>) {
         for (result in results) {
             when (result) {
-                is ProgressResult.RebuildSchedules -> rebuildSchedules(filterLessonsForActivePack(result.lessons))
+                // Restore may resolve a saved pack to its manifest language after
+                // ProgressRestorer loaded the legacy language field. Build from
+                // the published context, which is also what the deck reads.
+                is ProgressResult.RebuildSchedules -> rebuildSchedules(
+                    filterLessonsForActivePack(_coreState.value.navigation.lessons)
+                )
                 is ProgressResult.BuildSessionCards -> buildSessionCards()
                 is ProgressResult.RefreshFlowerStates -> refreshFlowerStates()
                 is ProgressResult.NormalizeEliteSpeeds -> {

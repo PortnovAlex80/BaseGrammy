@@ -34,7 +34,7 @@ internal class SessionEliteController(
     fun eliteSubLessonSize(): Int = ceil(subLessonSize * sizeMultiplier).toInt()
 
     private fun buildCards(): List<SessionCard> {
-        val cards = stateAccess.uiState.value.navigation.lessons.flatMap { it.cards }
+        val cards = stateAccess.currentState.navigation.lessons.flatMap { it.cards }
         if (cards.isEmpty()) return emptyList()
         return cards.shuffled().take(eliteSubLessonSize())
     }
@@ -70,7 +70,7 @@ internal class SessionEliteController(
     }
 
     fun cancel(): List<SessionEvent> {
-        if (!stateAccess.uiState.value.elite.eliteActive) return emptyList()
+        if (!stateAccess.currentState.elite.eliteActive) return emptyList()
         activeTimer.pause()
         stateMachine.reset()
         updateStateAndClearInput {

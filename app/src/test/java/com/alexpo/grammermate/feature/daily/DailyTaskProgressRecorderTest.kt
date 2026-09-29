@@ -22,7 +22,6 @@ import com.alexpo.grammermate.shared.TrainingStateAccess
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
-import kotlinx.coroutines.flow.MutableStateFlow
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
@@ -39,8 +38,8 @@ class DailyTaskProgressRecorderTest {
         val first = SentenceCard("first", "one", listOf("uno"))
         val second = SentenceCard("second", "two", listOf("due"))
         val stateAccess = mockk<TrainingStateAccess>()
-        every { stateAccess.uiState } returns MutableStateFlow(
-            TrainingUiState(navigation = NavigationState(activePackId = PackId("pack-a")))
+        every { stateAccess.currentState } returns TrainingUiState(
+            navigation = NavigationState(activePackId = PackId("pack-a"))
         )
         val coordinator = DailyPracticeCoordinator(
             stateAccess, mockk<Application>(), mockk<AnswerValidator>(),

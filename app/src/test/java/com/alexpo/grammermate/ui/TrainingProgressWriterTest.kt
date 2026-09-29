@@ -20,7 +20,11 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 
 class TrainingProgressWriterTest {
     private val core = MutableStateFlow(TrainingUiState())
@@ -116,5 +120,35 @@ class TrainingProgressWriterTest {
         audio.value = AudioState(ttsSpeed = 1.8f)
 
         assertEquals(1.3f, withTimeout(5_000) { saved.await() }.audio.ttsSpeed)
+    }
+
+    @Test
+    fun restoreBarrierWaitsForAnAlreadyQueuedTimerCheckpoint() {
+        val tracker = mockk<ProgressTracker>()
+        val mastery = mockk<MasteryStore>(relaxed = true)
+        val entered = CountDownLatch(1)
+        val release = CountDownLatch(1)
+        val drained = CountDownLatch(1)
+        every { tracker.saveProgress(any(), any(), any()) } answers {
+            entered.countDown()
+            release.await(5, TimeUnit.SECONDS)
+            false
+        }
+        val writer = TrainingProgressWriter(
+            snapshots, tracker, mastery, normalizeEliteSpeeds = { it },
+            createBackup = {}, scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+        )
+
+        writer.saveFromTimer()
+        assertTrue(entered.await(5, TimeUnit.SECONDS))
+        val barrier = Thread { writer.drainTimerWrites(); drained.countDown() }
+        barrier.start()
+        try {
+            assertFalse(drained.await(100, TimeUnit.MILLISECONDS))
+        } finally {
+            release.countDown()
+        }
+        assertTrue(drained.await(5, TimeUnit.SECONDS))
+        barrier.join(5_000)
     }
 }

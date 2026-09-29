@@ -71,9 +71,8 @@ internal fun VocabDrillDestination(
     }
     val vocabExit = remember(vocabDrillVm) {
         {
-            if (vocabDrillVm.hasRatedCards) {
-                vm.refreshVocabMasteryCount()
-            }
+            vocabDrillVm.exitSession()
+            vm.refreshVocabMasteryCount()
             vm.refreshStreakFromStore()
             onNavigateResetStack(Routes.HOME)
         }

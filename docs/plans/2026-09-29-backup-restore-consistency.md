@@ -1,6 +1,6 @@
 # Backup restore consistency follow-up
 
-Date: 2026-09-29. Found while reviewing the `TrainingViewModel` startup split. This is a separate correctness defect, not completed by ADR-027.
+Date: 2026-09-29. Found while reviewing the `TrainingViewModel` startup split. Decision: [ADR-029](../architecture/decisions/029-restore-progress-as-a-snapshot.md).
 
 ## Reproducible risks
 
@@ -17,3 +17,9 @@ Date: 2026-09-29. Found while reviewing the `TrainingViewModel` startup split. T
 4. Define and test whether restore means full snapshot replacement or merge. Make the backup file list match that contract, including pack-scoped drill data.
 
 Until this is done, a successful file-copy result alone does not prove that the running app uses the restored progress.
+
+## Implementation status
+
+The data-layer repair is committed in `8f52a040f`: managed progress files are staged and restored as a replacement snapshot, legacy paths are mapped, mastery writes drain before replacement, and live factory-owned store caches are invalidated afterward. Real-store restore and existing mastery tests pass. `AppRoot` now waits for `RestoreNotifier.DONE` before constructing the ViewModel. The live ViewModel restore path pauses the timer, drains pending timer checkpoints, invalidates its separately held pack lesson/cursor caches, restores target pack selection and rebinds pack-scoped stores before rebuilding derived UI. A failed restore resumes an active timer.
+
+The final combined unit/build and device gates are still required; this status is implementation evidence, not a G5 pass.

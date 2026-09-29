@@ -17,6 +17,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -84,5 +85,29 @@ class SessionRunnerInputTest {
         assertEquals(InputMode.WORD_BANK, state.uiState.value.cardSession.inputMode)
         assertEquals(listOf("hello"), state.uiState.value.cardSession.wordBankWords)
         assertEquals("", input.value)
+    }
+
+    @Test
+    fun restoreDropsLiveAnswerWithoutDiscardingPersistedProgress() {
+        val (runner, state, input) = harness(HintLevel.EASY)
+        state.updateState {
+            it.copy(cardSession = it.cardSession.copy(
+                correctCount = 2,
+                activeTimeMs = 12_000L,
+                selectedWords = listOf("hello")
+            ))
+        }
+        runner.showAnswer()
+        runner.onInputChanged("old draft")
+
+        runner.clearTransientAfterRestore()
+
+        assertEquals(emptyList<com.alexpo.grammermate.data.SessionCard>(), runner.getSessionCards())
+        assertEquals("", input.value)
+        assertNull(state.uiState.value.cardSession.currentCard)
+        assertNull(state.uiState.value.cardSession.answerText)
+        assertEquals(emptyList<String>(), state.uiState.value.cardSession.selectedWords)
+        assertEquals(2, state.uiState.value.cardSession.correctCount)
+        assertEquals(12_000L, state.uiState.value.cardSession.activeTimeMs)
     }
 }

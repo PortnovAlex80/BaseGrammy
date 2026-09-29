@@ -21,7 +21,8 @@ import org.junit.Test
 class DailyStreakCompletionTest {
     private class StateAccess : TrainingStateAccess {
         private val state = MutableStateFlow(TrainingUiState())
-        override val uiState: StateFlow<TrainingUiState> = state
+        val uiState: StateFlow<TrainingUiState> = state
+        override val currentState: TrainingUiState get() = state.value
         override fun updateState(transform: (TrainingUiState) -> TrainingUiState) {
             state.value = transform(state.value)
         }

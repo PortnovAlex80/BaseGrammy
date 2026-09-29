@@ -23,8 +23,8 @@ class BadSentenceHelper(
     // ── Training-session bad sentences ─────────────────────────────────────
 
     fun flagBadSentence(): BadSentenceResult {
-        val card = stateAccess.uiState.value.cardSession.currentCard ?: return BadSentenceResult.None
-        val state = stateAccess.uiState.value
+        val card = stateAccess.currentState.cardSession.currentCard ?: return BadSentenceResult.None
+        val state = stateAccess.currentState
         val packId = state.navigation.activePackId ?: return BadSentenceResult.None
         badSentenceStore.addBadSentence(
             packId = packId.value,
@@ -41,8 +41,8 @@ class BadSentenceHelper(
     }
 
     fun unflagBadSentence() {
-        val card = stateAccess.uiState.value.cardSession.currentCard ?: return
-        val packId = stateAccess.uiState.value.navigation.activePackId ?: return
+        val card = stateAccess.currentState.cardSession.currentCard ?: return
+        val packId = stateAccess.currentState.navigation.activePackId ?: return
         badSentenceStore.removeBadSentence(packId.value, card.id)
         stateAccess.updateState {
             it.copy(cardSession = it.cardSession.copy(badSentenceCount = badSentenceStore.getBadSentenceCount(packId.value)))
@@ -50,13 +50,13 @@ class BadSentenceHelper(
     }
 
     fun isBadSentence(): Boolean {
-        val card = stateAccess.uiState.value.cardSession.currentCard ?: return false
-        val packId = stateAccess.uiState.value.navigation.activePackId ?: return false
+        val card = stateAccess.currentState.cardSession.currentCard ?: return false
+        val packId = stateAccess.currentState.navigation.activePackId ?: return false
         return badSentenceStore.isBadSentence(packId.value, card.id)
     }
 
     fun exportBadSentences(): String? {
-        val packId = stateAccess.uiState.value.navigation.activePackId ?: return null
+        val packId = stateAccess.currentState.navigation.activePackId ?: return null
         val entries = badSentenceStore.getBadSentences(packId.value)
         if (entries.isEmpty()) return null
         val file = badSentenceStore.exportUnified()
@@ -66,7 +66,7 @@ class BadSentenceHelper(
     // ── Daily Practice bad sentences ───────────────────────────────────────
 
     fun flagDailyBadSentence(cardId: String, languageId: String, sentence: String, translation: String, mode: String) {
-        val packId = stateAccess.uiState.value.navigation.activePackId ?: return
+        val packId = stateAccess.currentState.navigation.activePackId ?: return
         badSentenceStore.addBadSentence(
             packId = packId.value,
             cardId = cardId,
@@ -79,18 +79,18 @@ class BadSentenceHelper(
     }
 
     fun unflagDailyBadSentence(cardId: String) {
-        val packId = stateAccess.uiState.value.navigation.activePackId ?: return
+        val packId = stateAccess.currentState.navigation.activePackId ?: return
         badSentenceStore.removeBadSentence(packId.value, cardId)
         dailyBadCardIds.remove(cardId)
     }
 
     fun isDailyBadSentence(cardId: String): Boolean {
         return dailyBadCardIds.contains(cardId) ||
-            stateAccess.uiState.value.navigation.activePackId?.let { badSentenceStore.isBadSentence(it.value, cardId) } == true
+            stateAccess.currentState.navigation.activePackId?.let { badSentenceStore.isBadSentence(it.value, cardId) } == true
     }
 
     fun exportDailyBadSentences(): String? {
-        val packId = stateAccess.uiState.value.navigation.activePackId ?: return null
+        val packId = stateAccess.currentState.navigation.activePackId ?: return null
         val entries = badSentenceStore.getBadSentences(packId.value)
         if (entries.isEmpty()) return null
         val file = badSentenceStore.exportUnified()
@@ -100,18 +100,18 @@ class BadSentenceHelper(
     // ── Card hiding ────────────────────────────────────────────────────────
 
     fun hideCurrentCard(): BadSentenceResult {
-        val card = stateAccess.uiState.value.cardSession.currentCard ?: return BadSentenceResult.None
+        val card = stateAccess.currentState.cardSession.currentCard ?: return BadSentenceResult.None
         hiddenCardStore.hideCard(card.id)
         return BadSentenceResult.SkipToNextCard
     }
 
     fun unhideCurrentCard() {
-        val card = stateAccess.uiState.value.cardSession.currentCard ?: return
+        val card = stateAccess.currentState.cardSession.currentCard ?: return
         hiddenCardStore.unhideCard(card.id)
     }
 
     fun isCurrentCardHidden(): Boolean {
-        val card = stateAccess.uiState.value.cardSession.currentCard ?: return false
+        val card = stateAccess.currentState.cardSession.currentCard ?: return false
         return hiddenCardStore.isHidden(card.id)
     }
 
@@ -119,7 +119,7 @@ class BadSentenceHelper(
 
     /** Compute the bad-sentence count for the active pack. */
     fun getBadSentenceCount(): Int {
-        val packId = stateAccess.uiState.value.navigation.activePackId ?: return 0
+        val packId = stateAccess.currentState.navigation.activePackId ?: return 0
         return badSentenceStore.getBadSentenceCount(packId.value)
     }
 }

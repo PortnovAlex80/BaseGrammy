@@ -54,7 +54,7 @@ class BossOrchestrator(
     // ── Boss Battle Lifecycle ──────────────────────────────────────────
 
     private fun startBoss(type: BossType): List<BossCommand> {
-        val state = stateAccess.uiState.value
+        val state = stateAccess.currentState
         val lessons = state.navigation.lessons
         val selectedId = state.navigation.selectedLessonId
         val selectedIndex = lessons.indexOfFirst { it.id == selectedId }
@@ -130,7 +130,7 @@ class BossOrchestrator(
     }
 
     fun finishBoss(): List<BossCommand> {
-        val state = stateAccess.uiState.value
+        val state = stateAccess.currentState
         val bossState = _state.value
         val result = bossBattleRunner.finishBoss(
             bossType = bossState.bossType,
@@ -194,7 +194,7 @@ class BossOrchestrator(
 
     fun clearBossRewardMessage(): List<BossCommand> {
         // Snapshot all state atomically to prevent TOCTOU bugs
-        val state = stateAccess.uiState.value
+        val state = stateAccess.currentState
         val bossActive = _state.value.bossActive
         val sessionState = state.cardSession.sessionState
         val currentCard = state.cardSession.currentCard

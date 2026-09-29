@@ -92,7 +92,7 @@ class DailyPracticeCoordinator(
 
     /** Get the current active pack ID dynamically (not cached). */
     private fun getCurrentActivePackId(): String? {
-        return stateAccess.uiState.value.navigation.activePackId?.value
+        return stateAccess.currentState.navigation.activePackId?.value
     }
 
     // ── Drill store access (delegated to factory functions) ──────────────────
@@ -130,7 +130,7 @@ class DailyPracticeCoordinator(
 
     fun endSession() {
         val ds = _state.value.dailySession
-        val languageId = stateAccess.uiState.value.navigation.selectedLanguageId?.value ?: return
+        val languageId = stateAccess.currentState.navigation.selectedLanguageId?.value ?: return
         val blockTypes = ds.blocks.map { it.type }.toSet()
         val anyNewFire = streakCompletion.record(languageId, blockTypes)
         Log.d(logTag, "DailyPractice: endSession, blockTypes=$blockTypes, streakFires=$anyNewFire")
@@ -202,7 +202,7 @@ class DailyPracticeCoordinator(
         Log.d(logTag, "DailyPractice: getCurrentBlock active=${ds.active}, blockIndex=${ds.blockIndex}, type=${ds.currentBlock?.type}")
 
         // Validate that the session's packId matches the current active pack
-        val currentPackId = stateAccess.uiState.value.navigation.activePackId?.value
+        val currentPackId = stateAccess.currentState.navigation.activePackId?.value
         if (ds.packId.isNotEmpty() && currentPackId != null && ds.packId != currentPackId) {
             invalidateDailySession()
             throw SessionInvalidatedException("Pack changed from ${ds.packId} to $currentPackId")
@@ -239,7 +239,7 @@ class DailyPracticeCoordinator(
     fun hasResumableDailySession(): Boolean {
         val cursor = getCurrentPackCursor()
         val today = java.time.LocalDate.now().toString()
-        val state = stateAccess.uiState.value
+        val state = stateAccess.currentState
         val packId = state.navigation.activePackId?.value ?: return false
         val languageId = state.navigation.selectedLanguageId?.value ?: return false
         return DailySessionIdentityResolver.forStoredRepeat(
@@ -268,7 +268,7 @@ class DailyPracticeCoordinator(
         _state.update { it.copy(dailyCursor = cursor) }
         dailyPracticeAnsweredCounts = mutableMapOf()
 
-        val state = stateAccess.uiState.value
+        val state = stateAccess.currentState
         val packId = state.navigation.activePackId ?: return false
         val langId = state.navigation.selectedLanguageId ?: return false
 
@@ -325,7 +325,7 @@ class DailyPracticeCoordinator(
         resolveProgressLessonInfo: () -> Pair<String, Int>?
     ): Boolean {
         Log.d(logTag, "DailyPractice: repeatDailyPractice level=$lessonLevel")
-        val state = stateAccess.uiState.value
+        val state = stateAccess.currentState
         val packId = state.navigation.activePackId ?: return false
         val langId = state.navigation.selectedLanguageId ?: return false
 
@@ -422,13 +422,13 @@ class DailyPracticeCoordinator(
         dailyPracticeAnsweredCounts[blockType] = count + 1
 
         if (blockType == DailyBlockType.TRANSLATE && accepted && sentenceCard != null) {
-            val packId = stateAccess.uiState.value.navigation.activePackId?.value ?: return
+            val packId = stateAccess.currentState.navigation.activePackId?.value ?: return
             taskProgress.recordSentenceShow(packId, resolveCardLessonId(sentenceCard), sentenceCard.id)
         }
     }
 
     fun persistDailyVerbProgress(card: VerbDrillCard) {
-        val packId = stateAccess.uiState.value.navigation.activePackId?.value ?: return
+        val packId = stateAccess.currentState.navigation.activePackId?.value ?: return
         taskProgress.recordVerbShow(packId, card)
     }
 
@@ -496,7 +496,7 @@ class DailyPracticeCoordinator(
         val block = getCurrentBlock() ?: return
         val task = block.tasks.getOrNull(block.taskIndex) as? DailyTask.VocabFlashcard ?: return
         val wordId = task.word.id
-        val state = stateAccess.uiState.value
+        val state = stateAccess.currentState
         val packId = state.navigation.activePackId ?: return
         val newStepIndex = taskProgress.rateVocab(packId.value, wordId, rating)
         Log.d(logTag, "DailyPractice: rateVocabCard wordId=$wordId, rating=$rating, newStepIndex=$newStepIndex, taskIndex=${block.taskIndex}/${block.tasks.size}")

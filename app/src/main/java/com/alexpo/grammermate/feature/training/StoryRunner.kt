@@ -37,7 +37,7 @@ class StoryRunner(
      * Sets an error message if no story is found.
      */
     fun openStory(phase: StoryPhase): StoryResult {
-        val state = stateAccess.uiState.value
+        val state = stateAccess.currentState
         val lessonId = state.navigation.selectedLessonId ?: return StoryResult.None
         val languageId = state.navigation.selectedLanguageId ?: return StoryResult.None
         val story = lessonStore.getStoryQuizzes(lessonId.value, phase, languageId.value).firstOrNull()
@@ -60,7 +60,7 @@ class StoryRunner(
      * @param allCorrect whether the user answered all questions correctly
      */
     fun completeStory(phase: StoryPhase, allCorrect: Boolean): StoryResult {
-        val state = stateAccess.uiState.value
+        val state = stateAccess.currentState
         val shouldPersist = allCorrect || state.cardSession.testMode
         _state.update { current ->
             if (!allCorrect && !state.cardSession.testMode) {

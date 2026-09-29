@@ -22,7 +22,7 @@ internal class SessionNavigator(
     private val logTag = "SessionRunner"
     private val audit get() = AuditLogger.getInstanceOrNull()
     private val isLinearSession: Boolean
-        get() = LinearSessionTransitions.handles(stateAccess.uiState.value.cardSession.screenMode)
+        get() = LinearSessionTransitions.handles(stateAccess.currentState.cardSession.screenMode)
 
     private fun updateStateAndClearInput(transform: (TrainingUiState) -> TrainingUiState) {
         inputTextFlow.value = ""
@@ -30,7 +30,7 @@ internal class SessionNavigator(
     }
 
     fun nextCard(triggerVoice: Boolean = false): List<SessionEvent> {
-        val state = stateAccess.uiState.value
+        val state = stateAccess.currentState
         val fromIdx = state.cardSession.currentIndex
         val wasHintShown = state.cardSession.sessionState == SessionState.HINT_SHOWN || stateMachine.hintAnswer != null
         stateMachine.reset()
@@ -67,7 +67,7 @@ internal class SessionNavigator(
         val nextIndex = (state.cardSession.currentIndex + 1).coerceAtMost(lastIndex)
         val nextCard = sessionCards().getOrNull(nextIndex)
 
-        if (triggerVoice && stateAccess.uiState.value.cardSession.inputMode == InputMode.VOICE) {
+        if (triggerVoice && stateAccess.currentState.cardSession.inputMode == InputMode.VOICE) {
             stateMachine.triggerVoice()
         }
         updateStateAndClearInput {
@@ -81,7 +81,7 @@ internal class SessionNavigator(
             events.add(SessionEvent.AdvanceBossProgress(nextIndex, sessionCards().size))
         }
         // Update word bank if in WORD_BANK mode
-        if (stateAccess.uiState.value.cardSession.inputMode == InputMode.WORD_BANK) {
+        if (stateAccess.currentState.cardSession.inputMode == InputMode.WORD_BANK) {
             wordBank.update()
         }
 
@@ -89,14 +89,14 @@ internal class SessionNavigator(
             activeTimer.resume()
         }
         // Audit: card navigation next
-        val toIdx = stateAccess.uiState.value.cardSession.currentIndex
+        val toIdx = stateAccess.currentState.cardSession.currentIndex
         audit?.cardNav("next", fromIdx, toIdx, "submit")
         events.add(SessionEvent.SaveProgress)
         return events
     }
 
     fun prevCard(): List<SessionEvent> {
-        val state = stateAccess.uiState.value
+        val state = stateAccess.currentState
         val fromIdx = state.cardSession.currentIndex
         val prevIndex = (state.cardSession.currentIndex - 1).coerceAtLeast(0)
         val prevCard = sessionCards().getOrNull(prevIndex)
@@ -124,11 +124,11 @@ internal class SessionNavigator(
     /** Manual arrows pause before moving; the pause and move each request their own save. */
     private fun navigateManually(forward: Boolean): List<SessionEvent> {
         val events = mutableListOf<SessionEvent>()
-        if (stateAccess.uiState.value.cardSession.sessionState == SessionState.ACTIVE) {
+        if (stateAccess.currentState.cardSession.sessionState == SessionState.ACTIVE) {
             events.addAll(pauseSession())
         }
         stateMachine.reset()
-        val state = stateAccess.uiState.value
+        val state = stateAccess.currentState
         val fromIdx = state.cardSession.currentIndex
         val targetIndex = if (forward) {
             (fromIdx + 1).coerceAtMost(sessionCards().lastIndex)
@@ -140,7 +140,7 @@ internal class SessionNavigator(
             it.copy(cardSession = SessionNavigationTransitions.browse(it.cardSession, targetIndex, targetCard))
         }
         audit?.cardNav(if (forward) "next" else "prev", fromIdx, targetIndex, "manual")
-        if (forward && stateAccess.uiState.value.cardSession.inputMode == InputMode.WORD_BANK) {
+        if (forward && stateAccess.currentState.cardSession.inputMode == InputMode.WORD_BANK) {
             wordBank.update()
         }
         events.add(SessionEvent.SaveProgress)
@@ -150,7 +150,7 @@ internal class SessionNavigator(
     fun selectSubLesson(index: Int): List<SessionEvent> {
         activeTimer.pause()
         stateMachine.reset()
-        val prevState = stateAccess.uiState.value
+        val prevState = stateAccess.currentState
         val fromSub = prevState.cardSession.activeSubLessonIndex
         val fromIdx = prevState.cardSession.currentIndex
         updateStateAndClearInput {
@@ -168,7 +168,7 @@ internal class SessionNavigator(
     }
 
     fun skipToNextCard() {
-        val state = stateAccess.uiState.value
+        val state = stateAccess.currentState
         val fromIdx = state.cardSession.currentIndex
         val nextIndex = state.cardSession.currentIndex + 1
         if (nextIndex < sessionCards().size) {

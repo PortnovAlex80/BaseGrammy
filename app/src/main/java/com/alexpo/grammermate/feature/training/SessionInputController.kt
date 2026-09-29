@@ -44,9 +44,9 @@ internal class SessionInputController(
     }
 
     fun setInputMode(mode: InputMode) {
-        val previousMode = stateAccess.uiState.value.cardSession.inputMode
+        val previousMode = stateAccess.currentState.cardSession.inputMode
         // Preserve the legacy WORD_BANK guard: no voice launch or audit on this early return.
-        if (mode == InputMode.WORD_BANK && stateAccess.uiState.value.cardSession.hintLevel != HintLevel.EASY) {
+        if (mode == InputMode.WORD_BANK && stateAccess.currentState.cardSession.hintLevel != HintLevel.EASY) {
             stateAccess.updateState { it.copy(cardSession = it.cardSession.copy(inputMode = InputMode.VOICE)) }
             return
         }
@@ -55,7 +55,7 @@ internal class SessionInputController(
             stateMachine.reset()
         }
         val shouldTriggerVoice = mode == InputMode.VOICE &&
-            stateAccess.uiState.value.cardSession.sessionState == SessionState.ACTIVE
+            stateAccess.currentState.cardSession.sessionState == SessionState.ACTIVE
         if (shouldTriggerVoice) stateMachine.triggerVoice()
         stateAccess.updateState {
             it.copy(cardSession = it.cardSession.copy(

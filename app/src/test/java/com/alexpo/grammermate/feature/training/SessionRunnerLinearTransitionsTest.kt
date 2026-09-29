@@ -33,7 +33,8 @@ class SessionRunnerLinearTransitionsTest {
 
     private class RecordingStateAccess(initial: TrainingUiState) : TrainingStateAccess {
         private val state = MutableStateFlow(initial)
-        override val uiState: StateFlow<TrainingUiState> = state
+        val uiState: StateFlow<TrainingUiState> = state
+        override val currentState: TrainingUiState get() = state.value
         val writes = mutableListOf<CardSessionState>()
 
         override fun updateState(transform: (TrainingUiState) -> TrainingUiState) {

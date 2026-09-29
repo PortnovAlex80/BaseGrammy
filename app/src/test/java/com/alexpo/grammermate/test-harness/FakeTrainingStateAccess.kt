@@ -14,7 +14,8 @@ class FakeTrainingStateAccess(
 ) : TrainingStateAccess {
 
     private val _uiState = MutableStateFlow(initialState)
-    override val uiState: StateFlow<TrainingUiState> = _uiState
+    val uiState: StateFlow<TrainingUiState> = _uiState
+    override val currentState: TrainingUiState get() = _uiState.value
 
     override fun updateState(transform: (TrainingUiState) -> TrainingUiState) {
         _uiState.value = transform(_uiState.value)

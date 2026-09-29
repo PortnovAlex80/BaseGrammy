@@ -58,7 +58,7 @@ class VocabSprintRunner(
      * partially-completed sprint.
      */
     fun openSprint(resume: Boolean = false): VocabResult {
-        val state = stateAccess.uiState.value
+        val state = stateAccess.currentState
         val lessonId = state.navigation.selectedLessonId ?: return VocabResult.None
         val languageId = state.navigation.selectedLanguageId ?: return VocabResult.None
         val allEntries = lessonStore.getVocabEntries(lessonId.value, languageId.value)
@@ -169,7 +169,7 @@ class VocabSprintRunner(
      * the correct answer is revealed.
      */
     fun submitAnswer(inputOverride: String? = null): VocabSubmitResult {
-        val state = stateAccess.uiState.value
+        val state = stateAccess.currentState
         val vocabState = _state.value
         val entry = vocabState.currentVocab ?: return VocabSubmitResult(VocabSoundResult.None, VocabResult.None)
         val input = inputOverride ?: vocabState.vocabInputText
@@ -232,7 +232,7 @@ class VocabSprintRunner(
      * Advance to the next vocab entry, or finish the sprint if all entries completed.
      */
     private fun moveToNextVocab(): VocabResult {
-        val state = stateAccess.uiState.value
+        val state = stateAccess.currentState
         val vocabState = _state.value
         val nextIndex = vocabState.vocabIndex + 1
         if (nextIndex >= vocabSession.size) {
@@ -278,7 +278,7 @@ class VocabSprintRunner(
      */
     private fun updateWordBank() {
         val entry = _state.value.currentVocab ?: return
-        val options = buildWordBank(entry, vocabSession, stateAccess.uiState.value)
+        val options = buildWordBank(entry, vocabSession, stateAccess.currentState)
         _state.update { it.copy(vocabWordBankWords = options) }
     }
 

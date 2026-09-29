@@ -51,7 +51,7 @@ class SettingsActionHandler(
     // ── Config changes ──────────────────────────────────────────────────
 
     fun toggleTestMode(): List<SettingsResult> {
-        val state = stateAccess.uiState.value
+        val state = stateAccess.currentState
         val newTestMode = !state.cardSession.testMode
         stateAccess.updateState {
             it.copy(
@@ -107,7 +107,7 @@ class SettingsActionHandler(
     }
 
     fun getClickableWordHints(): Boolean {
-        return stateAccess.uiState.value.navigation.clickableWordHints
+        return stateAccess.currentState.navigation.clickableWordHints
     }
 
     // ── Profile ─────────────────────────────────────────────────────────

@@ -30,13 +30,17 @@ fun AppRoot() {
         ScreenLogger.screenShown("STARTUP")
     }
 
-    val vm: TrainingViewModel = viewModel()
-    val state by vm.uiState.collectAsStateWithLifecycle()
-    GrammarMateTheme(themeMode = state.navigation.themeMode) {
-        val restoreState by RestoreNotifier.restoreState.collectAsStateWithLifecycle()
-        if (restoreState.status == RestoreStatus.DONE) {
+    val restoreState by RestoreNotifier.restoreState.collectAsStateWithLifecycle()
+    if (restoreState.status == RestoreStatus.DONE) {
+        // Restoring replaces progress files. Construct the ViewModel only after
+        // that replacement so startup loading cannot cache or save old values.
+        val vm: TrainingViewModel = viewModel()
+        val state by vm.uiState.collectAsStateWithLifecycle()
+        GrammarMateTheme(themeMode = state.navigation.themeMode) {
             GrammarMateApp(vm = vm)
-        } else {
+        }
+    } else {
+        GrammarMateTheme {
             StartupScreen(status = restoreState.status)
         }
     }

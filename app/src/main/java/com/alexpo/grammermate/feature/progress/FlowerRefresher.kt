@@ -41,7 +41,7 @@ class FlowerRefresher(
      * [com.alexpo.grammermate.data.NavigationState.ladderRows].
      */
     fun refreshFlowerStates() {
-        val state = stateAccess.uiState.value
+        val state = stateAccess.currentState
         val languageId = state.navigation.selectedLanguageId
         val lessons = state.navigation.lessons
         val nowMs = System.currentTimeMillis()
