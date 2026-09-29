@@ -1,6 +1,7 @@
 package com.alexpo.grammermate.ui
 
 import android.app.Application
+import android.net.Uri
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.hasAnyDescendant
 import androidx.compose.ui.test.hasClickAction
@@ -17,13 +18,19 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.alexpo.grammermate.R
+import com.alexpo.grammermate.data.SentenceCard
+import com.alexpo.grammermate.data.StoreFactory
 import org.junit.Before
 import org.junit.Assert.assertTrue
+import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
+import java.io.File
+import java.util.zip.ZipEntry
+import java.util.zip.ZipOutputStream
 
 /**
  * Phase 2 exit criteria (docs/architecture/ARCHITECTURE_REVIEW_2026-09-08.md):
@@ -46,6 +53,33 @@ class NavigationJourneyClickUiTest {
 
     private lateinit var vm: TrainingViewModel
 
+    private fun importOneLessonPack(packId: String, lessonId: String, prompt: String) {
+        val zip = File(rule.activity.cacheDir, "$packId-test.zip")
+        val manifest = """{"schemaVersion":2,"packId":"$packId","packVersion":"test-1","language":"it","displayName":"$packId","chapters":[{"chapterId":"chapter_1","order":1,"title":"Test","subtitle":"Test","lessons":["$lessonId"]}]}"""
+        ZipOutputStream(zip.outputStream()).use { output ->
+            fun entry(name: String, contents: String) {
+                output.putNextEntry(ZipEntry(name))
+                output.write(contents.toByteArray(Charsets.UTF_8))
+                output.closeEntry()
+            }
+            entry("manifest.json", manifest)
+            entry("$lessonId.csv", "$lessonId title\n$prompt;Risposta\n")
+        }
+        val app = RuntimeEnvironment.getApplication() as Application
+        StoreFactory.getInstance(app).getLessonStore().importPackFromUri(Uri.fromFile(zip), app.contentResolver)
+    }
+
+    private fun currentSentencePrompt(): String? =
+        (vm.uiState.value.cardSession.currentCard as? SentenceCard)?.promptRu
+
+    private fun awaitPackCard(packId: String, expectedPrompt: String) {
+        rule.waitUntil(10_000) {
+            org.robolectric.Shadows.shadowOf(android.os.Looper.getMainLooper()).idle()
+            vm.uiState.value.navigation.activePackId?.value == packId &&
+                currentSentencePrompt() == expectedPrompt
+        }
+    }
+
     @Before
     fun setUp() {
         val app = RuntimeEnvironment.getApplication() as Application
@@ -56,6 +90,40 @@ class NavigationJourneyClickUiTest {
             // Robolectric main looper; drain it from each poll.
             org.robolectric.Shadows.shadowOf(android.os.Looper.getMainLooper()).idle()
             !vm.uiState.value.isLoading
+        }
+    }
+
+    @Test
+    fun viewModelSwitchesDisjointAndSharedLessonPacksWithoutReusingCards() {
+        importOneLessonPack("ITALIAN_SHORT", "shared", "Short pack card")
+        importOneLessonPack("ITALIAN_FULL_COURSE", "shared", "Full pack card")
+        importOneLessonPack("ITALIAN_IMPERIAL", "unique", "Imperial pack card")
+        val lessonStore = StoreFactory.getInstance(RuntimeEnvironment.getApplication() as Application).getLessonStore()
+        val loaded = lessonStore.getLessons("ITALIAN_SHORT", "it")
+        assertEquals(1, loaded.size)
+        assertEquals("shared", loaded.single().id.value)
+        assertTrue(loaded.single().cards.isNotEmpty())
+        assertEquals(listOf("shared"), lessonStore.getLessonIdsForPack("ITALIAN_SHORT"))
+
+        try {
+            rule.runOnUiThread { vm.selectPack("ITALIAN_SHORT") }
+            awaitPackCard("ITALIAN_SHORT", "Short pack card")
+            assertEquals("shared", vm.uiState.value.navigation.selectedLessonId?.value)
+            assertEquals(listOf("shared"), vm.uiState.value.navigation.activePackLessonIds)
+
+            rule.runOnUiThread { vm.selectPack("ITALIAN_IMPERIAL") }
+            awaitPackCard("ITALIAN_IMPERIAL", "Imperial pack card")
+            assertEquals(listOf("unique"), vm.uiState.value.navigation.activePackLessonIds)
+
+            rule.runOnUiThread { vm.selectPack("ITALIAN_SHORT") }
+            awaitPackCard("ITALIAN_SHORT", "Short pack card")
+            rule.runOnUiThread { vm.selectPack("ITALIAN_FULL_COURSE") }
+            awaitPackCard("ITALIAN_FULL_COURSE", "Full pack card")
+            assertEquals(listOf("shared"), vm.uiState.value.navigation.activePackLessonIds)
+        } finally {
+            // This Robolectric class shares the app's files across methods.
+            // Restore the English zero state expected by the existing journeys.
+            rule.runOnUiThread { vm.selectLanguage("en") }
         }
     }
 
