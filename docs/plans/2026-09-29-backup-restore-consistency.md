@@ -22,4 +22,4 @@ Until this is done, a successful file-copy result alone does not prove that the 
 
 The data-layer repair is committed in `8f52a040f`: managed progress files are staged and restored as a replacement snapshot, legacy paths are mapped, mastery writes drain before replacement, and live factory-owned store caches are invalidated afterward. Real-store restore and existing mastery tests pass. `AppRoot` now waits for `RestoreNotifier.DONE` before constructing the ViewModel. The live ViewModel restore path pauses the timer, drains pending timer checkpoints, invalidates its separately held pack lesson/cursor caches, restores target pack selection and rebinds pack-scoped stores before rebuilding derived UI. A failed restore resumes an active timer.
 
-The final combined unit/build and device gates are still required; this status is implementation evidence, not a G5 pass.
+The final build, 679-test JVM suite and two-test device gate passed on 2026-09-30; see the [closure evidence](2026-09-29-architecture-closure-evidence.md). `TrainingBossRewardRestoreTest` additionally verifies that restored reward maps hydrate the authoritative boss owner and survive the next normal save.

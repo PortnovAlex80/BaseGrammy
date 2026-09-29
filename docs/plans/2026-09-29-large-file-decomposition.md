@@ -96,7 +96,7 @@ Each row below reviews one of the fourteen **baseline** files. A retained integr
 | `VocabDrillScreen.kt` | Session/card presentation and voice/flip UI lifecycle. `VocabDrillSelectionSection` and `VocabDrillResultSections` own stateless grouped display; `VocabDrillViewModel` owns deck/rating state and `WordMasteryStore` persists it. Destination calls the screen. | Retain the card-level lifecycle; click and restart tests guard flip/rate/exit effects. |
 | `TrainingScreen.kt` | Screen-level input, voice adapters and session controls. `TrainingModeSections` and `TrainingScreenContent` own mode/result and card display. `GrammarMateApp` calls the screen; `SessionRunner` remains the state owner. | Retain the input/voice lifecycle at the screen boundary; production click tests guard pause, hint, navigation and word-bank behavior. |
 
-No row is closed by its physical size. G6 remains pending until the final G1-G5 evidence passes after the last code change. Word bank retains its current compatibility behavior; its learning value is a separate product decision, not a reason to expand this milestone.
+No row is closed by its physical size. G6 is closed with the final G1–G5 evidence in the [closure ledger](2026-09-29-architecture-closure-evidence.md). Word bank retains its current compatibility behavior; its learning value is a separate product decision, not a reason to expand this milestone.
 
 ## Stop rule
 

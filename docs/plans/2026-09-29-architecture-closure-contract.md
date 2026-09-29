@@ -2,7 +2,7 @@
 
 Date: 2026-09-29. Baseline: `c18bbacbd` on `feature/atomic-design`.
 Decisions: [ADR-008](../architecture/decisions/008-bounded-architecture-closure.md), amended by [ADR-009](../architecture/decisions/009-decompose-large-owners.md) and [ADR-026](../architecture/decisions/026-use-ownership-not-line-count-for-decomposition.md).
-Status: defined target, **not yet achieved**. This document fixes the finish line for the next refactoring effort; it is not a report that the gates below have passed.
+Status: **closed on 2026-09-30**. This document fixes the finish line; the [final evidence ledger](2026-09-29-architecture-closure-evidence.md) records the passing G1–G6 checks and route dispositions.
 
 ## Goal and boundary
 
@@ -87,3 +87,9 @@ Outside this milestone: migrating all 24 P5 UI items, global atom/molecule/templ
 Baseline evidence is deliberately limited: commit `c18bbacbd` built and passed 551 unit tests, and instrumented-test sources compiled. The last device walkthrough and instrumented run were on an earlier revision. Neither establishes G1–G5 for this new milestone.
 
 At this baseline **0 of 6 gates are closed**: G1 has no CI boundary guard; G2 has no completed owner/effect map and the cross-feature contract still lives under Daily; G3 has partial executable coverage mixed with placeholder suites; G4 defects are open or deferred as above; G5 has no final-revision device/route evidence; G6 has 14 tracked oversized files. Existing passing tests and prior walkthrough evidence are inputs to these gates, not replacements for them.
+
+## Final disposition — 2026-09-30
+
+**G1–G6 are closed** on the final shipping-code revision. The [evidence ledger](2026-09-29-architecture-closure-evidence.md) maps B1–B5 to executable tests and D1–D5 to their fixed or explicitly deferred disposition. The package guard passes for 238 production Kotlin files and its three self-tests pass. `:app:assembleDebug` and the full 679-test JVM suite pass. The final `:app:connectedDebugAndroidTest` run passes both instrumented tests on `emulator-5554`; the [route matrix](2026-09-29-route-matrix.md) records ten reachable routes as `PASS` and preserves the four non-pass classifications. The [14-file review](2026-09-29-large-file-decomposition.md) is closed by ownership and caller evidence rather than a line threshold.
+
+This closes the agreed architecture refactor. Atomic Design P5 visual migration, enabling Daily, and hardware microphone/Bluetooth verification remain outside this milestone's pass claim.
