@@ -63,7 +63,7 @@ import com.alexpo.grammermate.feature.daily.DailyPracticeCoordinator
 import com.alexpo.grammermate.shared.TrainingStateAccess
 import com.alexpo.grammermate.feature.progress.BadSentenceHelper
 import com.alexpo.grammermate.feature.progress.BadSentenceResult
-import com.alexpo.grammermate.feature.progress.ChapterProgressCalculator
+import com.alexpo.grammermate.feature.progress.ChapterRoadmapController
 import com.alexpo.grammermate.feature.progress.FlowerRefresher
 import com.alexpo.grammermate.feature.progress.ProgressResult
 import com.alexpo.grammermate.feature.progress.ProgressRestorer
@@ -90,9 +90,7 @@ import com.alexpo.grammermate.feature.pomodoro.PomodoroRecords
 import com.alexpo.grammermate.data.CardDifficultyRating
 import com.alexpo.grammermate.data.PackLessonProgressStore
 import com.alexpo.grammermate.data.Chapter
-import com.alexpo.grammermate.data.ChapterProgress
 import com.alexpo.grammermate.data.ChapterCardUi
-import com.alexpo.grammermate.data.ChapterStatus
 
 /**
  * Re-import every bundled pack from assets on each app start, ignoring pack versions.
@@ -207,10 +205,13 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     private val _packTiles = MutableStateFlow<List<PackTileUi>>(emptyList())
     val packTiles: StateFlow<List<PackTileUi>> = _packTiles.asStateFlow()
 
-    private val chapterRepository = com.alexpo.grammermate.feature.progress.ChapterRepository(lessonStore, masteryStore)
-
-    private val _chapterCards = MutableStateFlow<List<ChapterCardUi>>(emptyList())
-    val chapterCards: StateFlow<List<ChapterCardUi>> = _chapterCards.asStateFlow()
+    private val chapterRoadmap = ChapterRoadmapController(
+        lessonStore,
+        com.alexpo.grammermate.feature.progress.ChapterRepository(lessonStore, masteryStore),
+        _coreState,
+        logTag
+    )
+    val chapterCards: StateFlow<List<ChapterCardUi>> = chapterRoadmap.chapterCards
 
     private val _profileStats = MutableStateFlow(ProfileStats(0, 0, ""))
     val profileStats: StateFlow<ProfileStats> = _profileStats.asStateFlow()
@@ -221,11 +222,6 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     private fun refreshPackTiles() {
         val tiles = getPackTiles()
         if (_packTiles.value != tiles) _packTiles.value = tiles
-    }
-
-    private fun refreshChapterCards() {
-        val cards = getChapterCards()
-        if (_chapterCards.value != cards) _chapterCards.value = cards
     }
 
     /** profileStats' CEFR scan parses vocab CSVs from disk — refresh only on
@@ -2530,15 +2526,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
      * Returns an empty list if the pack has no chapters.
      */
     fun getChapterCards(): List<ChapterCardUi> {
-        val activePackId = _coreState.value.navigation.activePackId?.value ?: return emptyList()
-        val selectedLanguageId = _coreState.value.navigation.selectedLanguageId?.value ?: return emptyList()
-
-        if (!lessonStore.hasChapters(activePackId)) {
-            return emptyList()
-        }
-
-        val chapters = lessonStore.getChapters(activePackId)
-        return chapterRepository.getChapterCards(chapters, activePackId, selectedLanguageId)
+        return chapterRoadmap.getChapterCards()
     }
 
     /**
@@ -2601,9 +2589,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
      * Returns null if all lessons are completed or chapter is empty.
      */
     fun getFirstIncompleteLesson(chapter: com.alexpo.grammermate.data.Chapter): String? {
-        val nav = _coreState.value.navigation
-        val selectedLanguageId = nav.selectedLanguageId?.value ?: return null
-        return chapterRepository.getFirstIncompleteLesson(chapter, nav.activePackId?.value, selectedLanguageId)
+        return chapterRoadmap.getFirstIncompleteLesson(chapter)
     }
 
     /**
@@ -2611,55 +2597,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
      * Call this when the app starts or when switching packs.
      */
     fun loadChapters() {
-        val activePackId = _coreState.value.navigation.activePackId?.value ?: run {
-            // Clear chapter state if no pack is active
-            _coreState.update {
-                it.copy(
-                    chapters = emptyList(),
-                    chapterProgresses = emptyMap(),
-                    activeChapterId = null
-                )
-            }
-            _chapterCards.value = emptyList()
-            Log.d(logTag, "loadChapters: no active pack, clearing chapters")
-            return
-        }
-
-        if (!lessonStore.hasChapters(activePackId)) {
-            // Pack has no chapters - clear chapter state
-            _coreState.update {
-                it.copy(
-                    chapters = emptyList(),
-                    chapterProgresses = emptyMap(),
-                    activeChapterId = null
-                )
-            }
-            _chapterCards.value = emptyList()
-            Log.d(logTag, "loadChapters: pack $activePackId has no chapters, clearing")
-            return
-        }
-
-        Log.d(logTag, "loadChapters: loading chapters for pack $activePackId")
-        val chapters = lessonStore.getChapters(activePackId)
-        // Phase 3 (3.3): chapter progress is ALWAYS computed live from mastery
-        // (the same ChapterProgressCalculator the roadmap uses). The on-disk
-        // chapterProgressStore snapshot is gone — it could be stale/empty on
-        // cold start and diverged from the roadmap's live numbers (B3).
-        val chapterProgresses = computeAllChapterProgress(chapters, activePackId)
-
-        // Determine active chapter ID (first incomplete or first chapter)
-        val activeChapterId = chapterRepository.determineActiveChapter(chapters, chapterProgresses)
-
-        Log.d(logTag, "loadChapters: updating state with ${chapters.size} chapters, activeChapterId=$activeChapterId")
-
-        _coreState.update {
-            it.copy(
-                chapters = chapters,
-                chapterProgresses = chapterProgresses,
-                activeChapterId = activeChapterId
-            )
-        }
-        refreshChapterCards()
+        chapterRoadmap.loadChapters()
     }
 
     /**
@@ -2669,43 +2607,11 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
      * @param lessonId The lesson ID that was updated
      */
     private fun updateChapterProgress(lessonId: String) {
-        val activePackId = _coreState.value.navigation.activePackId?.value ?: return
-        val selectedLanguageId = _coreState.value.navigation.selectedLanguageId?.value ?: return
-
-        if (!lessonStore.hasChapters(activePackId)) {
-            return
-        }
-
-        val chapters = lessonStore.getChapters(activePackId)
-
-        val affectedProgresses = chapterRepository.getAffectedChapterProgresses(
-            chapters, lessonId, activePackId, selectedLanguageId
-        )
-        if (affectedProgresses.isEmpty()) {
-            return
-        }
-
-        for (newProgress in affectedProgresses) {
-            _coreState.update {
-                it.copy(
-                    chapterProgresses = it.chapterProgresses.toMutableMap().apply {
-                        put(newProgress.chapterId, newProgress)
-                    }
-                )
-            }
-        }
-        refreshChapterCards()
-    }
-
-    private fun computeAllChapterProgress(chapters: List<Chapter>, packId: String): Map<String, ChapterProgress> {
-        val langId = _coreState.value.navigation.selectedLanguageId?.value ?: ""
-        return chapterRepository.computeAllChapterProgress(chapters, packId, langId)
+        chapterRoadmap.updateChapterProgress(lessonId)
     }
 
     fun getCompletedLessonIds(chapter: Chapter): Set<String> {
-        val nav = _coreState.value.navigation
-        if (nav.selectedLanguageId == null) return emptySet()
-        return chapterRepository.getCompletedLessonIds(chapter, nav.activePackId?.value)
+        return chapterRoadmap.getCompletedLessonIds(chapter)
     }
 }
 
