@@ -9,6 +9,9 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodesWithContentDescription
+import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -20,6 +23,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.alexpo.grammermate.R
 import com.alexpo.grammermate.data.InputMode
 import com.alexpo.grammermate.data.PackLessonProgressStoreImpl
+import com.alexpo.grammermate.data.SentenceCard
 import com.alexpo.grammermate.data.SessionState
 import com.alexpo.grammermate.data.StoreFactory
 import com.alexpo.grammermate.ui.screens.TrainingScreenContent
@@ -54,6 +58,10 @@ class RegularLessonClickUiTest {
         stores.getMasteryStore().clearPack(packId)
         PackLessonProgressStoreImpl(application()).deletePackProgress(packId)
         importLessonPack()
+        assertEquals(
+            listOf("Prompt one", "Prompt two", "Prompt three"),
+            stores.getLessonStore().getLessons(packId, "it").single().cards.map { (it as SentenceCard).promptRu }
+        )
 
         vm = TrainingViewModel(application())
         rule.setContent {
@@ -80,10 +88,21 @@ class RegularLessonClickUiTest {
             vm.selectSubLesson(0)
             vm.training.setInputMode(InputMode.KEYBOARD)
         }
-        rule.waitUntil(10_000) {
-            Shadows.shadowOf(Looper.getMainLooper()).idle()
-            vm.uiState.value.cardSession.currentCard?.promptRu == "Prompt one" &&
-                vm.uiState.value.cardSession.sessionState == SessionState.PAUSED
+        try {
+            rule.waitUntil(10_000) {
+                Shadows.shadowOf(Looper.getMainLooper()).idle()
+                vm.uiState.value.cardSession.currentCard?.promptRu == "Prompt one" &&
+                    vm.uiState.value.cardSession.sessionState == SessionState.PAUSED
+            }
+        } catch (cause: Throwable) {
+            val state = vm.uiState.value
+            throw AssertionError(
+                "Regular lesson setup failed: language=${state.navigation.selectedLanguageId}, " +
+                    "pack=${state.navigation.activePackId}, lesson=${state.navigation.selectedLessonId}, " +
+                    "lessonIds=${state.navigation.lessons.map { it.id.value }}, " +
+                    "activeIds=${state.navigation.activePackLessonIds}, card=${state.cardSession.currentCard}, " +
+                    "session=${state.cardSession.sessionState}, subLesson=${state.cardSession.activeSubLessonIndex}"
+            ).apply { initCause(cause) }
         }
         rule.onNodeWithTag("card_prompt_text").assertIsDisplayed()
             .assertTextContains("Prompt one")
@@ -101,17 +120,17 @@ class RegularLessonClickUiTest {
     @Test
     fun answerPauseHintAndNavigationHaveDistinctEffectsAndNoStaleInput() {
         // Pause/resume preserves the partial answer on the same card.
-        rule.onNodeWithTag("pause_button").performScrollTo().performClick()
+        clickNavigation("pause_button", R.string.content_desc_play)
         awaitState { it.cardSession.sessionState == SessionState.ACTIVE }
         rule.onNodeWithTag("input_field").performTextInput("partial")
-        rule.onNodeWithTag("pause_button").performScrollTo().performClick()
+        clickNavigation("pause_button", R.string.content_desc_pause)
         awaitState { it.cardSession.sessionState == SessionState.PAUSED }
         assertEquals("partial", vm.inputText.value)
         assertEquals(0, vm.uiState.value.cardSession.correctCount)
         assertEquals(0, vm.uiState.value.cardSession.incorrectCount)
         assertEquals("Prompt one", vm.uiState.value.cardSession.currentCard?.promptRu)
 
-        rule.onNodeWithTag("pause_button").performScrollTo().performClick()
+        clickNavigation("pause_button", R.string.content_desc_play)
         awaitState { it.cardSession.sessionState == SessionState.ACTIVE }
         assertEquals("partial", vm.inputText.value)
 
@@ -122,12 +141,17 @@ class RegularLessonClickUiTest {
         assertEquals(1, vm.uiState.value.cardSession.hintCount)
         assertEquals(0, vm.uiState.value.cardSession.correctCount)
         assertEquals(0, vm.uiState.value.cardSession.incorrectCount)
-        rule.onNodeWithText(rule.activity.getString(R.string.hint_answer_prefix) + "answer one")
+        // The production hint may render as one plain string or as clickable
+        // annotated words; both must show the revealed answer.
+        rule.waitUntil(10_000) {
+            rule.onAllNodesWithText("answer one", substring = true).fetchSemanticsNodes().isNotEmpty()
+        }
+        rule.onNodeWithText("answer one", substring = true)
             .performScrollTo().assertIsDisplayed()
 
         // The Next arrow visits card two without grading card one and clears
         // its partial text, hint and result before the new card is shown.
-        rule.onNodeWithTag("next_button").performScrollTo().performClick()
+        clickNavigation("next_button", R.string.content_desc_next)
         awaitState { it.cardSession.currentCard?.promptRu == "Prompt two" }
         assertEquals(1, vm.uiState.value.cardSession.currentIndex)
         assertEquals(SessionState.PAUSED, vm.uiState.value.cardSession.sessionState)
@@ -142,7 +166,7 @@ class RegularLessonClickUiTest {
         assertEquals(0L, masteryLastReview())
 
         // A wrong answer stays on card two and shows feedback.
-        rule.onNodeWithTag("pause_button").performScrollTo().performClick()
+        clickNavigation("pause_button", R.string.content_desc_play)
         awaitState { it.cardSession.sessionState == SessionState.ACTIVE }
         rule.onNodeWithTag("input_field").performTextInput("wrong")
         rule.onNodeWithTag("check_button").performScrollTo().performClick()
@@ -177,6 +201,17 @@ class RegularLessonClickUiTest {
             Shadows.shadowOf(Looper.getMainLooper()).idle()
             predicate(vm.uiState.value)
         }
+    }
+
+    private fun clickNavigation(tag: String, contentDescription: Int) {
+        // NavIconButton puts the tag on its outer Box and the click action on
+        // the inner IconButton. Scroll the Box, then click the production action.
+        rule.onNodeWithTag(tag).performScrollTo()
+        val description = rule.activity.getString(contentDescription)
+        rule.waitUntil(10_000) {
+            rule.onAllNodesWithContentDescription(description).fetchSemanticsNodes().isNotEmpty()
+        }
+        rule.onNodeWithContentDescription(description).performClick()
     }
 
     private fun masteryLastReview(): Long = StoreFactory.getInstance(application())
