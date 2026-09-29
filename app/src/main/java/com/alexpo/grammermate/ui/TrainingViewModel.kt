@@ -3,12 +3,10 @@ package com.alexpo.grammermate.ui
 import android.app.Application
 import android.content.Context
 import android.net.Uri
-import java.io.File
 import com.alexpo.grammermate.AppContainer
 import com.alexpo.grammermate.BuildConfig
 import com.alexpo.grammermate.ui.navigation.Routes
 import com.alexpo.grammermate.GrammarMateApplication
-import com.alexpo.grammermate.data.GrammarChipStore
 import com.alexpo.grammermate.data.SubmitResult
 import com.alexpo.grammermate.data.TrainingUiState
 import com.alexpo.grammermate.data.ParseError
@@ -398,6 +396,9 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         PomodoroSettingsStore(getApplication<Application>()),
         PomodoroHistoryStore(getApplication<Application>())
     )
+    private val startupLoader = TrainingStartupLoader(
+        application, container, StartupContentResolver(lessonStore), pomodoroRecords
+    )
     private val pomodoroHelper = PomodoroHelper(
         stateProvider = { _coreState.value },
         onUpdateState = { newState -> _coreState.update { newState } },
@@ -664,23 +665,9 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         // on app startup (was 500ms–2s on weak tablets). UI shows a loading spinner
         // via TrainingUiState.isLoading until this coroutine completes.
         viewModelScope.launch(Dispatchers.IO) {
-            lessonStore.ensureSeedData()
-            // Automatically seed/update default packs if needed
-            lessonStore.updateDefaultPacksIfNeeded()
-
-            // Initialize GrammarChipStore after packs are installed
-            val packsDir = File(getApplication<Application>().filesDir, "grammarmate/packs")
-            GrammarChipStore.initialize(getApplication(), packsDir)
-
-            badSentenceStore.migrateIfNeeded(lessonStore)
-
-            val progress = progressStore.load()
-            val config = configStore.load()
-            val profile = profileStore.load()
-            // Warm the mastery cache off-main: later main-thread reads
-            // (getForPack during composition-derived refreshes) hit memory only.
-            masteryStore.loadAll()
-            pomodoroRecords.loadDuration()
+            val startup = startupLoader.load()
+            val progress = startup.progress
+            val config = startup.config
             eliteSizeMultiplier = config.eliteSizeMultiplier
             sessionSize = config.sessionSize
             cardProvider.setSubLessonSize(sessionSize)
@@ -689,39 +676,11 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             dailyPracticeCoordinator.setSessionSize(sessionSize)
             val bossLessonRewards = bossOrchestrator.parseBossRewards(progress.bossLessonRewards)
             val bossMegaRewards = bossOrchestrator.parseBossRewards(progress.bossMegaRewards)
-            val languages = lessonStore.getLanguagesWithPacks()
-            val packs = lessonStore.getInstalledPacks()
-            val hasExistingProgress = progressStore.exists()
-            val selectedLanguageId = if (hasExistingProgress) {
-                languages.firstOrNull { it.id == progress.languageId }?.id
-            } else {
-                null // Zero state: no progress.yaml → show language cards
-            }
-            val lessons = selectedLanguageId?.let { langId ->
-                progress.activePackId?.let { pid -> lessonStore.getLessons(pid.value, langId.value) }
-                    ?: emptyList()
-            } ?: emptyList()
-            val selectedLessonId = lessons.firstOrNull()?.id
+            val restoredContent = startup.content
+            val selectedLanguageId = restoredContent.languageId
+            val lessons = restoredContent.lessons
             val normalizedEliteSpeeds = sessionRunner.normalizeEliteSpeeds(progress.eliteBestSpeeds)
-            val restoredScreen = "HOME"
-            val streakData = selectedLanguageId?.let { streakStore.getCurrentStreak(it.value) }
-                ?: com.alexpo.grammermate.data.StreakData(languageId = com.alexpo.grammermate.data.LanguageId(""))
-            // Resolve activePackId: prefer saved value if pack still exists,
-            // then derive from lessonId, then fall back to first pack for language.
-            val savedPackId = progress.activePackId
-            val allPackIds = packs.map { it.packId }.toSet()
-            val initialActivePackId = if (savedPackId != null && savedPackId in allPackIds) {
-                savedPackId
-            } else {
-                selectedLessonId?.let { com.alexpo.grammermate.data.PackId(lessonStore.getPackIdForLesson(it.value) ?: return@let null) }
-            }
-            val initialPackLessonIds = initialActivePackId?.let { lessonStore.getLessonIdsForPack(it.value) }
-
-            // Load lesson progress from pack-scoped store (Phase 5, Wave 3.1)
-            val packProgress = initialActivePackId?.let { packLessonProgressStore.loadPackProgress(it.value) }
-            val lessonProgress = selectedLessonId?.let { lessonId ->
-                packProgress?.lessonProgress?.get(lessonId.value)
-            }
+            val initialActivePackId = restoredContent.packId
 
             // Phase 3 (3.5): stamp retroactive completions on the restore path
             // too — only selectPack recalculated before, so a cold start showed
@@ -739,10 +698,24 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
                 )
             }
 
+            val startupState = TrainingStartupState(
+                content = restoredContent,
+                languages = startup.languages,
+                packs = startup.packs,
+                progress = progress,
+                config = config,
+                profile = startup.profile,
+                streak = startup.streak,
+                lessonProgress = startup.lessonProgress,
+                normalizedEliteSpeeds = normalizedEliteSpeeds,
+                eliteUnlocked = sessionRunner.resolveEliteUnlocked(lessons, config.testMode),
+                eliteStepCount = eliteStepCount,
+                badSentenceCount = startup.badSentenceCount,
+                hintSessionOffset = Random.nextInt(0, 100)
+            )
+
             withContext(Dispatchers.Main) {
-                _coreState.update {
-                    it.resetSessionState().copy(isLoading = false, navigation = it.navigation.copy(languages = languages, installedPacks = packs, selectedLanguageId = selectedLanguageId, activePackId = initialActivePackId, activePackLessonIds = initialPackLessonIds, lessons = lessons, selectedLessonId = selectedLessonId, mode = progress.mode, userName = profile.userName, initialScreen = restoredScreen, welcomeDialogAttempts = profile.welcomeDialogAttempts, themeMode = config.themeMode, uiLanguage = config.uiLanguage, clickableWordHints = config.clickableWordHints), cardSession = it.cardSession.copy(sessionState = lessonProgress?.state ?: SessionState.PAUSED, currentIndex = lessonProgress?.currentIndex ?: 0, correctCount = lessonProgress?.correctCount ?: 0, incorrectCount = lessonProgress?.incorrectCount ?: 0, incorrectAttemptsForCard = lessonProgress?.incorrectAttemptsForCard ?: 0, activeTimeMs = lessonProgress?.activeTimeMs ?: 0L, voiceActiveMs = progress.voiceActiveMs, voiceWordCount = progress.voiceWordCount, hintCount = progress.hintCount, testMode = config.testMode, vocabSprintLimit = config.vocabSprintLimit, currentStreak = streakData.currentStreak, longestStreak = streakData.longestStreak, todayFireCount = streakData.todayFireCount, badSentenceCount = initialActivePackId?.let { pid -> badSentenceStore.getBadSentenceCount(pid.value) } ?: 0, hintLevel = config.hintLevel, hintSessionOffset = Random.nextInt(0, 100)), elite = it.elite.copy(eliteStepIndex = progress.eliteStepIndex.coerceIn(0, eliteStepCount - 1), eliteBestSpeeds = normalizedEliteSpeeds, eliteUnlocked = sessionRunner.resolveEliteUnlocked(lessons, config.testMode), eliteSizeMultiplier = config.eliteSizeMultiplier))
-                }
+                _coreState.update(startupState::apply)
                 // Initialize feature-owned state from persisted progress
                 bossOrchestrator.initRewards(bossLessonRewards, bossMegaRewards)
                 rebindWordMasteryStore(initialActivePackId?.value)
