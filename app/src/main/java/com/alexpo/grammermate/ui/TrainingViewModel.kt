@@ -75,6 +75,7 @@ import com.alexpo.grammermate.feature.training.SessionEvent
 import com.alexpo.grammermate.feature.training.SessionRunner
 import com.alexpo.grammermate.feature.training.StoryResult
 import com.alexpo.grammermate.feature.training.StoryRunner
+import com.alexpo.grammermate.feature.story.StoryReaderController
 import com.alexpo.grammermate.feature.training.WordBankGenerator
 import com.alexpo.grammermate.feature.vocab.VocabResult
 import com.alexpo.grammermate.feature.vocab.VocabSoundResult
@@ -383,6 +384,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         configStore = configStore,
         storyAudioResolver = container.storyAudioResolver
     )
+    private val storyReader = StoryReaderController(lessonStore, audioCoordinator, _coreState, logTag)
 
     /** Lifecycle owner is lazy because most sessions never open sound-pack settings. */
     private val soundPackTransfers: SoundPackTransferController by lazy {
@@ -558,7 +560,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     // ── TTS playback for story narration ───────────────────────────────────────
 
     fun speakStoryText(text: String, languageId: String = "en") {
-        audioCoordinator.onTtsSpeak(text, languageId = languageId)
+        storyReader.speakText(text, languageId)
     }
 
     /**
@@ -615,39 +617,27 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         storyFile: String? = null,
         packId: String? = null
     ) {
-        audioCoordinator.playMultilingualStory(content, defaultLanguageId, storyFile, packId)
+        storyReader.speakMultilingual(content, defaultLanguageId, storyFile, packId)
     }
 
     fun stopStoryNarration() {
-        audioCoordinator.stopTts()
+        storyReader.stop()
     }
 
     fun pauseStoryPlayback() {
-        audioCoordinator.pauseStoryPlayback()
+        storyReader.pause()
     }
 
     fun resumeStoryPlayback() {
-        audioCoordinator.resumeStoryPlayback()
+        storyReader.resume()
     }
 
     fun setStoryReader(chapterTitle: String, content: String, storyFile: String? = null) {
-        _coreState.update {
-            it.copy(
-                storyReaderChapterTitle = chapterTitle,
-                storyReaderStoryFile = storyFile,
-                storyReaderContent = content
-            )
-        }
+        storyReader.open(chapterTitle, content, storyFile)
     }
 
     fun clearStoryReader() {
-        _coreState.update {
-            it.copy(
-                storyReaderChapterTitle = null,
-                storyReaderStoryFile = null,
-                storyReaderContent = ""
-            )
-        }
+        storyReader.clear()
     }
 
     init {
@@ -2545,43 +2535,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
      * @return Story content in the appropriate language, or null if not found
      */
     fun loadStoryContent(storyFile: String?): String? {
-        if (storyFile == null) return null
-
-        return try {
-            val activePackId = _coreState.value.navigation.activePackId?.value ?: return null
-            val uiLanguage = currentUiLanguage // Get from configStore
-
-            // Extract chapter ID from storyFile for language detection
-            // storyFile format: "chapter_XX_original.md" or "chapter_XX_name.md"
-            val chapterBase = storyFile.removePrefix("chapter_")
-                .removeSuffix(".md")
-                .split("_")[0] // Get "XX" part
-            val chapterId = "chapter_$chapterBase"
-
-            Log.d(logTag, "Loading story: storyFile=$storyFile, chapterId=$chapterId, uiLanguage=$uiLanguage")
-
-            // Use language detection to get the right story file
-            val detectedStoryFile = lessonStore.detectStoryLanguage(activePackId, chapterId, uiLanguage)
-
-            if (detectedStoryFile != null) {
-                Log.d(logTag, "Detected story file: $detectedStoryFile (original request: $storyFile)")
-                val content = lessonStore.getChapterStory(activePackId, detectedStoryFile)
-
-                if (content != null) {
-                    Log.d(logTag, "Successfully loaded story: $detectedStoryFile")
-                    content
-                } else {
-                    Log.w(logTag, "Story file not found: $detectedStoryFile")
-                    null
-                }
-            } else {
-                Log.w(logTag, "No story file detected for chapter: $chapterId")
-                null
-            }
-        } catch (e: Exception) {
-            Log.e(logTag, "Failed to load story content: $storyFile", e)
-            null
-        }
+        return storyReader.loadContent(storyFile)
     }
 
     /**
