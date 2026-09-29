@@ -12,7 +12,7 @@ import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
-import com.alexpo.grammermate.data.validation.DataValidator
+import com.alexpo.grammermate.data.validation.MasteryStateValidator
 
 interface MasteryStore {
 
@@ -180,7 +180,7 @@ class MasteryStoreImpl(
 
                     // Validate mastery data before using it
                     @Suppress("UNCHECKED_CAST")
-                    val validationResult = DataValidator.validateMasteryState(
+                    val validationResult = MasteryStateValidator.validateMasteryState(
                         lessonId = lessonId,
                         languageId = languageId,
                         data = lessonData as? Map<String, Any>
