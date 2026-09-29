@@ -44,6 +44,10 @@ class AuxDrillStoreImpl(
 
     private var progressCache: Map<String, AuxDrillComboProgress>? = null
 
+    fun invalidateCache() = mutex.withLock {
+        progressCache = null
+    }
+
     override fun loadProgress(): Map<String, AuxDrillComboProgress> {
         progressCache?.let { return it }
         val loaded = loadProgressFromDisk()

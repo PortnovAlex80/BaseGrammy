@@ -1,6 +1,7 @@
 package com.alexpo.grammermate.data
 
 import android.content.Context
+import android.app.Application
 import android.net.Uri
 import android.util.Log
 import androidx.documentfile.provider.DocumentFile
@@ -53,6 +54,7 @@ class BackupManagerImpl(private val context: Context) : BackupManager {
      */
     override fun createBackup(): Boolean {
         return try {
+            MasteryStoreImpl.drainBeforeRestore(context)
             val success = createBackupToInternal()
             Log.d(logTag, "createBackup: success=$success")
             success
@@ -64,7 +66,7 @@ class BackupManagerImpl(private val context: Context) : BackupManager {
 
     override fun restoreFromBackup(backupPath: String): Boolean {
         return try {
-            restorer.restoreFromPath(backupPath)
+            restoreWithCacheBarrier { restorer.restoreFromPath(backupPath) }
         } catch (e: Exception) {
             Log.e(logTag, "restoreFromBackup failed", e)
             false
@@ -73,7 +75,7 @@ class BackupManagerImpl(private val context: Context) : BackupManager {
 
     override fun restoreFromBackupUri(backupUri: Uri): Boolean {
         return try {
-            restorer.restoreFromUri(backupUri)
+            restoreWithCacheBarrier { restorer.restoreFromUri(backupUri) }
         } catch (e: Exception) {
             Log.e(logTag, "restoreFromBackupUri failed", e)
             false
@@ -119,6 +121,18 @@ class BackupManagerImpl(private val context: Context) : BackupManager {
 
     override fun hasBackup(): Boolean = getAvailableBackups().isNotEmpty()
 
+    private fun restoreWithCacheBarrier(restore: () -> Boolean): Boolean {
+        MasteryStoreImpl.drainBeforeRestore(context)
+        val restored = restore()
+        if (restored) {
+            MasteryStoreImpl.invalidateAfterRestore(context)
+            (context.applicationContext as? Application)?.let {
+                StoreFactory.getInstance(it).invalidateAfterRestore()
+            }
+        }
+        return restored
+    }
+
     // endregion
 
     // region -- Internal backup --
@@ -126,55 +140,29 @@ class BackupManagerImpl(private val context: Context) : BackupManager {
     private fun createBackupToInternal(): Boolean {
         val dir = backupDir ?: return false
         val backupSubDir = File(dir, "backup_latest")
-        if (!backupSubDir.exists() && !backupSubDir.mkdirs()) return false
-
+        val stagingDir = File(dir, ".backup_staging")
+        val previousDir = File(dir, ".backup_previous")
+        if (stagingDir.exists() && !stagingDir.deleteRecursively()) return false
+        if (!stagingDir.mkdirs()) return false
         val timestamp = collector.currentTimestamp()
-
-        // Copy main files
-        collector.mainBackupFileNames.forEach { name ->
-            val src = File(internalDir, name)
-            if (src.exists()) {
-                AtomicFileWriter.copyAtomic(src, File(backupSubDir, name))
+        return try {
+            BackupSnapshotFiles.listIn(internalDir).forEach { (relativePath, source) ->
+                AtomicFileWriter.copyAtomic(source, File(stagingDir, relativePath))
             }
-        }
-
-        // Copy streak files
-        collector.listStreakFiles().forEach { file ->
-            AtomicFileWriter.copyAtomic(file, File(backupSubDir, file.name))
-        }
-
-        // Remove old streak.yaml if present (migration)
-        val oldStreakBackup = File(backupSubDir, "streak.yaml")
-        if (oldStreakBackup.exists()) oldStreakBackup.delete()
-
-        // Copy drill-progress files (legacy global format)
-        collector.listDrillProgressFiles().forEach { file ->
-            AtomicFileWriter.copyAtomic(file, File(backupSubDir, file.name))
-        }
-
-        // Copy pack-scoped drill data.
-        collector.listPackDrillDirs().forEach { packDir ->
-            val targetDir = File(backupSubDir, "drills/${packDir.name}")
-            targetDir.mkdirs()
-
-            listOf("word_mastery.yaml", "verb_drill_progress.yaml", "verb_drill_last_session.yaml").forEach { fileName ->
-                val source = File(packDir, fileName)
-                if (source.exists()) {
-                    AtomicFileWriter.copyAtomic(source, File(targetDir, fileName))
-                }
+            writeBackupMetadata(stagingDir, timestamp)
+            if (previousDir.exists() && !previousDir.deleteRecursively()) return false
+            if (backupSubDir.exists() && !backupSubDir.renameTo(previousDir)) return false
+            if (!stagingDir.renameTo(backupSubDir)) {
+                if (previousDir.exists()) previousDir.renameTo(backupSubDir)
+                return false
             }
+            if (previousDir.exists()) previousDir.deleteRecursively()
+            true
+        } catch (e: Exception) {
+            Log.e(logTag, "Failed to build backup snapshot", e)
+            stagingDir.deleteRecursively()
+            false
         }
-
-        // Copy legacy language-specific verb drill files.
-        collector.listVerbDrillFiles().forEach { file ->
-            Log.d(logTag, "Backing up verb drill file: ${file.name}")
-            AtomicFileWriter.copyAtomic(file, File(backupSubDir, file.name))
-        }
-
-        // Write metadata via AtomicFileWriter (fixes violation)
-        writeBackupMetadata(backupSubDir, timestamp)
-
-        return true
     }
 
     // endregion

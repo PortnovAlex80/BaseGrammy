@@ -104,13 +104,25 @@ class StoreFactory private constructor(private val appContext: Application) {
         vocabProgressCache.clear()
     }
 
+    /** Refresh live references after a backup replaces their underlying files. */
+    @Synchronized
+    internal fun invalidateAfterRestore() {
+        hiddenCardCache.invalidateCache()
+        badSentenceCache.invalidateCache()
+        wordMasteryCache.values.forEach(WordMasteryStoreImpl::invalidateCache)
+        verbDrillCache.values.forEach(VerbDrillStoreImpl::invalidateCache)
+        auxDrillCache.values.forEach(AuxDrillStoreImpl::invalidateCache)
+        vocabProgressCache.values.forEach(VocabProgressStoreImpl::invalidateCache)
+    }
+
     companion object {
         @Volatile
         private var instance: StoreFactory? = null
 
         fun getInstance(application: Application): StoreFactory {
-            return instance ?: synchronized(this) {
-                instance ?: StoreFactory(application).also { instance = it }
+            return instance?.takeIf { it.appContext === application } ?: synchronized(this) {
+                instance?.takeIf { it.appContext === application }
+                    ?: StoreFactory(application).also { instance = it }
             }
         }
     }

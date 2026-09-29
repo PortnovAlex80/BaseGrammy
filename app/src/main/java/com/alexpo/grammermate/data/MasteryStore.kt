@@ -113,6 +113,27 @@ class MasteryStoreImpl(
          */
         private val registryLock = ReentrantLock()
         private val pendingByPath = LinkedHashMap<String, MutableList<MasteryStoreImpl>>()
+        private val liveInstances = java.util.Collections.newSetFromMap(
+            java.util.WeakHashMap<MasteryStoreImpl, Boolean>()
+        )
+
+        /** Finish every queued writer before a backup replaces mastery.yaml. */
+        internal fun drainBeforeRestore(context: Context) {
+            val path = File(context.filesDir, "grammarmate/mastery.yaml").canonicalPath
+            val instances = registryLock.withLock {
+                liveInstances.filter { it.canonicalPath == path }.toList()
+            }
+            instances.forEach(MasteryStoreImpl::flush)
+        }
+
+        /** Discard old in-memory snapshots held even by references outside StoreFactory. */
+        internal fun invalidateAfterRestore(context: Context) {
+            val path = File(context.filesDir, "grammarmate/mastery.yaml").canonicalPath
+            val instances = registryLock.withLock {
+                liveInstances.filter { it.canonicalPath == path }.toList()
+            }
+            instances.forEach(MasteryStoreImpl::invalidateRestoredCache)
+        }
 
         private fun lockForPath(canonicalPath: String): ReentrantLock =
             fileLocks.getOrPut(canonicalPath) { ReentrantLock() }
@@ -143,6 +164,26 @@ class MasteryStoreImpl(
     // Кеш для быстрого доступа
     private var cache: MutableMap<String, MutableMap<String, LessonMasteryState>> = mutableMapOf()
     private var cacheLoaded = false
+
+    init {
+        registryLock.withLock { liveInstances.add(this) }
+    }
+
+    private fun invalidateRestoredCache() {
+        schedLock.withLock {
+            dirty = false
+            cancelPendingTaskLocked()
+            unregisterPendingLocked()
+            writeEpoch++
+        }
+        // A write already running when cancellation happened must finish before
+        // callers can observe the restored file through this instance.
+        writer.submit {}.get()
+        mutex.withLock {
+            cache = mutableMapOf()
+            cacheLoaded = false
+        }
+    }
 
     /**
      * Загрузить все состояния освоения.

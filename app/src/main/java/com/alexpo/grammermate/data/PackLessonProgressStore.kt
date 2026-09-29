@@ -32,6 +32,9 @@ interface PackLessonProgressStore {
     /** Flush any pending writes to disk immediately. */
     fun flush()
 
+    /** Re-read disk after an external backup restore. */
+    fun invalidateCache()
+
     /**
      * Migrate global lesson progress to pack-scoped storage.
      * Called once during app upgrade to TASK-081.
@@ -51,6 +54,10 @@ class PackLessonProgressStoreImpl(context: Context) : PackLessonProgressStore {
 
     // In-memory cache for progress data — invalidated on save
     private var progressCache: MutableMap<String, PackLessonProgressState>? = null
+
+    override fun invalidateCache() = mutex.withLock {
+        progressCache = null
+    }
 
     private fun getFileForPack(packId: String): File {
         return File(baseDir, "lesson_progress_$packId.yaml")

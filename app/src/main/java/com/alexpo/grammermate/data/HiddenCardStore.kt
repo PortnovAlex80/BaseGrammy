@@ -25,6 +25,11 @@ class HiddenCardStoreImpl(private val context: Context) : HiddenCardStore {
     private var hiddenIds: MutableSet<String> = mutableSetOf()
     private var loaded = false
 
+    fun invalidateCache() = mutex.withLock {
+        hiddenIds = mutableSetOf()
+        loaded = false
+    }
+
     private fun ensureLoaded() {
         if (loaded) return
         loaded = true
@@ -54,13 +59,17 @@ class HiddenCardStoreImpl(private val context: Context) : HiddenCardStore {
     }
 
     override fun isHidden(cardId: String): Boolean {
-        ensureLoaded()
-        return hiddenIds.contains(cardId)
+        return mutex.withLock {
+            ensureLoaded()
+            hiddenIds.contains(cardId)
+        }
     }
 
     override fun getHiddenCardIds(): Set<String> {
-        ensureLoaded()
-        return hiddenIds.toSet()
+        return mutex.withLock {
+            ensureLoaded()
+            hiddenIds.toSet()
+        }
     }
 
     override fun clearAll() = mutex.withLock {

@@ -57,6 +57,11 @@ class BadSentenceStoreImpl(private val context: Context) : BadSentenceStore {
     private var packs: MutableMap<String, MutableList<BadSentenceEntry>> = mutableMapOf()
     private var loaded = false
 
+    fun invalidateCache() = mutex.withLock {
+        packs = mutableMapOf()
+        loaded = false
+    }
+
     private fun ensureLoaded() {
         if (loaded) return
         loaded = true
@@ -228,36 +233,36 @@ class BadSentenceStoreImpl(private val context: Context) : BadSentenceStore {
         persist()
     }
 
-    override fun getBadSentences(packId: String): List<BadSentenceEntry> {
+    override fun getBadSentences(packId: String): List<BadSentenceEntry> = mutex.withLock {
         ensureLoaded()
-        return packs[packId]?.toList() ?: emptyList()
+        packs[packId]?.toList() ?: emptyList()
     }
 
-    override fun isBadSentence(packId: String, cardId: String): Boolean {
+    override fun isBadSentence(packId: String, cardId: String): Boolean = mutex.withLock {
         ensureLoaded()
-        return packs[packId]?.any { it.cardId == cardId } == true
+        packs[packId]?.any { it.cardId == cardId } == true
     }
 
     /**
      * Backward-compatible: checks all packs for the given cardId.
      * Used during migration period.
      */
-    override fun isBadSentence(cardId: String): Boolean {
+    override fun isBadSentence(cardId: String): Boolean = mutex.withLock {
         ensureLoaded()
-        return packs.values.any { entries -> entries.any { it.cardId == cardId } }
+        packs.values.any { entries -> entries.any { it.cardId == cardId } }
     }
 
-    override fun getBadSentenceCount(packId: String): Int {
+    override fun getBadSentenceCount(packId: String): Int = mutex.withLock {
         ensureLoaded()
-        return packs[packId]?.size ?: 0
+        packs[packId]?.size ?: 0
     }
 
     /**
      * Total bad sentence count across all packs.
      */
-    override fun getTotalBadSentenceCount(): Int {
+    override fun getTotalBadSentenceCount(): Int = mutex.withLock {
         ensureLoaded()
-        return packs.values.sumOf { it.size }
+        packs.values.sumOf { it.size }
     }
 
     override fun exportToTextFile(packId: String): File {

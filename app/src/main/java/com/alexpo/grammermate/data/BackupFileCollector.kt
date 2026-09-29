@@ -1,23 +1,17 @@
 package com.alexpo.grammermate.data
 
 import android.content.Context
-import android.util.Log
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
 
 /**
- * Collects files to include in a backup and enumerates available backups.
+ * Locates internal backups and builds their human-readable metadata.
  *
  * This class is internal to the backup subsystem -- callers should use [BackupManager]
  * as the primary public API.
  */
 internal class BackupFileCollector(private val context: Context) {
-
-    private val logTag = "BackupFileCollector"
-
-    // Internal data directory
-    private val internalDir = File(context.filesDir, "grammarmate")
 
     val backupDir: File? by lazy {
         File(context.filesDir, "grammarmate/backups").apply {
@@ -25,68 +19,33 @@ internal class BackupFileCollector(private val context: Context) {
         }
     }
 
-    // region -- File lists for backup --
-
-    /** Well-known top-level YAML files that should be backed up when present. */
-    val mainBackupFileNames: List<String> = listOf(
-        "mastery.yaml",
-        "progress.yaml",
-        "profile.yaml",
-        "hidden_cards.yaml",
-        "bad_sentences.yaml",
-        "vocab_progress.yaml"
-        // Legacy language-scoped verb drill files are collected dynamically via listVerbDrillFiles().
-        // Pack-scoped verb drill files live under drills/{packId}/ and are copied with pack drill data.
-    )
-
-    /** List streak files (streak_*.yaml) from internal storage. */
-    fun listStreakFiles(): List<File> =
-        internalDir.listFiles { file ->
-            file.name.startsWith("streak_") && file.name.endsWith(".yaml")
-        }?.toList() ?: emptyList()
-
-    /** List drill-progress files (drill_progress_*.yaml) from internal storage. */
-    fun listDrillProgressFiles(): List<File> =
-        internalDir.listFiles { file ->
-            file.name.startsWith("drill_progress_") && file.name.endsWith(".yaml")
-        }?.toList() ?: emptyList()
-
-    /** List legacy language-scoped verb drill files from internal storage. */
-    fun listVerbDrillFiles(): List<File> =
-        internalDir.listFiles { file ->
-            (file.name.startsWith("verb_drill_progress_") || file.name.startsWith("verb_drill_last_session_"))
-                    && file.name.endsWith(".yaml")
-        }?.toList() ?: emptyList()
-
-    /** List pack directories under internal drills/. */
-    fun listPackDrillDirs(): List<File> {
-        val drillsDir = File(internalDir, "drills")
-        if (!drillsDir.exists()) return emptyList()
-        return drillsDir.listFiles(java.io.FileFilter { it.isDirectory })?.toList() ?: emptyList()
-    }
-
-    // endregion
-
     // region -- Backup metadata --
 
     fun buildMetadataContent(timestamp: String): String = """
         Backup created: $timestamp
         App version: 1.0
         Data format: YAML
+        Restore contract: replace all managed progress files with this snapshot
         Contents:
         - mastery.yaml (flower levels and progress)
         - progress.yaml (training session progress)
-        - streak.yaml (daily streak data)
+        - streak_*.yaml (daily streak data per language)
         - profile.yaml (user name and settings)
         - hidden_cards.yaml (hidden card IDs)
         - bad_sentences.yaml (reported bad sentences)
         - vocab_progress.yaml (vocab sprint progress)
+        - word_mastery.yaml (legacy word mastery)
         - drill_progress_*.yaml (per-language drill progress)
         - verb_drill_progress_{languageId}.yaml (legacy per-language verb drill progress)
         - verb_drill_last_session_{languageId}.yaml (legacy verb drill last session state per language)
+        - aux_drill_progress_{languageId}.yaml (legacy aux drill progress per language)
+        - lesson_progress_*.yaml (per-pack lesson progress)
+        - daily_cursor_*.yaml (per-pack daily cursor)
         - drills/{packId}/word_mastery.yaml (word mastery per pack)
         - drills/{packId}/verb_drill_progress.yaml (verb drill progress per pack)
         - drills/{packId}/verb_drill_last_session.yaml (verb drill last session per pack)
+        - drills/{packId}/aux_drill_progress.yaml (aux drill progress per pack)
+        - drills/{packId}/vocab_progress.yaml (vocab progress per pack)
     """.trimIndent()
 
     fun currentTimestamp(): String =

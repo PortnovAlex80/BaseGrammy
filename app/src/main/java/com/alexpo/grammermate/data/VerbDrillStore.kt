@@ -228,6 +228,7 @@ class VerbDrillStoreImpl(
         progressCache = null
         cardsCacheKey = null
         cardsCache = null
+        lastSessionCache = null
     }
 
     // ── Last Session Persistence (VD-50) ────────────────────────────────────────
