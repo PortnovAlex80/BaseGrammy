@@ -118,6 +118,37 @@ class BackupRestoreConsistencyTest {
     }
 
     @Test
+    fun legacyFlatNamesRestoreIntoCurrentLanguageAndPackPaths() {
+        val source = File(app.filesDir, "legacy-restore").apply { mkdirs() }
+        val streakContent = """
+            languageId: it
+            currentStreak: 3
+            longestStreak: 5
+            lastCompletionDateMs: 0
+            totalSubLessonsCompleted: 7
+        """.trimIndent() + "\n"
+        val verbContent = "languageId: it\nschemaVersion: 1\nprogress: {}\n"
+        val sessionContent = "languageId: it\nschemaVersion: 1\nsessionCardIds: []\n"
+        val packContent = "schemaVersion: 1\ndata: {fromLegacy: true}\n"
+        File(source, "streak.yaml").writeText(streakContent)
+        File(source, "verb_drill_progress.yaml").writeText(verbContent)
+        File(source, "verb_drill_last_session.yaml").writeText(sessionContent)
+        File(source, "drills_${pack}_vocab_progress.yaml").writeText(packContent)
+
+        File(dataDir, "streak_it.yaml").writeText("languageId: it\ncurrentStreak: 1\n")
+        assertTrue(manager.restoreFromBackup(source.absolutePath))
+
+        assertEquals(3, StreakStoreImpl(app).load("it").currentStreak)
+        assertEquals(streakContent, File(dataDir, "streak_it.yaml").readText())
+        assertEquals(verbContent, File(dataDir, "verb_drill_progress_it.yaml").readText())
+        assertEquals(sessionContent, File(dataDir, "verb_drill_last_session_it.yaml").readText())
+        assertEquals(packContent, File(dataDir, "drills/$pack/vocab_progress.yaml").readText())
+        assertFalse(File(dataDir, "streak.yaml").exists())
+        assertFalse(File(dataDir, "drills_${pack}_vocab_progress.yaml").exists())
+        source.deleteRecursively()
+    }
+
+    @Test
     fun invalidSnapshotDoesNotReplaceAnyExistingProgressFile() {
         val hidden = File(dataDir, "hidden_cards.yaml")
         hidden.writeText("schemaVersion: 1\nhiddenCardIds: [keep]\n")
