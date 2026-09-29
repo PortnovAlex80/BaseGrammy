@@ -46,10 +46,6 @@ class VocabDrillViewModel(application: Application) : AndroidViewModel(applicati
     private var allWords: List<VocabWord> = emptyList()
     private var masteryMap: Map<String, WordMasteryState> = emptyMap()
 
-    /** Tracks whether any rating was submitted during the current session. */
-    private var _hasRatedCards = false
-    val hasRatedCards: Boolean get() = _hasRatedCards
-
     /** Currently active pack ID, null means no pack scoping (legacy mode). */
     private var activePackId: String? = null
 
@@ -278,7 +274,6 @@ class VocabDrillViewModel(application: Application) : AndroidViewModel(applicati
         val session = _uiState.value.session ?: return
         val index = session.currentIndex
         if (index >= session.cards.size) return
-        _hasRatedCards = true
 
         val card = session.cards[index]
         val now = System.currentTimeMillis()
@@ -341,18 +336,12 @@ class VocabDrillViewModel(application: Application) : AndroidViewModel(applicati
     fun exitSession() {
         // Record fire streak: session counts if any card was rated GOOD/EASY/HARD (not just AGAIN)
         val session = _uiState.value.session
-        if (session != null && _hasRatedCards) {
-            val hasNonAgainRating = session.cards.any { card ->
-                card.mastery.lastReviewDateMs > 0L
-            }
-            if (hasNonAgainRating) {
-                val languageId = _uiState.value.loadedLanguageId
-                if (languageId != null) {
-                    streakStore.recordPracticeTypeCompletion(languageId, PracticeType.VOCAB)
-                }
+        if (session != null && session.correctCount > 0) {
+            val languageId = _uiState.value.loadedLanguageId
+            if (languageId != null) {
+                streakStore.recordPracticeTypeCompletion(languageId, PracticeType.VOCAB)
             }
         }
-        _hasRatedCards = false
         _uiState.update { it.copy(session = null) }
         updateCounts()
     }
