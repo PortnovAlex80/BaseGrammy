@@ -1333,6 +1333,10 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             }
         }
 
+        // A linear completion must persist after its mastery/daily hooks and
+        // after forceBackupOnSave is set. Other answer paths save via events.
+        if (result.needsSaveProgress) saveProgress()
+
         Log.d(logTag, "Answer submitted: accepted=${result.accepted}")
         return SubmitResult(result.accepted, result.hintShown)
     }
@@ -2372,13 +2376,19 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     private fun saveProgressFromTimer() = dispatchSaveProgress(async = true)
 
     private fun dispatchSaveProgress(async: Boolean) {
-        val state = uiState.value
-        // Read daily cursor directly from coordinator to avoid combine flow staleness.
-        // The combine() flow that produces uiState merges _coreState with coordinator's
-        // dailyState; after updateCursor() the MutableStateFlow is updated immediately
-        // but the downstream combine may not have propagated yet, so uiState.value can
-        // contain a stale cursor. This caused storeFirstSessionCardIds() to write a
-        // cursor missing firstSessionDate/cardIds to disk, breaking Repeat after restart.
+        // The combined UI flow can lag immediate writes or stop collecting entirely.
+        // Persist from each authoritative flow so completion and cursor changes cannot
+        // be replaced by an older UI projection.
+        val state = _coreState.value.copy(
+            audio = audioCoordinator.audioState.value,
+            story = storyRunner.stateFlow.value,
+            vocabSprint = vocabSprintRunner.vocabState.value,
+            daily = dailyPracticeCoordinator.dailyState.value,
+            flowerDisplay = flowerRefresher.stateFlow.value,
+            boss = bossOrchestrator.stateFlow.value
+        )
+        // Read the cursor directly from its coordinator as well: it may have
+        // changed before dailyState has emitted its matching projection.
         val actualCursor = dailyPracticeCoordinator.getCursor()
         val stateToSave = if (state.daily.dailyCursor != actualCursor) {
             state.copy(daily = state.daily.copy(dailyCursor = actualCursor))

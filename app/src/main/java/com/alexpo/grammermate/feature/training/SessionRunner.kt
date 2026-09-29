@@ -190,7 +190,7 @@ class SessionRunner(
         val needsBossFinish: Boolean = false,
         val needsSubLessonComplete: Boolean = false,
         val needsEliteFinish: Boolean = false,
-        val needsSaveProgress: Boolean = true,
+        val needsSaveProgress: Boolean = false,
         val needsFlowerRefresh: Boolean = false
     )
 
@@ -533,7 +533,6 @@ class SessionRunner(
             accepted = true,
             hintShown = false,
             needsBossFinish = true,
-            needsSaveProgress = true,
             needsFlowerRefresh = true
         )
     }

@@ -16,6 +16,7 @@ import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.alexpo.grammermate.data.InputMode
+import com.alexpo.grammermate.data.SessionState
 import com.alexpo.grammermate.data.TrainingMode
 import com.alexpo.grammermate.data.TrainingScreenMode
 import com.alexpo.grammermate.data.VerbDrillCard
@@ -34,6 +35,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
+import java.io.File
 
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [33])
@@ -57,6 +59,22 @@ class VerbDrillSessionCardRegressionTest {
     @After
     fun tearDown() {
         store.clear()
+    }
+
+    @Test
+    fun final_answer_creates_backup_after_linear_completion() {
+        val harness = renderPreparedHarness()
+        startVerbSessionThroughUi(harness)
+        repeat(4) { answerCurrentCardCorrectly(harness.trainingVm) }
+        val backupMetadata = File(application.filesDir, "grammarmate/backups/backup_latest/metadata.txt")
+        backupMetadata.delete()
+        val finalCard = requireNotNull(harness.trainingVm.uiState.value.cardSession.currentCard)
+        harness.trainingVm.training.onInputChanged(finalCard.acceptedAnswers.first())
+        assertTrue(harness.trainingVm.submitAnswer().accepted)
+
+        assertEquals(SessionState.PAUSED, harness.trainingVm.uiState.value.cardSession.sessionState)
+        composeRule.waitUntil(timeoutMillis = 5_000) { backupMetadata.exists() }
+        assertTrue(backupMetadata.length() > 0L)
     }
 
     @Test
