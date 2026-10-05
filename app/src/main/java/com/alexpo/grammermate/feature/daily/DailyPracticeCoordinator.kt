@@ -415,7 +415,7 @@ class DailyPracticeCoordinator(
     fun recordDailyCardPracticed(
         blockType: DailyBlockType,
         sentenceCard: SentenceCard?,
-        resolveCardLessonId: (card: SentenceCard) -> String,
+        resolveCardLessonId: (card: SentenceCard) -> String?,
         accepted: Boolean = true
     ) {
         val count = dailyPracticeAnsweredCounts[blockType] ?: 0
@@ -423,7 +423,9 @@ class DailyPracticeCoordinator(
 
         if (blockType == DailyBlockType.TRANSLATE && accepted && sentenceCard != null) {
             val packId = stateAccess.currentState.navigation.activePackId?.value ?: return
-            taskProgress.recordSentenceShow(packId, resolveCardLessonId(sentenceCard), sentenceCard.id)
+            resolveCardLessonId(sentenceCard)?.let { lessonId ->
+                taskProgress.recordSentenceShow(packId, lessonId, sentenceCard.id)
+            }
         }
     }
 

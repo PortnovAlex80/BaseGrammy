@@ -22,6 +22,14 @@ Thumbs.db
 # Build artifacts
 *.zip
 
+# Packaged source inputs must also exist in a clean checkout.
+!/app/src/main/assets/grammarmate/packs/EN_ADV_BASE_GRAMMAR.zip
+!/app/src/main/assets/grammarmate/packs/GREEK_EXPRESS_IT.zip
+
+# Generated Python bytecode from repository checks.
+__pycache__/
+*.py[cod]
+
 # Compiled class files
 *.class
 

@@ -555,6 +555,9 @@ class MasteryStoreImpl(
      */
     private fun writeSnapshotIfDirty() {
         val epochAtStart = schedLock.withLock {
+            // The scheduled window has been consumed. A mutation during/after
+            // this write must be able to schedule the next window.
+            pendingTask = null
             if (!dirty) {
                 unregisterPendingLocked()
                 return

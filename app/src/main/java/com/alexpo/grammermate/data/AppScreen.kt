@@ -3,13 +3,11 @@ package com.alexpo.grammermate.data
 /**
  * App navigation screen enum.
  * Extracted from GrammarMateApp.kt for shared access.
- * ELITE and VOCAB are kept for backward compatibility — they redirect to HOME.
+ * Historical ELITE and VOCAB names resolve to HOME through parse().
  */
 enum class AppScreen {
     HOME,
     LESSON,
-    ELITE,
-    VOCAB,
     DAILY_PRACTICE,
     STORY,
     TRAINING,

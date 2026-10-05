@@ -439,7 +439,7 @@ private fun VocabDrillCardScreen(
             isFlagged = isBadSentence(),
             onFlag = onFlagBadSentence,
             onUnflag = onUnflagBadSentence,
-            onHideCard = { showReportSheet = false },
+            onHideCard = null,
             onExportBadSentences = onExportBadSentences,
             onCopyText = {
                 if (reportText.isNotBlank()) {

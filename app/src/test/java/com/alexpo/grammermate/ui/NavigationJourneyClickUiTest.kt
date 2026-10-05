@@ -4,10 +4,17 @@ import android.app.Application
 import android.net.Uri
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.hasAnyDescendant
+import androidx.compose.ui.test.hasAnyAncestor
+import androidx.compose.ui.test.isPopup
+import androidx.compose.ui.test.printToString
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.hasTextExactly
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.test.performSemanticsAction
+import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onAllNodesWithText
@@ -16,10 +23,13 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
+import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.alexpo.grammermate.R
 import com.alexpo.grammermate.data.SentenceCard
 import com.alexpo.grammermate.data.StoreFactory
+import com.alexpo.grammermate.data.HintLevel
 import org.junit.Before
 import org.junit.Assert.assertTrue
 import org.junit.Assert.assertEquals
@@ -224,6 +234,82 @@ class NavigationJourneyClickUiTest {
         rule.waitUntil(5_000) {
             org.robolectric.Shadows.shadowOf(android.os.Looper.getMainLooper()).idle()
             vm.chapterCards.value.isEmpty() && vm.uiState.value.chapters.isEmpty()
+        }
+    }
+
+    @Test
+    fun training_settings_pack_switch_clears_draft_and_preserves_difficulty() {
+        val app = rule.activity.application
+        val configStore = StoreFactory.getInstance(app).getAppConfigStore()
+        val originalConfig = configStore.load()
+        val packA = "SETTINGS_PACK_A"
+        val packB = "SETTINGS_PACK_B"
+        importOneLessonPack(packA, "settings_a", "Settings first prompt")
+        importOneLessonPack(packB, "settings_b", "Settings second prompt")
+        val skipLabel = rule.activity.getString(R.string.dialog_welcome_skip)
+        if (rule.onAllNodesWithText(skipLabel).fetchSemanticsNodes().isNotEmpty()) {
+            rule.onNodeWithText(skipLabel).performClick()
+        }
+        try {
+            rule.runOnUiThread {
+                vm.importLessonPack(Uri.fromFile(File(rule.activity.cacheDir, "$packA-test.zip")))
+            }
+            awaitPackCard(packA, "Settings first prompt")
+            rule.waitUntil(10_000) { vm.chapterCards.value.isNotEmpty() }
+            rule.onNode(hasScrollAction()).performScrollToNode(hasAnyDescendant(hasTextExactly("Continue")))
+            rule.onAllNodesWithText("Continue")[0].performClick()
+            rule.waitUntil(10_000) { rule.onAllNodesWithText("settings_a title").fetchSemanticsNodes().isNotEmpty() }
+            rule.onAllNodesWithText("settings_a title")[0].performClick()
+            val firstTile = hasClickAction() and hasAnyDescendant(hasTextExactly("1"))
+            rule.waitUntil(10_000) { rule.onAllNodes(firstTile, useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty() }
+            rule.onAllNodes(firstTile, useUnmergedTree = true)[0].performClick()
+            rule.waitUntil(10_000) { rule.onAllNodesWithTag("input_field").fetchSemanticsNodes().isNotEmpty() }
+            rule.onNodeWithContentDescription(app.getString(R.string.content_desc_keyboard_mode)).performScrollTo().performClick()
+            rule.onNodeWithTag("input_field").performTextInput("draft from pack A")
+            assertEquals("draft from pack A", vm.inputText.value)
+
+            rule.onNodeWithContentDescription(app.getString(R.string.training_settings)).performClick()
+            val hardLabel = app.getString(R.string.settings_hard)
+            rule.onNodeWithText(hardLabel).performScrollTo().assertIsDisplayed().assertIsEnabled()
+                .performSemanticsAction(SemanticsActions.OnClick) { it() }
+            assertEquals(HintLevel.HARD, vm.uiState.value.cardSession.hintLevel)
+            assertTrue(vm.uiState.value.navigation.installedPacks.any { it.packId.value == packB })
+            rule.onNode(hasClickAction() and hasTextExactly(packA)).performScrollTo().assertIsDisplayed().assertIsEnabled()
+                .performSemanticsAction(SemanticsActions.OnClick) { it() }
+            org.robolectric.Shadows.shadowOf(android.os.Looper.getMainLooper()).idleFor(java.time.Duration.ofMillis(250))
+            rule.waitForIdle()
+            try {
+                // Activate the actual popup item through accessibility semantics;
+                // native Dialog/Popup pointer dispatch is covered on Android.
+                rule.onNode(hasAnyAncestor(isPopup()) and hasClickAction() and hasAnyDescendant(hasTextExactly(packB)), useUnmergedTree = true)
+                    .performScrollTo().assertIsDisplayed().assertIsEnabled()
+                    .performSemanticsAction(SemanticsActions.OnClick) { it() }
+                org.robolectric.Shadows.shadowOf(android.os.Looper.getMainLooper()).idleFor(java.time.Duration.ofMillis(250))
+                rule.waitForIdle()
+                awaitPackCard(packB, "Settings second prompt")
+            } catch (failure: Throwable) {
+                println("Pack selection callback: expected=$packB actual=${vm.uiState.value.navigation.activePackId} lesson=${vm.uiState.value.navigation.selectedLessonId} card=${currentSentencePrompt()}")
+                runCatching { println(rule.onNode(isPopup(), useUnmergedTree = true).printToString()) }
+                throw failure
+            }
+            rule.onNode(SemanticsMatcher.keyIsDefined(SemanticsActions.Dismiss))
+                .assertIsDisplayed().assertIsEnabled()
+                .performSemanticsAction(SemanticsActions.Dismiss) { it() }
+            rule.waitUntil(10_000) {
+                rule.onAllNodesWithText(app.getString(R.string.settings_interface_language)).fetchSemanticsNodes().isEmpty()
+            }
+
+            rule.onNodeWithTag("input_field").assertIsDisplayed()
+            assertEquals("", vm.inputText.value)
+            assertEquals(HintLevel.HARD, vm.uiState.value.cardSession.hintLevel)
+            assertEquals(0, vm.uiState.value.cardSession.correctCount)
+            assertEquals("settings_b", vm.uiState.value.navigation.selectedLessonId?.value)
+        } finally {
+            rule.runOnUiThread { vm.selectLanguage("en") }
+            val lessons = StoreFactory.getInstance(app).getLessonStore()
+            lessons.removeInstalledPackData(packA)
+            lessons.removeInstalledPackData(packB)
+            configStore.save(originalConfig)
         }
     }
 

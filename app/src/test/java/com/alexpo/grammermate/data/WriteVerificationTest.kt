@@ -123,23 +123,6 @@ class WriteVerificationTest {
     }
 
     @Test
-    fun drillProgressStore_saveDrillProgress_createsNonEmptyFile() {
-        val store = DrillProgressStoreImpl(context)
-        val file = File(testDir, "drill_progress_test-lesson.yaml")
-
-        // Write test data
-        store.saveDrillProgress("test-lesson", 5)
-
-        // Verify file exists and is not empty
-        assertTrue("Drill progress file should exist", file.exists())
-        assertTrue("Drill progress file should not be empty", file.length() > 0)
-
-        // Verify data can be read back
-        val progress = store.getDrillProgress("test-lesson")
-        assertEquals(5, progress)
-    }
-
-    @Test
     fun progressStore_save_createsNonEmptyFile() {
         val store = ProgressStoreImpl(context)
         val file = File(testDir, "progress.yaml")

@@ -2,6 +2,9 @@ package com.alexpo.grammermate.feature.progress
 
 import com.alexpo.grammermate.data.BadSentenceStore
 import com.alexpo.grammermate.data.HiddenCardStore
+import com.alexpo.grammermate.data.HiddenCardKeys
+import com.alexpo.grammermate.data.SentenceCard
+import com.alexpo.grammermate.data.SessionCard
 import com.alexpo.grammermate.data.TrainingUiState
 import com.alexpo.grammermate.shared.TrainingStateAccess
 import kotlinx.coroutines.flow.StateFlow
@@ -26,9 +29,10 @@ class BadSentenceHelper(
         val card = stateAccess.currentState.cardSession.currentCard ?: return BadSentenceResult.None
         val state = stateAccess.currentState
         val packId = state.navigation.activePackId ?: return BadSentenceResult.None
+        val reportId = reportKey(card) ?: return BadSentenceResult.None
         badSentenceStore.addBadSentence(
             packId = packId.value,
-            cardId = card.id,
+            cardId = reportId,
             languageId = state.navigation.selectedLanguageId?.value ?: return BadSentenceResult.None,
             sentence = card.promptRu,
             translation = card.acceptedAnswers.joinToString(" / "),
@@ -43,7 +47,8 @@ class BadSentenceHelper(
     fun unflagBadSentence() {
         val card = stateAccess.currentState.cardSession.currentCard ?: return
         val packId = stateAccess.currentState.navigation.activePackId ?: return
-        badSentenceStore.removeBadSentence(packId.value, card.id)
+        val reportId = reportKey(card) ?: return
+        badSentenceStore.removeBadSentence(packId.value, reportId)
         stateAccess.updateState {
             it.copy(cardSession = it.cardSession.copy(badSentenceCount = badSentenceStore.getBadSentenceCount(packId.value)))
         }
@@ -52,7 +57,8 @@ class BadSentenceHelper(
     fun isBadSentence(): Boolean {
         val card = stateAccess.currentState.cardSession.currentCard ?: return false
         val packId = stateAccess.currentState.navigation.activePackId ?: return false
-        return badSentenceStore.isBadSentence(packId.value, card.id)
+        val reportId = reportKey(card) ?: return false
+        return badSentenceStore.isBadSentence(packId.value, reportId)
     }
 
     fun exportBadSentences(): String? {
@@ -101,21 +107,34 @@ class BadSentenceHelper(
 
     fun hideCurrentCard(): BadSentenceResult {
         val card = stateAccess.currentState.cardSession.currentCard ?: return BadSentenceResult.None
-        hiddenCardStore.hideCard(card.id)
+        val key = hiddenKey(card) ?: return BadSentenceResult.None
+        hiddenCardStore.hideCard(key)
         return BadSentenceResult.SkipToNextCard
     }
 
     fun unhideCurrentCard() {
         val card = stateAccess.currentState.cardSession.currentCard ?: return
-        hiddenCardStore.unhideCard(card.id)
+        hiddenKey(card)?.let(hiddenCardStore::unhideCard)
     }
 
     fun isCurrentCardHidden(): Boolean {
         val card = stateAccess.currentState.cardSession.currentCard ?: return false
-        return hiddenCardStore.isHidden(card.id)
+        return hiddenKey(card)?.let(hiddenCardStore::isHidden) ?: false
     }
 
     // ── Utility ────────────────────────────────────────────────────────────
+
+    /** Sentence feedback follows its source lesson, including mixed review slots. */
+    private fun reportKey(card: SessionCard): String? =
+        if (card is SentenceCard) hiddenKey(card) else card.id
+
+    private fun hiddenKey(card: SessionCard): String? {
+        val state = stateAccess.currentState
+        val packId = state.navigation.activePackId?.value ?: return null
+        val lessonScope = if (card is SentenceCard) state.navigation.selectedLessonId?.value
+            else "@${state.cardSession.returnTo ?: state.cardSession.screenMode.name}"
+        return HiddenCardKeys.forCard(card, packId, lessonScope)
+    }
 
     /** Compute the bad-sentence count for the active pack. */
     fun getBadSentenceCount(): Int {

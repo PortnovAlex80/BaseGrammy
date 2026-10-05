@@ -3,6 +3,7 @@ package com.alexpo.grammermate.feature.training
 import com.alexpo.grammermate.data.BossType
 import com.alexpo.grammermate.data.LanguageId
 import com.alexpo.grammermate.data.Lesson
+import com.alexpo.grammermate.data.HiddenCardKeys
 import com.alexpo.grammermate.data.LessonId
 import com.alexpo.grammermate.data.LessonMasteryState
 import com.alexpo.grammermate.data.LessonSchedule
@@ -110,11 +111,11 @@ class CardProvider(
 
         val lessonCards = when (mode) {
             TrainingMode.ALL_SEQUENTIAL ->
-                lessons.flatMap { it.cards }.filter { it.id !in hiddenCardIds }
+                lessons.flatMap { it.cards }.filterNot { HiddenCardKeys.contains(hiddenCardIds, it) }
             TrainingMode.ALL_MIXED -> {
                 val reviewLimit = TrainingConfig.REVIEW_LIMIT
                 lessons.flatMap { it.allCards }
-                    .filter { it.id !in hiddenCardIds }
+                    .filterNot { HiddenCardKeys.contains(hiddenCardIds, it) }
                     .shuffled()
                     .take(reviewLimit)
             }
@@ -159,7 +160,7 @@ class CardProvider(
             .firstOrNull { it.id == selectedLessonId }
             ?.cards ?: emptyList()
         return lessonCards
-            .filter { it.id !in hiddenCardIds }
+            .filterNot { HiddenCardKeys.contains(hiddenCardIds, it) }
             .shuffled()
     }
 
@@ -230,7 +231,7 @@ class CardProvider(
         )
         val subLesson = subLessons.getOrNull(activeIdx)
         val currentCards = (subLesson?.cards ?: emptyList())
-            .filter { it.id !in hiddenCardIds }
+            .filterNot { HiddenCardKeys.contains(hiddenCardIds, it) }
 
         // Смешанный блок: слоты повторения заполняются здесь, по актуальному
         // mastery, а не запекаются в статический план.

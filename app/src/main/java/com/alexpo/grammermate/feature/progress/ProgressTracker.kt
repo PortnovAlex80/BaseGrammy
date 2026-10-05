@@ -4,6 +4,8 @@ import android.util.Log
 import com.alexpo.grammermate.data.DailyCursorState
 import com.alexpo.grammermate.data.FlowerCalculator
 import com.alexpo.grammermate.data.InputMode
+import com.alexpo.grammermate.data.HiddenCardKeys
+import com.alexpo.grammermate.data.SentenceCard
 import com.alexpo.grammermate.data.countsTowardMastery
 import com.alexpo.grammermate.data.LanguageId
 import com.alexpo.grammermate.data.Lesson
@@ -69,7 +71,7 @@ class ProgressTracker(
         // Boss battles do not count toward mastery/flower/SRS progress
         if (bossActive) return
 
-        val lessonId = resolveCardLessonId(card, selectedLessonId, lessons)
+        val lessonId = resolveCardLessonId(card, selectedLessonId, lessons) ?: return
 
         // Word Bank mode: does NOT count for mastery (flower growth)
         // Only voice and keyboard input count for skill formation
@@ -103,13 +105,15 @@ class ProgressTracker(
         if (inputMode != InputMode.WORD_BANK || cards.isEmpty()) return
         val lessonId = selectedLessonId ?: return
         val pid = packId ?: return  // Pack-scoped mastery only; no pack = no-op
-        val lessonCardIds = lessons
-            .firstOrNull { it.id == lessonId }
-            ?.cards
-            ?.map { it.id }
-            ?.toSet()
-            ?: return
-        val cardIds = cards.map { it.id }.filter { lessonCardIds.contains(it) }
+        val lessonCards = lessons.firstOrNull { it.id == lessonId }?.cards ?: return
+        val lessonCardIds = lessonCards.map { it.id }.toSet()
+        val cardIds = cards.filterIsInstance<SentenceCard>().filter { card ->
+            (card.sourcePackId == null || card.sourcePackId == pid) &&
+                (card.sourceLessonId == null || card.sourceLessonId == lessonId.value) &&
+                (card.sourceLessonId != null || card in lessonCards) &&
+                lessonCardIds.contains(card.id)
+        }.map { it.id }
+        if (cardIds.isEmpty()) return
         masteryStore.markCardsShownForProgressForPack(pid, lessonId.value, cardIds)
     }
 
@@ -160,8 +164,7 @@ class ProgressTracker(
             val mastery = masteryStore.getForPack(pid, lesson.id.value)
             if (mastery == null || mastery.completedAtMs != null) continue  // Skip already completed or no data
 
-            val lessonCardIds = lesson.cards.map { it.id }.toSet()
-            val hiddenInLesson = lessonCardIds.count { it in hiddenCardIds }
+            val hiddenInLesson = lesson.cards.count { HiddenCardKeys.contains(hiddenCardIds, it, pid, lesson.id.value) }
             val effectiveCardCount = lesson.cards.size - hiddenInLesson
             val threshold = minOf(effectiveCardCount.coerceAtLeast(0), TrainingConfig.LESSON_COMPLETION_CARD_THRESHOLD)
 
@@ -187,23 +190,23 @@ class ProgressTracker(
     ): Int {
         if (lessonId == null || mastery == null || mastery.shownCardIds.isEmpty()) return 0
 
-        val lessonCardIds = lessons
-            .firstOrNull { it.id == lessonId }
-            ?.cards
-            ?.map { it.id }
-            ?.toSet()
-            ?: return 0
+        val lessonCards = lessons.firstOrNull { it.id == lessonId }?.cards ?: return 0
+        val lessonCardIds = lessonCards.map { it.id }.toSet()
+        val packId = lessonCards.firstOrNull()?.sourcePackId ?: stateAccess.currentState.navigation.activePackId?.value
 
         var completed = 0
         for (subLesson in subLessons) {
             // Exclude hidden/bad cards from completion check — they are never delivered to the user
-            val deliverableCards = subLesson.cards.filter { it.id !in hiddenCardIds }
+            val deliverableCards = subLesson.cards.filter { !HiddenCardKeys.contains(hiddenCardIds, it, packId, lessonId.value) }
             if (deliverableCards.isEmpty()) {
                 completed++  // All cards hidden = auto-complete this sub-lesson
                 continue
             }
             val allCardsShown = deliverableCards.all { card ->
-                !lessonCardIds.contains(card.id) || mastery.shownCardIds.contains(card.id)
+                val belongsToLesson = (card.sourcePackId == null || card.sourcePackId == packId) &&
+                    (card.sourceLessonId == null || card.sourceLessonId == lessonId.value) &&
+                    (card.sourceLessonId != null || card in lessonCards) && lessonCardIds.contains(card.id)
+                !belongsToLesson || mastery.shownCardIds.contains(card.id)
             }
             if (allCardsShown) {
                 completed++
@@ -217,26 +220,22 @@ class ProgressTracker(
 
     /**
      * Resolve which lesson a card belongs to.
-     * Prefers the currently selected lesson if it contains the card,
-     * then searches all lessons. Falls back to selectedLessonId or "unknown".
+     * Catalog origin owns the credit, even when a mixed session selected another lesson.
+     * Stale cards from another pack and non-sentence drill cards cannot earn lesson credit.
      */
     fun resolveCardLessonId(
         card: com.alexpo.grammermate.data.SessionCard,
         selectedLessonId: LessonId?,
         lessons: List<Lesson>
-    ): LessonId {
-        // Prefer the currently selected lesson if it contains this card
-        if (selectedLessonId != null) {
-            val selectedLesson = lessons.find { it.id == selectedLessonId }
-            if (selectedLesson != null && selectedLesson.cards.any { it.id == card.id }) {
-                return selectedLessonId
-            }
-        }
-        return lessons
-            .find { lesson -> lesson.cards.any { it.id == card.id } }
-            ?.id
-            ?: selectedLessonId
-            ?: LessonId("unknown")
+    ): LessonId? {
+        val sentence = card as? SentenceCard ?: return null
+        val activePackId = stateAccess.currentState.navigation.activePackId?.value
+        if (sentence.sourcePackId != null && sentence.sourcePackId != activePackId) return null
+        sentence.sourceLessonId?.let { return LessonId(it) }
+        // Old in-memory callers may supply source-less cards. Exact content equality avoids
+        // guessing ownership from the repeated card_N row IDs used by ordinary pack CSVs.
+        val matches = lessons.filter { lesson -> lesson.cards.any { it == sentence } }
+        return matches.firstOrNull { it.id == selectedLessonId }?.id ?: matches.singleOrNull()?.id
     }
 
     // ── Progress-based lesson info ───────────────────────────────────
@@ -338,9 +337,15 @@ class ProgressTracker(
         // Save lesson progress to pack-scoped store (Phase 5, Wave 3.1)
         val activePackId = state.navigation.activePackId?.value
         val selectedLessonId = state.navigation.selectedLessonId?.value
-        if (activePackId != null && selectedLessonId != null) {
+        val cardPackId = (state.cardSession.currentCard as? SentenceCard)?.sourcePackId
+        val isLessonCheckpoint = (cardPackId == null || cardPackId == activePackId) &&
+            state.cardSession.screenMode == com.alexpo.grammermate.data.TrainingScreenMode.NORMAL &&
+            state.navigation.mode == com.alexpo.grammermate.data.TrainingMode.LESSON &&
+            !state.cardSession.isReviewMode && !state.elite.eliteActive && state.cardSession.currentCard != null
+        if (isLessonCheckpoint && activePackId != null && selectedLessonId != null) {
             val lessonProgress = PackLessonProgressState.LessonProgress(
                 currentIndex = state.cardSession.currentIndex,
+                activeSubLessonIndex = state.cardSession.activeSubLessonIndex,
                 correctCount = state.cardSession.correctCount,
                 incorrectCount = state.cardSession.incorrectCount,
                 incorrectAttemptsForCard = state.cardSession.incorrectAttemptsForCard,
@@ -502,12 +507,15 @@ class ProgressTracker(
             val verbDrillLastSessionFile = java.io.File(baseDir, "verb_drill_last_session_$languageId.yaml")
             if (verbDrillLastSessionFile.exists()) verbDrillLastSessionFile.delete()
 
+            java.io.File(baseDir, "aux_drill_progress_$languageId.yaml").delete()
+
             val globalVocabFile = java.io.File(baseDir, "vocab_progress_$languageId.yaml")
             if (globalVocabFile.exists()) globalVocabFile.delete()
         }
 
         for (pack in packs) {
             val packDir = java.io.File(baseDir, "drills/${pack.packId.value}")
+            java.io.File(packDir, "aux_drill_progress.yaml").delete()
             val wordMasteryFile = java.io.File(packDir, "word_mastery.yaml")
             if (wordMasteryFile.exists()) wordMasteryFile.delete()
 
@@ -568,6 +576,7 @@ class ProgressTracker(
         val languageId = pack?.languageId?.value
 
         if (languageId != null) {
+            java.io.File(baseDir, "aux_drill_progress_$languageId.yaml").delete()
             val verbDrillFile = java.io.File(baseDir, "verb_drill_progress_$languageId.yaml")
             if (verbDrillFile.exists()) verbDrillFile.delete()
 
@@ -576,6 +585,7 @@ class ProgressTracker(
         }
 
         val packDir = java.io.File(baseDir, "drills/$packId")
+        java.io.File(packDir, "aux_drill_progress.yaml").delete()
         val wordMasteryFile = java.io.File(packDir, "word_mastery.yaml")
         if (wordMasteryFile.exists()) wordMasteryFile.delete()
 

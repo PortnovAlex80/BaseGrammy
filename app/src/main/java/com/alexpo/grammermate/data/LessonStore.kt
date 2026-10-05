@@ -53,7 +53,6 @@ interface LessonStore {
 
     // -- Lesson CRUD --
 
-    fun getLessons(languageId: String): List<Lesson>
 
     /** Pack-scoped lesson loading. Only loads lessons from the specified pack. */
     fun getLessons(packId: String, languageId: String): List<Lesson>
@@ -139,19 +138,10 @@ interface LessonStore {
 
     fun hasChapters(packId: String): Boolean
 
-    // -- External lesson loading --
-
-    fun loadExternalLessons(languageId: String, externalDirPath: String): Int
-
     // -- Story language detection --
 
     fun detectStoryLanguage(packId: String, chapterId: String, uiLanguage: String): String?
 
-    @Deprecated("Use getVerbDrillFiles(packId, languageId) for pack-scoped drill lookup.")
-    fun getVerbDrillFiles(languageId: String): List<File>
-
-    @Deprecated("Use hasVerbDrill(packId, languageId) for pack-scoped drill check.")
-    fun hasVerbDrillLessons(languageId: String): Boolean
 }
 
 /**
@@ -169,6 +159,7 @@ interface LessonStore {
 class LessonStoreImpl(private val context: Context) : LessonStore {
     private val yaml = Yaml()
     private val baseDir = File(context.filesDir, "grammarmate")
+    init { PackInstallTransaction.recover(baseDir) }
     private val lessonsDir = File(baseDir, "lessons")
     private val languagesFile = File(lessonsDir, "languages.yaml")
     private val languagesStore = YamlListStore(yaml, languagesFile)
@@ -206,7 +197,7 @@ class LessonStoreImpl(private val context: Context) : LessonStore {
         packsStore, seedMarker, defaultPacks
     )
 
-    private val lessonCatalog = LessonCatalog(packsDir, lessonsDir, languageManager, ::loadIndex)
+    private val lessonCatalog = LessonCatalog(packsDir, languageManager)
 
     private val chapterStories = PackChapterStoryRepository(context, packsDir, languageManager::readInstalledPackManifest)
 
@@ -215,31 +206,30 @@ class LessonStoreImpl(private val context: Context) : LessonStore {
     )
 
     private val packImporter = PackImporter(
-        context, baseDir, packsDir, packsStore,
-        storiesDir, storiesStore, vocabDir, vocabStore,
-        languageEnsurer = { languageManager.ensureLanguage(it) },
-        languageDir = { languageDir(it) },
-        lessonsDir = lessonsDir,
-        lessonIndexWriter = { langId, id, title, fileName, drillFileName ->
-            saveIndex(langId, LessonIndexEntry(id, title, fileName, drillFileName))
-        },
-        replaceById = { langId, id -> replaceById(langId, id) },
-        replaceByTitle = { langId, title -> replaceByTitle(langId, title) },
-        removePacksForLanguage = { packId, langId -> languageManager.removePacksForLanguage(packId, langId) },
-        getInstalledPacks = { languageManager.getInstalledPacks() }
+        context, baseDir, packsDir, packsStore, languagesStore, storiesStore, vocabStore
     )
 
     // ── Seed & defaults ──────────────────────────────────────────────────
 
-    override fun ensureSeedData() = languageManager.ensureSeedData()
+    private var checkedLegacyPersonalLessons = false
+
+    @Synchronized
+    override fun ensureSeedData() {
+        languageManager.ensureSeedData()
+        if (!checkedLegacyPersonalLessons) {
+            if (packImporter.migrateLegacyPersonalLessons()) invalidatePackCaches()
+            checkedLegacyPersonalLessons = true
+        }
+    }
 
     /** Drop every pack-derived cache (lessons + manifests) after pack mutations. */
     private fun invalidatePackCaches() {
         invalidateLessonsCache()
         languageManager.invalidateManifestCache()
+        GrammarChipStore.reloadIfInitialized(packsDir)
     }
 
-    override fun seedDefaultPacksIfNeeded(): Boolean = withIndexBatch {
+    override fun seedDefaultPacksIfNeeded(): Boolean = run {
         val seeded = languageManager.seedDefaultPacksIfNeeded { path ->
             packImporter.importPackFromAssets(path)
             true
@@ -248,7 +238,7 @@ class LessonStoreImpl(private val context: Context) : LessonStore {
         seeded
     }
 
-    override fun updateDefaultPacksIfNeeded(): Boolean = withIndexBatch {
+    override fun updateDefaultPacksIfNeeded(): Boolean = run {
         val updated = languageManager.updateDefaultPacksIfNeeded(
             importFromAssets = { path ->
                 packImporter.importPackFromAssets(path)
@@ -260,9 +250,8 @@ class LessonStoreImpl(private val context: Context) : LessonStore {
         updated
     }
 
-    override fun forceReloadDefaultPacks(): Boolean = withIndexBatch {
+    override fun forceReloadDefaultPacks(): Boolean = run {
         val result = languageManager.forceReloadDefaultPacks(
-            removeInstalledPackData = { packId -> removeInstalledPackData(packId) },
             importFromAssets = { path ->
                 packImporter.importPackFromAssets(path)
                 true
@@ -291,20 +280,16 @@ class LessonStoreImpl(private val context: Context) : LessonStore {
 
     // ── Pack import ──────────────────────────────────────────────────────
 
-    override fun importPackFromUri(uri: Uri, resolver: ContentResolver): LessonPack = withIndexBatch {
+    override fun importPackFromUri(uri: Uri, resolver: ContentResolver): LessonPack = run {
         ensureSeedData()
-        val pack = packImporter.importPackFromUri(uri, resolver)
-        invalidateLessonsCache()
-        languageManager.invalidateManifestCache(pack.packId.value)
-        pack
+        try { packImporter.importPackFromUri(uri, resolver) }
+        finally { invalidatePackCaches() }
     }
 
-    override fun importPackFromAssets(assetPath: String): LessonPack = withIndexBatch {
+    override fun importPackFromAssets(assetPath: String): LessonPack = run {
         ensureSeedData()
-        val pack = packImporter.importPackFromAssets(assetPath)
-        invalidateLessonsCache()
-        languageManager.invalidateManifestCache(pack.packId.value)
-        pack
+        try { packImporter.importPackFromAssets(assetPath) }
+        finally { invalidatePackCaches() }
     }
 
     // ── Pack removal ─────────────────────────────────────────────────────
@@ -315,7 +300,7 @@ class LessonStoreImpl(private val context: Context) : LessonStore {
             val languageId = manifest.language.lowercase().trim()
             if (languageId.isNotBlank()) {
                 manifest.lessons.forEach { lesson ->
-                    deleteLesson(languageId, lesson.lessonId)
+                    deleteLegacyLesson(languageId, lesson.lessonId)
                 }
                 languageManager.removePacksForLanguage(packId, languageId)
                 languageManager.deletePackDrills(packId)
@@ -330,49 +315,33 @@ class LessonStoreImpl(private val context: Context) : LessonStore {
             languageManager.deletePackDrills(packId)
             removedEntry || removedDir
         }
-        invalidateLessonsCache()
-        languageManager.invalidateManifestCache(packId)
+        invalidatePackCaches()
         return result
     }
 
     // ── CSV lesson import ────────────────────────────────────────────────
 
     override fun importFromUri(languageId: String, uri: Uri, resolver: ContentResolver): Lesson {
-        val (lesson, errors) = packImporter.importLessonFromUri(
-            languageId, uri, resolver,
-            ensureSeedData = { ensureSeedData() },
-            loadIndex = { loadIndex(it) },
-            writeIndex = { langId, entries -> writeIndex(langId, entries) }
-        )
+        ensureSeedData()
+        val (lesson, errors) = packImporter.importLessonFromUri(languageId, uri, resolver)
 
         // Log any errors that occurred during import
         errors.forEach { error ->
             android.util.Log.w("LessonStore", error.toUserMessage())
         }
 
-        invalidateLessonsCache(languageId)
-        return lesson ?: error("Lesson import failed")
+        invalidatePackCaches()
+        return lesson
     }
 
     override fun importFromUriWithErrors(languageId: String, uri: Uri, resolver: ContentResolver): Pair<Lesson, List<ParseError>> {
-        val (lesson, errors) = packImporter.importLessonFromUri(
-            languageId, uri, resolver,
-            ensureSeedData = { ensureSeedData() },
-            loadIndex = { loadIndex(it) },
-            writeIndex = { langId, entries -> writeIndex(langId, entries) }
-        )
-
-        invalidateLessonsCache(languageId)
-        val actualLesson = lesson ?: error("Lesson import failed")
-        return Pair(actualLesson, errors)
+        ensureSeedData()
+        val result = packImporter.importLessonFromUri(languageId, uri, resolver)
+        invalidatePackCaches()
+        return result
     }
 
     // ── Lesson CRUD ──────────────────────────────────────────────────────
-
-    override fun getLessons(languageId: String): List<Lesson> {
-        ensureSeedData()
-        return lessonCatalog.getLessons(languageId)
-    }
 
     override fun getLessons(packId: String, languageId: String): List<Lesson> {
         ensureSeedData()
@@ -418,11 +387,22 @@ class LessonStoreImpl(private val context: Context) : LessonStore {
         drillFileManager.removeVocabEntries(languageId, null)
         drillFileManager.removeStoriesForLanguage(languageId)
         languageManager.removePacksForLanguage(languageId)
-        invalidateLessonsCache(languageId)
+        invalidatePackCaches()
     }
 
     override fun deleteLesson(languageId: String, lessonId: String) {
         ensureSeedData()
+        val userPack = getInstalledPacks().firstOrNull { pack ->
+            pack.packId.value.startsWith("USER_") && pack.languageId.value == languageId &&
+                languageManager.readInstalledPackManifest(pack.packId.value)?.lessons?.singleOrNull()?.let {
+                    it.lessonId == lessonId && it.type in setOf("personal", "draft")
+                } == true
+        }
+        if (userPack != null) removeInstalledPackData(userPack.packId.value)
+        else deleteLegacyLesson(languageId, lessonId)
+    }
+
+    private fun deleteLegacyLesson(languageId: String, lessonId: String) {
         val entries = loadIndex(languageId).toMutableList()
         val iterator = entries.iterator()
         while (iterator.hasNext()) {
@@ -450,17 +430,9 @@ class LessonStoreImpl(private val context: Context) : LessonStore {
 
     override fun createEmptyLesson(languageId: String, title: String): Lesson {
         ensureSeedData()
-        val normalizedTitle = title.trim().ifBlank { "Lesson" }
-        replaceByTitle(languageId, normalizedTitle)
-        val id = java.util.UUID.randomUUID().toString()
-        val fileName = "lesson_$id.csv"
-        val dir = languageDir(languageId)
-        dir.mkdirs()
-        val csvFile = File(dir, fileName)
-        AtomicFileWriter.writeText(csvFile, normalizedTitle)
-        saveIndex(languageId, LessonIndexEntry(id, normalizedTitle, fileName))
-        invalidateLessonsCache(languageId)
-        return Lesson(id = LessonId(id), languageId = LanguageId(languageId), title = normalizedTitle, cards = emptyList())
+        val lesson = packImporter.createEmptyLesson(languageId, title)
+        invalidatePackCaches()
+        return lesson
     }
 
     // ── Story & vocab queries (delegated) ────────────────────────────────
@@ -494,13 +466,6 @@ class LessonStoreImpl(private val context: Context) : LessonStore {
     override fun hasVocabDrill(packId: String, languageId: String): Boolean =
         drillFileManager.hasVocabDrill(packId, languageId)
 
-    @Deprecated("Use getVerbDrillFiles(packId, languageId) for pack-scoped drill lookup.")
-    override fun getVerbDrillFiles(languageId: String): List<File> =
-        drillFileManager.getVerbDrillFilesLegacy(languageId)
-
-    @Deprecated("Use hasVerbDrill(packId, languageId) for pack-scoped drill check.")
-    override fun hasVerbDrillLessons(languageId: String): Boolean =
-        drillFileManager.hasVerbDrillLessons(languageId)
 
     // ── Chapter queries (Grammar Story Roadmap) ───────────────────────────
 
@@ -516,141 +481,14 @@ class LessonStoreImpl(private val context: Context) : LessonStore {
 
     // ── External lesson loading ─────────────────────────────────────────────
 
-    /**
-     * Load lessons from an external directory with Russian naming pattern.
-     * Pattern: урок_{number}_{code}.csv (e.g., урок_01_A01.csv, урок_02_A02.csv)
-     *
-     * @param languageId Target language ID (e.g., "it" for Italian)
-     * @param externalDirPath Absolute path to external lesson directory
-     * @return Number of lessons successfully loaded
-     */
-    override fun loadExternalLessons(languageId: String, externalDirPath: String): Int = withIndexBatch {
-        ensureSeedData()
-        val externalDir = File(externalDirPath)
-        if (!externalDir.exists() || !externalDir.isDirectory) {
-            android.util.Log.w("LessonStore", "External directory does not exist: $externalDirPath")
-            return@withIndexBatch 0
-        }
-
-        // Russian pattern: урок_{number}_{code}.csv
-        val lessonPattern = Regex("""урок_(\d+)_[A-Z]\d+\.csv""")
-        val lessonFiles = externalDir.listFiles()
-            ?.filter { it.isFile && it.extension == "csv" }
-            ?.filter { lessonPattern.matches(it.name) }
-            ?.sortedBy { it.name }
-            ?: emptyList()
-
-        if (lessonFiles.isEmpty()) {
-            android.util.Log.w("LessonStore", "No lessons found matching pattern in: $externalDirPath")
-            return@withIndexBatch 0
-        }
-
-        var loadedCount = 0
-        lessonFiles.forEach { file ->
-            try {
-                val match = lessonPattern.find(file.name) ?: return@forEach
-                val lessonNumber = match.groupValues[1]
-                val codeMatch = Regex("""[A-Z]\d+""").find(file.name)
-                val code = codeMatch?.value ?: "UNKNOWN"
-
-                // Parse the CSV file
-                val parseResult = CsvParser.parseLesson(file.inputStream())
-                val (title, cards) = parseResult.data ?: return@forEach
-
-                // Create lesson ID from code
-                val lessonId = "${languageId}_lesson_${code}"
-
-                // Check if lesson already exists and replace it
-                replaceById(languageId, lessonId)
-
-                // Copy file to language directory
-                val fileName = "lesson_${code}.csv"
-                val dir = languageDir(languageId)
-                dir.mkdirs()
-                val csvFile = File(dir, fileName)
-                AtomicFileWriter.writeText(csvFile, file.readText())
-
-                // Update index
-                saveIndex(languageId, LessonIndexEntry(lessonId, title ?: "Lesson $lessonNumber", fileName))
-
-                loadedCount++
-                android.util.Log.i("LessonStore", "Loaded external lesson: ${file.name} -> $lessonId")
-            } catch (e: Exception) {
-                android.util.Log.e("LessonStore", "Failed to load lesson: ${file.name}", e)
-            }
-        }
-
-        if (loadedCount > 0) {
-            invalidateLessonsCache(languageId)
-            android.util.Log.i("LessonStore", "Successfully loaded $loadedCount lessons from $externalDirPath")
-        }
-
-        loadedCount
-    }
-
-    // ── Story language detection ─────────────────────────────────────────────
-
     override fun detectStoryLanguage(packId: String, chapterId: String, uiLanguage: String): String? =
         chapterStories.detectStoryLanguage(packId, chapterId, uiLanguage)
 
     // ── Private helpers ──────────────────────────────────────────────────
 
-    private fun saveIndex(languageId: String, entry: LessonIndexEntry) {
-        val existing = loadIndex(languageId).toMutableList()
-        val indexMap = mutableMapOf("id" to entry.id, "title" to entry.title, "file" to entry.fileName)
-        if (entry.drillFileName != null) {
-            indexMap["drillFile"] = entry.drillFileName
-        }
-        existing.add(indexMap)
-        writeIndex(languageId, existing)
-    }
+    private fun loadIndex(languageId: String): List<Map<String, Any>> = readIndexFromDisk(languageId)
 
-    // ── Lesson index batching ────────────────────────────────────────────
-    //
-    // Importing a pack touches the lesson index twice per lesson: replaceById()
-    // drops the stale row, then saveIndex() appends the new one. Each of those
-    // used to rewrite the whole YAML with an fsync, so the cost was quadratic in
-    // lesson count — the Italian packs (63 + 63 + 439 lessons) produced 1072 full
-    // rewrites of a 76 KB file and took 162 s on device.
-    //
-    // While a batch is open the index lives in memory and hits the disk once per
-    // language when the outermost batch closes. Reads inside the batch go to the
-    // buffer, so callers still observe their own writes.
-
-    private var indexBatchDepth = 0
-    private val indexBatchBuffers = mutableMapOf<String, List<Map<String, Any>>>()
-
-    /** Runs [block] with index writes buffered in memory. Re-entrant. */
-    private fun <T> withIndexBatch(block: () -> T): T {
-        indexBatchDepth++
-        try {
-            return block()
-        } finally {
-            indexBatchDepth--
-            // Flush on the way out of the outermost batch, including on failure:
-            // the buffer holds every write that did land before the exception.
-            if (indexBatchDepth == 0 && indexBatchBuffers.isNotEmpty()) {
-                val pending = indexBatchBuffers.toMap()
-                indexBatchBuffers.clear()
-                pending.forEach { (languageId, entries) -> writeIndexToDisk(languageId, entries) }
-            }
-        }
-    }
-
-    private fun loadIndex(languageId: String): List<Map<String, Any>> {
-        if (indexBatchDepth > 0) {
-            return indexBatchBuffers.getOrPut(languageId) { readIndexFromDisk(languageId) }
-        }
-        return readIndexFromDisk(languageId)
-    }
-
-    private fun writeIndex(languageId: String, entries: List<Map<String, Any>>) {
-        if (indexBatchDepth > 0) {
-            indexBatchBuffers[languageId] = entries
-            return
-        }
-        writeIndexToDisk(languageId, entries)
-    }
+    private fun writeIndex(languageId: String, entries: List<Map<String, Any>>) = writeIndexToDisk(languageId, entries)
 
     private fun readIndexFromDisk(languageId: String): List<Map<String, Any>> {
         val indexFile = indexFileFor(languageId)
@@ -665,62 +503,10 @@ class LessonStoreImpl(private val context: Context) : LessonStore {
         store.write(entries)
     }
 
-    private fun replaceByTitle(languageId: String, title: String) {
-        val entries = loadIndex(languageId).toMutableList()
-        val iterator = entries.iterator()
-        while (iterator.hasNext()) {
-            val entry = iterator.next()
-            val existingTitle = entry["title"] as? String ?: continue
-            if (existingTitle.equals(title, ignoreCase = true)) {
-                val fileName = entry["file"] as? String
-                if (fileName != null) {
-                    val csvFile = File(languageDir(languageId), fileName)
-                    if (csvFile.exists()) csvFile.delete()
-                }
-                val drillFileName = entry["drillFile"] as? String
-                if (drillFileName != null) {
-                    val drillFile = File(languageDir(languageId), drillFileName)
-                    if (drillFile.exists()) drillFile.delete()
-                }
-                iterator.remove()
-            }
-        }
-        writeIndex(languageId, entries)
-    }
-
-    private fun replaceById(languageId: String, lessonId: String) {
-        val entries = loadIndex(languageId).toMutableList()
-        val iterator = entries.iterator()
-        while (iterator.hasNext()) {
-            val entry = iterator.next()
-            val existingId = entry["id"] as? String ?: continue
-            if (existingId.equals(lessonId, ignoreCase = true)) {
-                val fileName = entry["file"] as? String
-                if (fileName != null) {
-                    val csvFile = File(languageDir(languageId), fileName)
-                    if (csvFile.exists()) csvFile.delete()
-                }
-                val drillFileName = entry["drillFile"] as? String
-                if (drillFileName != null) {
-                    val drillFile = File(languageDir(languageId), drillFileName)
-                    if (drillFile.exists()) drillFile.delete()
-                }
-                iterator.remove()
-            }
-        }
-        writeIndex(languageId, entries)
-    }
-
     private fun languageDir(languageId: String): File = File(lessonsDir, languageId)
 
     private fun indexFileFor(languageId: String): File = File(lessonsDir, "${languageId}_index.yaml")
 
-    private data class LessonIndexEntry(
-        val id: String,
-        val title: String,
-        val fileName: String,
-        val drillFileName: String? = null
-    )
 
     // ── Lazy loading private helpers ───────────────────────────────────
 

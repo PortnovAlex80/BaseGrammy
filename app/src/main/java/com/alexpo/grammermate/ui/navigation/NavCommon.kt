@@ -88,8 +88,6 @@ internal fun isVerbDrillLikeReturn(returnTo: String?): Boolean =
 internal fun routeToScreen(route: String?): AppScreen = when (route) {
     Routes.HOME -> AppScreen.HOME
     Routes.LESSON -> AppScreen.LESSON
-    Routes.ELITE -> AppScreen.ELITE
-    Routes.VOCAB -> AppScreen.VOCAB
     Routes.DAILY_PRACTICE -> AppScreen.DAILY_PRACTICE
     Routes.STORY -> AppScreen.STORY
     Routes.TRAINING -> AppScreen.TRAINING

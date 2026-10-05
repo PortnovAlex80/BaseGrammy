@@ -24,9 +24,13 @@ internal class BackupFileCollector(private val context: Context) {
     fun buildMetadataContent(timestamp: String): String = """
         Backup created: $timestamp
         App version: 1.0
-        Data format: YAML
-        Restore contract: replace all managed progress files with this snapshot
+        Data format: YAML and JSON
+        Restore contract: verified manifest replaces managed progress; old exports merge present files
         Contents:
+        - snapshot_manifest.yaml (complete inventory and SHA-256 checksums)
+        - pomodoro_history.yaml (session history)
+        - bg_vocab_marks.json (known and difficult background words)
+        - bg_vocab_position.json (last played word)
         - mastery.yaml (flower levels and progress)
         - progress.yaml (training session progress)
         - streak_*.yaml (daily streak data per language)

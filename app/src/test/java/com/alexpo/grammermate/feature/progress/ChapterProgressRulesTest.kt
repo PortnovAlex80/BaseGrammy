@@ -2,6 +2,7 @@ package com.alexpo.grammermate.feature.progress
 
 import com.alexpo.grammermate.data.Chapter
 import com.alexpo.grammermate.data.InputMode
+import com.alexpo.grammermate.data.HiddenCardKeys
 import com.alexpo.grammermate.data.LanguageId
 import com.alexpo.grammermate.data.Lesson
 import com.alexpo.grammermate.data.LessonId
@@ -118,7 +119,7 @@ class ChapterProgressRulesTest {
         tracker(fakeMastery).recalculateCompletionsExcludingHidden(
             lessons = listOf(lesson),
             languageId = LanguageId("it"),
-            hiddenCardIds = setOf("c1", "c2"),
+            hiddenCardIds = setOf("c1", "c2").map { HiddenCardKeys.scoped(packId, "l", it) }.toSet(),
             packId = packId
         )
 

@@ -32,3 +32,4 @@
 30. [030. Preserve imported packs during seeding](030-preserve-imported-packs-during-seeding.md)
 31. [031. Read command state synchronously](031-read-command-state-synchronously.md)
 32. [032. Require literal auto-submit](032-require-literal-auto-submit.md)
+33. [033. Repair operation boundaries after architecture review](033-review-remediation-boundaries.md)

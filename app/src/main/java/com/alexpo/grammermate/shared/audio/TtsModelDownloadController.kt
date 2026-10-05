@@ -148,7 +148,13 @@ internal class TtsModelDownloadController(
         when (request) {
             is Request.Selected -> {
                 if (source.isReady(request.languageId)) {
-                    updateState { it.copy(ttsModelReady = true, ttsDownloadState = DownloadState.Done) }
+                    updateState {
+                        it.copy(
+                            ttsModelReady = if (selectedLanguageId() == request.languageId) true else it.ttsModelReady,
+                            ttsDownloadState = if (selectedLanguageId() == request.languageId) DownloadState.Done else it.ttsDownloadState,
+                            ttsModelsReady = it.ttsModelsReady + (request.languageId to true)
+                        )
+                    }
                 } else {
                     launchForeground { downloadSingle(request.languageId, selectedRequest = true) }
                 }
@@ -185,13 +191,14 @@ internal class TtsModelDownloadController(
         source.download(languageId).collect { state ->
             if (selectedRequest) {
                 updateState { current ->
+                    val isSelected = selectedLanguageId() == languageId
                     if (state is DownloadState.Done) {
                         current.copy(
-                            ttsDownloadState = DownloadState.Done,
-                            ttsModelReady = true,
+                            ttsDownloadState = if (isSelected) DownloadState.Done else current.ttsDownloadState,
+                            ttsModelReady = if (isSelected) true else current.ttsModelReady,
                             ttsModelsReady = current.ttsModelsReady + (languageId to true)
                         )
-                    } else current.copy(ttsDownloadState = state)
+                    } else if (isSelected) current.copy(ttsDownloadState = state) else current
                 }
             } else {
                 updateState { current ->

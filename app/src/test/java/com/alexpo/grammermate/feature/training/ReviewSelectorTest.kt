@@ -174,9 +174,12 @@ class ReviewSelectorTest {
 
     @Test
     fun hiddenCardsAreExcluded() {
-        val l1 = lesson("l1", 6)
+        val l1 = lesson("l1", 6).let { lesson ->
+            lesson.copy(cards = lesson.cards.map { it.copy(sourcePackId = "review-pack", sourceLessonId = "l1") })
+        }
         val masteries = mapOf("l1" to mastery("l1", lastReviewMs = now - 5 * day))
-        val hidden = setOf("l1_c1", "l1_c2", "l1_c3")
+        val hiddenIds = setOf("l1_c1", "l1_c2", "l1_c3")
+        val hidden = hiddenIds.map { com.alexpo.grammermate.data.HiddenCardKeys.scoped("review-pack", "l1", it) }.toSet()
 
         val picked = ReviewSelector.selectReviewCards(
             candidates = listOf(l1),
@@ -188,7 +191,7 @@ class ReviewSelectorTest {
             hiddenCardIds = hidden
         )
 
-        assertThat(picked.map { it.id }).containsNoneIn(hidden)
+        assertThat(picked.map { it.id }).containsNoneIn(hiddenIds)
     }
 
     // ── Непрерывный отрезок ──────────────────────────────────────────────

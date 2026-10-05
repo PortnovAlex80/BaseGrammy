@@ -171,4 +171,44 @@ class TtsModelDownloadControllerTest {
         assertFalse(harness.state.ttsMeteredNetwork)
         assertTrue(source.batches.isEmpty())
     }
+
+    @Test
+    fun old_selected_download_does_not_mark_new_language_ready() = runTest {
+        val finishDownload = CompletableDeferred<Unit>()
+        val source = FakeSource().apply {
+            singleFlow = { language -> flow {
+                emit(DownloadState.Downloading(10, 1, 10))
+                finishDownload.await()
+                ready += language
+                emit(DownloadState.Done)
+            } }
+        }
+        val harness = Harness(source, this, StandardTestDispatcher(testScheduler))
+        harness.controller.startSelected()
+        runCurrent()
+        harness.selected = "en"
+        harness.state = harness.state.copy(ttsModelReady = false, ttsDownloadState = DownloadState.Idle)
+        finishDownload.complete(Unit)
+        runCurrent()
+        assertTrue(source.isReady("it"))
+        assertFalse(source.isReady("en"))
+        assertTrue(harness.state.ttsModelsReady["it"] == true)
+        assertFalse(harness.state.ttsModelReady)
+        assertEquals(DownloadState.Idle, harness.state.ttsDownloadState)
+    }
+
+    @Test
+    fun metered_confirmation_for_an_old_ready_language_keeps_current_readiness() = runTest {
+        val source = FakeSource().apply { metered = true }
+        val harness = Harness(source, this, StandardTestDispatcher(testScheduler))
+        harness.controller.startSelected()
+        harness.selected = "en"
+        source.ready += "it"
+        harness.controller.confirmMetered()
+        runCurrent()
+        assertTrue(source.singles.isEmpty())
+        assertTrue(harness.state.ttsModelsReady["it"] == true)
+        assertFalse(harness.state.ttsModelReady)
+        assertEquals(DownloadState.Idle, harness.state.ttsDownloadState)
+    }
 }

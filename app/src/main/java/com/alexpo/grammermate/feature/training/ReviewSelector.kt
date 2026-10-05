@@ -1,6 +1,7 @@
 package com.alexpo.grammermate.feature.training
 
 import com.alexpo.grammermate.data.Lesson
+import com.alexpo.grammermate.data.HiddenCardKeys
 import com.alexpo.grammermate.data.LessonMasteryState
 import com.alexpo.grammermate.data.SentenceCard
 import com.alexpo.grammermate.data.SpacedRepetitionConfig
@@ -52,7 +53,7 @@ object ReviewSelector {
                 // Урок, который ни разу не воспроизводили самостоятельно,
                 // в повторение не идёт — повторять нечего.
                 if (mastery.lastReviewMs <= 0L) return@mapNotNull null
-                val visible = lesson.allCards.filter { it.id !in hiddenCardIds }
+                val visible = lesson.allCards.filterNot { HiddenCardKeys.contains(hiddenCardIds, it) }
                 if (visible.isEmpty()) return@mapNotNull null
 
                 val effectiveDays = SpacedRepetitionConfig.effectiveDays(

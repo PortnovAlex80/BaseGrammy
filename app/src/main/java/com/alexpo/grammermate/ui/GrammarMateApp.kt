@@ -456,16 +456,6 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                         }
                     }
 
-                    // Backward compat: ELITE redirects to HOME
-                    composable(Routes.ELITE) {
-                        LaunchedEffect(Unit) { navController.navigate(Routes.HOME) { popUpTo(Routes.ELITE) { inclusive = true } } }
-                    }
-
-                    // Backward compat: VOCAB redirects to HOME
-                    composable(Routes.VOCAB) {
-                        LaunchedEffect(Unit) { navController.navigate(Routes.HOME) { popUpTo(Routes.VOCAB) { inclusive = true } } }
-                    }
-
                     composable(Routes.DAILY_PRACTICE) {
                         LaunchedEffect(Unit) { Log.d("GrammarMate", "Screen: DAILY_PRACTICE shown") }
                         DailyPracticeScreenContent(state, vm, remember { { route: String -> onNavigate(route) } }, onNavigateResetStack)
@@ -515,6 +505,7 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                     }
 
                     composable(Routes.TRAINING) {
+                        val drillBridge = remember(vm, verbDrillVm) { VerbDrillTrainingBridge(vm, verbDrillVm) }
                         // Phase 4 (4.6): the tense-info bottom sheet uses the SAME
                         // Activity-scoped verbDrillVm — one instance, one load
                         // (the former route-scoped duplicate ran a parallel
@@ -522,35 +513,16 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                         TrainingScreenContent(
                             state, vm,
                             onSubmit = {
-                                val beforeCard = state.cardSession.currentCard
-                                val result = vm.submitAnswer()
-                                if (
-                                    isVerbDrillLikeReturn(state.cardSession.returnTo) &&
-                                    beforeCard is VerbDrillCard &&
-                                    result.accepted
-                                ) {
-                                    verbDrillVm.submitCorrectAnswer()
-                                }
-                                result
+                                if (isVerbDrillLikeReturn(state.cardSession.returnTo)) drillBridge.submit()
+                                else vm.submitAnswer()
                             },
                             onNext = {
-                                if (
-                                    isVerbDrillLikeReturn(state.cardSession.returnTo) &&
-                                    state.cardSession.currentCard is VerbDrillCard &&
-                                    (state.cardSession.lastResult == false || state.cardSession.answerText != null)
-                                ) {
-                                    verbDrillVm.markCardCompleted()
-                                }
-                                vm.navigateNext()
+                                if (isVerbDrillLikeReturn(state.cardSession.returnTo)) drillBridge.next()
+                                else vm.navigateNext()
                             },
                             onPrev = {
-                                if (
-                                    isVerbDrillLikeReturn(state.cardSession.returnTo) &&
-                                    state.cardSession.currentIndex > 0
-                                ) {
-                                    verbDrillVm.prevCard()
-                                }
-                                vm.navigatePrev()
+                                if (isVerbDrillLikeReturn(state.cardSession.returnTo)) drillBridge.previous()
+                                else vm.navigatePrev()
                             },
                             onShowExitDialog = remember(dialogs, state.cardSession.returnTo, state.cardSession.currentCard) {
                                 {
@@ -559,13 +531,13 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                                     when {
                                         // Verb/Aux drill with active card (exiting mid-session) → return to drill screen
                                         isVerbDrillLikeReturn(returnTo) && hasActiveCard -> {
-                                            verbDrillVm.persistSessionState()
+                                            if (returnTo == Routes.VERB_DRILL) verbDrillVm.persistSessionState()
                                             vm.exitVerbDrillSession()
                                             onNavigatePopTo(returnTo)
                                         }
                                         // Verb/Aux drill with NO active card (block completed) → save state, go to HOME
                                         isVerbDrillLikeReturn(returnTo) && !hasActiveCard -> {
-                                            verbDrillVm.persistSessionState()
+                                            if (returnTo == Routes.VERB_DRILL) verbDrillVm.persistSessionState()
                                             vm.exitVerbDrillSession()
                                             onNavigateResetStack(Routes.HOME)
                                         }
@@ -581,16 +553,21 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                             },
                             onShowSettings = remember { { vm.pauseSession(); ScreenLogger.overlay("settings", shown = true); dialogs = DialogState.Settings } },
                             onTtsSpeak = onTtsSpeak,
-                            onVerbDrillMore = remember { {
-                                verbDrillVm.persistSessionState()
-                                verbDrillVm.nextBatch()
-                                val nextCards = verbDrillVm.uiState.value.session?.cards ?: emptyList()
-                                if (nextCards.isNotEmpty()) {
-                                    vm.replaceVerbDrillCards(nextCards)
-                                } else {
-                                    // No more cards — go to selection screen
+                            onVerbDrillMore = remember(state.cardSession.returnTo) { {
+                                if (state.cardSession.returnTo == Routes.AUX_DRILL) {
                                     vm.exitVerbDrillSession()
-                                    onNavigatePopTo(Routes.VERB_DRILL)
+                                    onNavigatePopTo(Routes.AUX_DRILL)
+                                } else {
+                                    verbDrillVm.persistSessionState()
+                                    verbDrillVm.nextBatch()
+                                    val nextCards = verbDrillVm.uiState.value.session?.cards ?: emptyList()
+                                    if (nextCards.isNotEmpty()) {
+                                        vm.replaceVerbDrillCards(nextCards)
+                                    } else {
+                                        // No more cards — go to selection screen
+                                        vm.exitVerbDrillSession()
+                                        onNavigatePopTo(Routes.VERB_DRILL)
+                                    }
                                 }
                             } },
                             onNavigate = onNavigate,
@@ -640,7 +617,7 @@ fun GrammarMateApp(vm: TrainingViewModel = viewModel()) {
                             Log.d("NavDebug", "BACK: TRAINING drill return path -> ${state.cardSession.returnTo}")
                             ScreenLogger.nav(currentRoute, "BACK", trigger = "back_press")
                             AuditLogger.getInstanceOrNull()?.backPress("training", "drill_return")
-                            verbDrillVm.persistSessionState()
+                            if (state.cardSession.returnTo == Routes.VERB_DRILL) verbDrillVm.persistSessionState()
                             vm.exitVerbDrillSession()
                             onNavigatePopTo(state.cardSession.returnTo)
                         }

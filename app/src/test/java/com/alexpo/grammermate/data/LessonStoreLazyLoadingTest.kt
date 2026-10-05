@@ -142,7 +142,6 @@ class LessonStoreLazyLoadingTest {
             throw UnsupportedOperationException()
         override fun importFromUriWithErrors(languageId: String, uri: android.net.Uri, resolver: android.content.ContentResolver): Pair<Lesson, List<ParseError>> =
             throw UnsupportedOperationException()
-        override fun getLessons(languageId: String): List<Lesson> = emptyList()
         override fun getLessons(packId: String, languageId: String): List<Lesson> = emptyList()
         override fun deleteAllLessons(languageId: String) {}
         override fun deleteLesson(languageId: String, lessonId: String) {}
@@ -160,10 +159,7 @@ class LessonStoreLazyLoadingTest {
         override fun getChapters(packId: String): List<Chapter> = emptyList()
         override fun getChapterStory(packId: String, storyFile: String): String? = null
         override fun hasChapters(packId: String): Boolean = false
-        override fun loadExternalLessons(languageId: String, externalDirPath: String): Int = 0
         override fun detectStoryLanguage(packId: String, chapterId: String, uiLanguage: String): String? = null
-        override fun getVerbDrillFiles(languageId: String): List<java.io.File> = emptyList()
-        override fun hasVerbDrillLessons(languageId: String): Boolean = false
     }
 }
 

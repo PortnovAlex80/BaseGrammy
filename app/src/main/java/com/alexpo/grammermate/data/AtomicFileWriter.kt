@@ -1,6 +1,10 @@
 package com.alexpo.grammermate.data
 
+import android.annotation.SuppressLint
 import android.util.Log
+import android.os.Build
+import androidx.annotation.ChecksSdkIntAtLeast
+import androidx.annotation.RequiresApi
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
@@ -68,25 +72,47 @@ object AtomicFileWriter {
      * Layer 2 — [java.nio.file.Files.move] with ATOMIC_MOVE (real JVMs and
      * Android API 26+): atomic replace on Windows via MoveFileEx, which
      * also never leaves the target missing.
-     * Layer 3 (last resort) — delete the target first, legacy Windows
-     * semantics with a retry/sleep loop. Only this branch can transiently
-     * leave the target absent, so it is reached only when both
-     * replace-capable APIs have already failed. It also keeps the up-to-100ms
-     * sleep off the caller's hot path on every platform that matters.
+     * A failed replacement keeps the previous target intact. Retrying must
+     * never delete the only durable copy before the new file is committed.
      */
-    private fun finalizeMove(tempFile: File, target: File) {
+    internal fun finalizeMove(tempFile: File, target: File) {
         // Layer 1 — File.renameTo: rename(2) semantics, atomically replaces
         // an existing destination on Android/Linux (the production target).
         // Returns false on Windows when the target exists.
         if (tempFile.renameTo(target)) return
 
         // Layer 2 — Files.move(ATOMIC_MOVE): MoveFileEx(MOVEFILE_REPLACE_EXISTING)
-        // on Windows JVMs, rename(2) on POSIX; needs Android API 26+ (caught
-        // below). Every attempt is an atomic replace — the target is never
+        // on Windows JVMs, rename(2) on POSIX; guarded on Android API 26+.
+        // Every attempt is an atomic replace — the target is never
         // absent. Transient AccessDeniedException (e.g. Defender briefly
         // holding the freshly written temp file) is retried, not escalated
-        // to the destructive fallback.
-        try {
+        // to deleting the previous file.
+        if (supportsNioMove()) try {
+            Api26Move.replace(tempFile, target)
+            return
+        } catch (_: IOException) {
+            // Retry the platform rename without deleting the old target.
+        }
+
+        repeat(10) {
+            Thread.sleep(10)
+            if (tempFile.renameTo(target)) return
+        }
+        tempFile.delete()
+        throw IOException("Failed to replace ${target.absolutePath}; previous file retained")
+    }
+
+    // SDK_INT=0 is the Android stub in the existing pure-JVM file tests.
+    // A real Android runtime always reports its positive platform API level.
+    @SuppressLint("ObsoleteSdkInt") // Preserve the host-JVM stub branch as well as Android API 26+.
+    @ChecksSdkIntAtLeast(api = 26)
+    internal fun supportsNioMove(): Boolean =
+        Build.VERSION.SDK_INT == 0 || Build.VERSION.SDK_INT >= 26
+
+    /** Keep unavailable NIO types out of the API 24/25 writer's class body. */
+    private object Api26Move {
+        @RequiresApi(26)
+        fun replace(tempFile: File, target: File) {
             var attempts = 0
             while (true) {
                 try {
@@ -104,29 +130,6 @@ object AtomicFileWriter {
                     Thread.sleep(10)
                 }
             }
-        } catch (_: Throwable) {
-            // API < 26 on Android, or a persistent I/O failure — take the
-            // legacy path.
-        }
-
-        // Layer 3 (last resort) — delete the target first, legacy Windows
-        // semantics with a retry/sleep loop. Only this branch can transiently
-        // leave the target absent, so it is reached only when both
-        // replace-capable layers above have failed.
-        if (target.exists()) {
-            if (!target.delete()) {
-                // If delete fails, wait a bit and retry (Windows file locking)
-                var attempts = 0
-                while (target.exists() && attempts < 10) {
-                    Thread.sleep(10)
-                    target.delete()
-                    attempts++
-                }
-            }
-        }
-        if (!tempFile.renameTo(target)) {
-            tempFile.delete()
-            error("Failed to finalize ${target.absolutePath}")
         }
     }
 

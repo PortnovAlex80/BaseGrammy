@@ -10,6 +10,8 @@ import com.alexpo.grammermate.data.LessonPack
 import com.alexpo.grammermate.data.Language
 import com.alexpo.grammermate.data.LessonStore
 import com.alexpo.grammermate.data.PackId
+import com.alexpo.grammermate.data.PackLessonProgressStore
+import com.alexpo.grammermate.data.SessionState
 import com.alexpo.grammermate.data.ProfileStore
 import com.alexpo.grammermate.data.ProgressStore
 import com.alexpo.grammermate.data.StreakData
@@ -41,7 +43,8 @@ class ProgressRestorer(
     private val eliteStepCount: Int,
     private val normalizeEliteSpeeds: (List<Double>) -> List<Double>,
     private val resolveEliteUnlocked: (List<Lesson>, Boolean) -> Boolean,
-    private val parseBossRewards: (Map<String, String>) -> Map<String, BossReward>
+    private val parseBossRewards: (Map<String, String>) -> Map<String, BossReward>,
+    private val packLessonProgressStore: PackLessonProgressStore
 ) {
     companion object {
         private const val logTag = "GrammarMate"
@@ -67,28 +70,37 @@ class ProgressRestorer(
         includeLanguageData: Boolean = false
     ): List<ProgressResult> {
         val normalizedEliteSpeeds = normalizeEliteSpeeds(progress.eliteBestSpeeds)
+        val checkpoint = progress.activePackId?.let { packId ->
+            selectedLessonId?.let { lessonId ->
+                packLessonProgressStore.loadPackProgress(packId.value)?.lessonProgress?.get(lessonId.value)
+            }
+        }
         stateAccess.updateState {
             val base = it.copy(
                 navigation = it.navigation.copy(
                     selectedLanguageId = selectedLanguageId,
+                    activePackId = progress.activePackId,
+                    activePackLessonIds = lessons.map { lesson -> lesson.id.value },
                     lessons = lessons,
                     selectedLessonId = selectedLessonId,
                     mode = progress.mode,
                     userName = profile.userName,
                     welcomeDialogAttempts = profile.welcomeDialogAttempts
                 ),
-                cardSession = it.cardSession.copy(
-                    sessionState = progress.state,
-                    currentIndex = progress.currentIndex,
-                    correctCount = progress.correctCount,
-                    incorrectCount = progress.incorrectCount,
-                    incorrectAttemptsForCard = progress.incorrectAttemptsForCard,
-                    activeTimeMs = progress.activeTimeMs,
+                cardSession = it.cardSession.resetForContext().copy(
+                    sessionState = checkpoint?.state?.takeUnless { state -> state == SessionState.HINT_SHOWN }
+                        ?: SessionState.PAUSED,
+                    currentIndex = checkpoint?.currentIndex ?: 0,
+                    correctCount = checkpoint?.correctCount ?: 0,
+                    incorrectCount = checkpoint?.incorrectCount ?: 0,
+                    activeTimeMs = checkpoint?.activeTimeMs ?: 0L,
+                    activeSubLessonIndex = checkpoint?.activeSubLessonIndex ?: 0,
                     voiceActiveMs = progress.voiceActiveMs,
                     voiceWordCount = progress.voiceWordCount,
                     hintCount = progress.hintCount,
                     currentStreak = streak.currentStreak,
-                    longestStreak = streak.longestStreak
+                    longestStreak = streak.longestStreak,
+                    todayFireCount = streak.todayFireCount
                 ),
                 elite = it.elite.copy(
                     eliteStepIndex = progress.eliteStepIndex.coerceIn(0, eliteStepCount - 1),
@@ -129,6 +141,7 @@ class ProgressRestorer(
         Log.d(logTag, "Backup restore result: $success")
 
         if (success) {
+            packLessonProgressStore.invalidateCache()
             val progress = progressStore.load()
             val profile = profileStore.load()
             val selectedLanguageId = if (progress.languageId.value.isNotEmpty()) progress.languageId else LanguageId("en")
@@ -171,6 +184,7 @@ class ProgressRestorer(
      * Returns a list of [ProgressResult] commands for the ViewModel to execute.
      */
     suspend fun reloadFromDisk(): List<ProgressResult> {
+        packLessonProgressStore.invalidateCache()
         val progress = progressStore.load()
         val profile = profileStore.load()
         val languages = lessonStore.getLanguages()

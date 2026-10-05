@@ -23,7 +23,7 @@ internal class BackupRestorer(private val context: Context) {
             BackupSnapshotFiles.listIn(root).forEach { (path, file) -> snapshot[path] = file.readText() }
             addLegacyFiles(root.listFiles()?.filter { it.isFile && isLegacyFile(it.name) }
                 .orEmpty().map { it.name to it.readText() }, snapshot)
-            applySnapshot(snapshot)
+            applySnapshot(snapshot, File(root, BackupSnapshotManifest.FILE_NAME).takeIf(File::isFile)?.readText())
         } catch (e: Exception) {
             Log.e(TAG, "Failed to restore backup from path", e)
             false
@@ -39,10 +39,13 @@ internal class BackupRestorer(private val context: Context) {
         val success = try {
             val snapshot = linkedMapOf<String, String>()
             val legacy = mutableListOf<Pair<String, String>>()
+            var manifest: String? = null
             root.listFiles().forEach { file ->
                 val name = file.name ?: return@forEach
                 if (file.isFile) {
-                    if (BackupSnapshotFiles.isManaged(name)) {
+                    if (name == BackupSnapshotManifest.FILE_NAME) {
+                        manifest = readDocument(file)
+                    } else if (BackupSnapshotFiles.isManaged(name)) {
                         snapshot[name] = readDocument(file)
                     } else if (isLegacyFile(name)) {
                         legacy += name to readDocument(file)
@@ -61,7 +64,7 @@ internal class BackupRestorer(private val context: Context) {
                 }
             }
             addLegacyFiles(legacy, snapshot)
-            applySnapshot(snapshot).also {
+            applySnapshot(snapshot, manifest).also {
                 log.appendLine("Result: ${if (it) "SUCCESS" else "FAILED"}")
                 log.appendLine("Progress files: ${snapshot.size}")
             }
@@ -78,47 +81,32 @@ internal class BackupRestorer(private val context: Context) {
         context.contentResolver.openInputStream(file.uri)?.bufferedReader()?.use { it.readText() }
             ?: error("Cannot read ${file.name}")
 
-    private fun applySnapshot(snapshot: Map<String, String>): Boolean {
-        if (snapshot.isEmpty() || snapshot.keys.any { !BackupSnapshotFiles.isManaged(it) }) return false
-        if (snapshot.any { (name, content) -> !isValid(content, name) }) return false
+    private fun applySnapshot(snapshot: Map<String, String>, manifest: String?): Boolean {
+        if (!BackupSnapshotManifest.accepts(snapshot, manifest) || snapshot.keys.any { !BackupSnapshotFiles.isManaged(it) }) return false
+        if (snapshot.any { (name, content) -> !BackupContentValidator.isValid(name, content) }) return false
         if (!internalDir.exists() && !internalDir.mkdirs()) return false
 
-        val existing = BackupSnapshotFiles.listIn(internalDir)
+        val existing = BackupSnapshotFiles.current(context)
         val previous = existing.mapValues { (_, file) -> file.readBytes() }
         return try {
-            // A missing progress file in the backup means empty progress for that feature.
-            existing.filterKeys { it !in snapshot }.values.forEach { file ->
+            // Only a verified complete snapshot may clear omitted progress. Legacy exports merge.
+            existing.filterKeys { manifest != null && it !in snapshot }.values.forEach { file ->
                 if (!file.delete()) error("Cannot delete stale ${file.name}")
             }
             snapshot.forEach { (path, content) ->
-                AtomicFileWriter.writeText(File(internalDir, path), content)
+                AtomicFileWriter.writeText(BackupSnapshotFiles.destination(context, path), content)
             }
             true
         } catch (e: Exception) {
             Log.e(TAG, "Restore failed; rolling back previous progress files", e)
-            BackupSnapshotFiles.listIn(internalDir).filterKeys { it !in previous }.values.forEach(File::delete)
+            BackupSnapshotFiles.current(context).filterKeys { it !in previous }.values.forEach(File::delete)
             previous.forEach { (path, bytes) ->
                 try {
-                    AtomicFileWriter.writeText(File(internalDir, path), bytes.toString(Charsets.UTF_8))
+                    AtomicFileWriter.writeText(BackupSnapshotFiles.destination(context, path), bytes.toString(Charsets.UTF_8))
                 } catch (rollbackError: Exception) {
                     Log.e(TAG, "Failed to roll back $path", rollbackError)
                 }
             }
-            false
-        }
-    }
-
-    private fun isValid(content: String, name: String): Boolean {
-        if (content.isBlank()) return false
-        return try {
-            val value = yaml.load<Any>(content)
-            when (value) {
-                is Map<*, *> -> value["schemaVersion"]?.let { it is Number } ?: true
-                is List<*> -> true
-                else -> false
-            }
-        } catch (e: Exception) {
-            Log.w(TAG, "Invalid backup file: $name", e)
             false
         }
     }

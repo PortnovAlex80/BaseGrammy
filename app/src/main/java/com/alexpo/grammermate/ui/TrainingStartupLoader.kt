@@ -39,7 +39,7 @@ internal class TrainingStartupLoader(
         val content = contentResolver.resolve(
             preferredLanguageId = progress.languageId.takeIf { container.progressStore.exists() },
             preferredPackId = progress.activePackId,
-            preferredLessonId = null,
+            preferredLessonId = progress.lessonId,
             languages = languages,
             packs = packs
         )

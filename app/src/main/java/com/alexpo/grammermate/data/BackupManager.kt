@@ -52,6 +52,7 @@ class BackupManagerImpl(private val context: Context) : BackupManager {
      * Create a backup of all progress data.
      * Returns true if backup succeeded.
      */
+    @Synchronized
     override fun createBackup(): Boolean {
         return try {
             MasteryStoreImpl.drainBeforeRestore(context)
@@ -126,6 +127,7 @@ class BackupManagerImpl(private val context: Context) : BackupManager {
         val restored = restore()
         if (restored) {
             MasteryStoreImpl.invalidateAfterRestore(context)
+            BgVocabMarkStore.invalidateAfterRestore(context)
             (context.applicationContext as? Application)?.let {
                 StoreFactory.getInstance(it).invalidateAfterRestore()
             }
@@ -146,9 +148,14 @@ class BackupManagerImpl(private val context: Context) : BackupManager {
         if (!stagingDir.mkdirs()) return false
         val timestamp = collector.currentTimestamp()
         return try {
-            BackupSnapshotFiles.listIn(internalDir).forEach { (relativePath, source) ->
+            BackupSnapshotFiles.current(context).forEach { (relativePath, source) ->
                 AtomicFileWriter.copyAtomic(source, File(stagingDir, relativePath))
             }
+            val snapshot = BackupSnapshotFiles.listIn(stagingDir).mapValues { it.value.readText() }
+            require(snapshot.all { (path, content) -> BackupContentValidator.isValid(path, content) }) {
+                "Current progress contains invalid data; previous backup retained"
+            }
+            AtomicFileWriter.writeText(File(stagingDir, BackupSnapshotManifest.FILE_NAME), BackupSnapshotManifest.encode(snapshot))
             writeBackupMetadata(stagingDir, timestamp)
             if (previousDir.exists() && !previousDir.deleteRecursively()) return false
             if (backupSubDir.exists() && !backupSubDir.renameTo(previousDir)) return false

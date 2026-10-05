@@ -93,8 +93,10 @@ class BackupRestoreConsistencyTest {
         val vocab = File(packDir, "vocab_progress.yaml")
         val cursor = File(dataDir, "daily_cursor_$pack.yaml")
         val lessonProgress = File(dataDir, "lesson_progress_$pack.yaml")
-        val content = "schemaVersion: 1\ndata: {}\n"
-        listOf(aux, vocab, cursor, lessonProgress).forEach { it.writeText(content) }
+        AuxDrillStoreImpl(app, pack).saveProgress(emptyMap())
+        VocabProgressStoreImpl(app, pack).addCompletedIndex("lesson", "en", 2)
+        PackDailyCursorStoreImpl(app).savePackCursor(PackDailyCursorState(packId = pack))
+        PackLessonProgressStoreImpl(app).savePackProgress(PackLessonProgressState(packId = pack))
         assertTrue(manager.createBackup())
 
         val latest = File(dataDir, "backups/backup_latest")
@@ -127,9 +129,9 @@ class BackupRestoreConsistencyTest {
             lastCompletionDateMs: 0
             totalSubLessonsCompleted: 7
         """.trimIndent() + "\n"
-        val verbContent = "languageId: it\nschemaVersion: 1\nprogress: {}\n"
+        val verbContent = "languageId: it\nschemaVersion: 1\ndata: {}\n"
         val sessionContent = "languageId: it\nschemaVersion: 1\nsessionCardIds: []\n"
-        val packContent = "schemaVersion: 1\ndata: {fromLegacy: true}\n"
+        val packContent = "schemaVersion: 1\ndata: {}\n"
         File(source, "streak.yaml").writeText(streakContent)
         File(source, "verb_drill_progress.yaml").writeText(verbContent)
         File(source, "verb_drill_last_session.yaml").writeText(sessionContent)

@@ -763,6 +763,9 @@ class SessionRunner(
 
     fun clearAllCards() {
         assignSessionCards(emptyList())
+        stateMachine.reset()
+        inputTextFlow.value = ""
+        sessionTimerMsSink?.invoke(0L)
     }
 
     /** Drop live input and retry state after files are replaced by a backup. */

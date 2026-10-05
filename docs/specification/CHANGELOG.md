@@ -2,6 +2,16 @@
 
 All changes to specification documents are tracked here. Each entry references the commit hash and version.
 
+## Architecture review remediation — 2026-10-05
+
+- Existing Spec Harness REQ/UC/AC-01…18 retained and expanded with context isolation, displayed-card identity, backup completeness/schema validation, audio lifecycle and reset/cache contracts. REQ/UC/AC-19 covers reproducible builds, bundled inputs and API compatibility.
+- Storage inventory rewritten against current owners: pack mastery and checkpoints, actual caches, background JSON and Pomodoro history; obsolete ChapterProgressStore and global-only mastery descriptions removed.
+- UC-43/44/45/47 now describe modern versus historical backup, validation before mutation, cache/UI hydration and actual save boundaries. Existing UC and element IDs are preserved.
+- Earlier May import/backup traces marked historical. Model, ViewModel and content documents link the current ownership and remediation contracts.
+- UC-53/73 and elements DP-18, VD-32, VOC-41, SH-01 now distinguish supported sentence Hide from unavailable drill actions. Runtime card origin separates same-row feedback and mixed-review credit; historical ambiguous hidden/report/mastery data is retained without guessing its source.
+- Executed checks and revision references are recorded in [Spec Harness evidence](../../spec-doc-harness/regression-evidence.md), separately from requirements and remaining device/audio acceptance.
+- A fresh API 36 install then exposed an Android canonical/lexical `filesDir` mismatch that the earlier JVM/build run did not cover. Pack journal paths now derive from one canonical root, and a path-alias import/rollback regression was added. The user stopped further local tests after this fix; post-fix device/build evidence is intentionally not marked as passing.
+
 ## [TASK-080: State Isolation Bug - Pack-Scoped Daily Cursor] - 2026-05-21
 
 ### Changed

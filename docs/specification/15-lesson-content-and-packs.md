@@ -1,10 +1,16 @@
 # 15. Lesson Content & Pack System — Specification
 
+## Current installation contract (2026-10-05)
+
+`LessonStore` delegates installation to `PackImporter`: validate manifest identifiers and canonical relative paths, stage required content and derived index writes, then publish through a bounded installation transaction with the registry last. Rejected updates retain the prior package. Rollback/recovery, cache invalidation and content versus progress ownership are described in [Data Stores](02-data-stores.md#21-lessonstore) and [ADR 033](../architecture/decisions/033-review-remediation-boundaries.md). The older implementation walkthrough below is historical where it describes removing the previous package before validation.
+
+Standalone CSV import/create publishes a normal `USER_*` package so the lesson is discoverable through pack navigation. Empty created lessons are explicit drafts. This does not enable disabled default packs or the Daily product entry. [Harness REQ-13](../../spec-doc-harness/requirements.md) and [regression evidence](../../spec-doc-harness/regression-evidence.md) cover malformed updates, traversal, rollback and the import lifecycle.
+
 ## 15.1 Lesson Pack Format
 
 ### 15.1.1 ZIP Structure
 
-A lesson pack is a standard ZIP archive. Its root directory must contain `manifest.json` and all CSV/JSON data files referenced by the manifest. Subdirectories are not used; all files reside at the archive root.
+A lesson pack is a standard ZIP archive with `manifest.json` at its root. Manifest paths may reference files in subdirectories, such as chapter stories and background audio, provided every path remains inside the package root. Absolute paths, parent traversal and invalid identifiers are rejected before installed content changes.
 
 ```
 lesson_pack.zip

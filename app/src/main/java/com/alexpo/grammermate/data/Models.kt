@@ -62,7 +62,10 @@ data class SentenceCard(
      * definite article) WITHOUT naming the target grammar. Null for most
      * cards; shown to the learner next to the prompt.
      */
-    val contextRu: String? = null
+    val contextRu: String? = null,
+    /** Runtime ownership; [id] remains the original persisted mastery/checkpoint ID. */
+    val sourcePackId: String? = null,
+    val sourceLessonId: String? = null
 ) : SessionCard
 
 data class VocabEntry(
@@ -190,9 +193,9 @@ data class TrainingProgress(
     val dailyLevel: Int = 0,
     val dailyTaskIndex: Int = 0,
     val dailyCursor: DailyCursorState = DailyCursorState(),
-    // Legacy fields - kept for backwards compatibility with existing progress files
-    // These are no longer used; lesson progress is now in PackLessonProgressStore
+    // Navigation metadata only; counters/position come from PackLessonProgressStore.
     val lessonId: String? = null,
+    // Historical fields retained for source/data compatibility, not restoration authority.
     val currentIndex: Int = 0,
     val correctCount: Int = 0,
     val incorrectCount: Int = 0,
@@ -467,7 +470,9 @@ data class PackLessonProgressState(
         val incorrectCount: Int = 0,
         val incorrectAttemptsForCard: Int = 0,
         val activeTimeMs: Long = 0L,
-        val state: SessionState = SessionState.PAUSED
+        val state: SessionState = SessionState.PAUSED,
+        /** Null in older checkpoints; resume then derives the first incomplete sub-lesson. */
+        val activeSubLessonIndex: Int? = null
     )
 }
 
@@ -560,6 +565,17 @@ data class CardSessionState(
     val completionNextAction: CompletionNextAction = CompletionNextAction.NONE,
     val verbConjugationCards: List<VerbDrillCard> = emptyList()
 ) {
+    /** Clear one session without discarding preferences or language-level streak display. */
+    fun resetForContext(): CardSessionState = CardSessionState(
+        sessionState = SessionState.PAUSED,
+        hintLevel = hintLevel,
+        testMode = testMode,
+        vocabSprintLimit = vocabSprintLimit,
+        currentStreak = currentStreak,
+        longestStreak = longestStreak,
+        todayFireCount = todayFireCount
+    )
+
     /** Whether the session can accept an answer submission. */
     val canSubmit: Boolean
         get() = currentCard != null && (sessionState == SessionState.ACTIVE || sessionState == SessionState.PAUSED)
@@ -702,7 +718,7 @@ data class TrainingUiState(
      * by the ViewModel.
      */
     fun resetSessionState(): TrainingUiState = copy(
-        cardSession = CardSessionState(sessionState = SessionState.PAUSED)
+        cardSession = cardSession.resetForContext()
     )
 
     /**
@@ -713,7 +729,6 @@ data class TrainingUiState(
      * are owned by feature flows. Feature resets are called explicitly by the ViewModel.
      */
     fun resetAllSessionState(): TrainingUiState = resetSessionState().copy(
-        cardSession = CardSessionState(correctCount = 0, incorrectCount = 0, activeTimeMs = 0L, voiceActiveMs = 0L, voiceWordCount = 0, hintCount = 0, currentCard = null),
         elite = EliteState(eliteActive = false)
     )
 }

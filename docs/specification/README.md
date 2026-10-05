@@ -2,6 +2,8 @@
 
 Index of project specifications and requirements. Documents have different verification dates; numbered status alone does not guarantee alignment with current code. Scenario traces are point-in-time evidence. Specs 12 and 14 have a current architecture section dated 2026-09-29 and explicitly retain earlier sections as historical reference during the Atomic Design migration.
 
+The 2026-10-05 architecture review updates [storage ownership](02-data-stores.md) and [backup/restore use cases](22-use-case-registry.md). All remediation contracts, preserved requirement IDs, current source mapping and executed regression evidence are connected in [Spec Harness](../../spec-doc-harness/README.md). See the [accepted implementation plan](../plans/2026-10-05-architecture-review-remediation.md); historical reports do not substitute for checks on the fixed revision.
+
 ---
 
 ## Specification Documents
@@ -11,7 +13,7 @@ Index of project specifications and requirements. Documents have different verif
 | # | Document | Description |
 |---|----------|-------------|
 | 01 | [Models & State](01-models-and-state.md) | All data classes, enums, sealed classes, contracts, invariants |
-| 02 | [Data Stores](02-data-stores.md) | 11 data stores: API, file format, write semantics, cross-store dependencies |
+| 02 | [Data Stores](02-data-stores.md) | Current store inventory, pack checkpoints, installation/restore boundaries, cache and reset ownership |
 | 03 | [Algorithms & Calculators](03-algorithms-and-calculators.md) | Ebbinghaus curve, flower state machine, scheduling, normalization |
 | 04 | [Parsers](04-parsers.md) | 5 parsers, CSV format specifications for all content types |
 | 05 | [Audio TTS/ASR](05-audio-tts-asr.md) | Sherpa-ONNX TTS/ASR engines, model management, lifecycle |

@@ -6,7 +6,9 @@ import com.alexpo.grammermate.data.LessonStore
 import com.alexpo.grammermate.data.ProgressStore
 import com.alexpo.grammermate.data.VerbDrillStore
 import io.mockk.every
+import io.mockk.Called
 import io.mockk.mockk
+import io.mockk.verify
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -49,26 +51,17 @@ class VerbDrillCardCatalogLoaderTest {
     }
 
     @Test
-    fun global_catalog_resolves_each_file_to_its_pack_and_skips_invalid_csv() {
-        val first = file("it_lesson_1.csv", "are", "Io parlo")
-        val second = file("it_lesson_2.csv", "ere", "Tu vedi")
-        val invalid = temp.newFile("it_broken.csv").apply { writeText("Title\ninvalid\nrow") }
-        @Suppress("DEPRECATION")
-        every { lessons.getVerbDrillFiles("it") } returns listOf(first, invalid, second)
-        every { lessons.getPackIdForLesson("lesson_1") } returns "pack-1"
-        every { lessons.getPackIdForLesson("lesson_2") } returns null
+    fun no_pack_has_no_drill_content_or_cross_pack_catalog_reads() {
         every { drillStore.loadProgress() } returns emptyMap()
-        every { badSentences.getBadSentenceCount("pack-1") } returns 1
-        every { badSentences.getBadSentenceCount("lesson_2") } returns 2
 
         val snapshot = loader.load("it", null, drillStore)
 
-        assertEquals(listOf("are_Presente_0", "ere_Presente_0"), snapshot.cards.map { it.id })
-        assertEquals("pack-1", snapshot.cardToPack["are_Presente_0"])
-        assertEquals("lesson_2", snapshot.cardToPack["ere_Presente_0"])
-        assertEquals(setOf("pack-1", "lesson_2"), snapshot.packIds)
-        assertEquals(listOf("Io", "Tu"), snapshot.persons)
-        assertEquals(3, snapshot.badCount)
+        assertTrue(snapshot.cards.isEmpty())
+        assertTrue(snapshot.cardToPack.isEmpty())
+        assertTrue(snapshot.packIds.isEmpty())
+        assertEquals(0, snapshot.badCount)
+        verify { lessons wasNot Called }
+        verify { badSentences wasNot Called }
     }
 
     private fun file(name: String, group: String, answer: String) = temp.newFile(name).apply {

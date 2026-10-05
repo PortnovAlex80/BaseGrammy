@@ -392,10 +392,8 @@ fun TrainingScreen(
             TrainingResultBlock(isCorrect = state.cardSession.lastResult)
             UnifiedNavigationRow(
                 stateModel = remember(
-                    state.cardSession.sessionState,
-                    state.cardSession.currentCard,
-                    state.cardSession.inputMode,
-                    state.boss?.bossActive
+                    state.cardSession,
+                    hasCards
                 ) {
                     object : com.alexpo.grammermate.data.CardSessionStateModel {
                         override val isActive = state.cardSession.sessionState == SessionState.ACTIVE
@@ -592,7 +590,7 @@ fun AnswerBox(
             isFlagged = cardIsBad,
             onFlag = onFlagBadSentence,
             onUnflag = onUnflagBadSentence,
-            onHideCard = onHideCard,
+            onHideCard = onHideCard.takeIf { reportCard is SentenceCard },
             onExportBadSentences = onExportBadSentences,
             onCopyText = {
                 if (reportText.isNotBlank()) {

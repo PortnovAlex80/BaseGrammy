@@ -3,10 +3,12 @@ package com.alexpo.grammermate.data
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
+import org.junit.Assert.assertThrows
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import java.io.File
+import java.io.IOException
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
 
@@ -17,7 +19,7 @@ import java.util.concurrent.atomic.AtomicLong
  * renameTo — a crash in that window is exactly the data loss AtomicFileWriter
  * exists to prevent, and the delete+sleep loop also cost up to 100ms on the
  * caller thread. The layered finalize (renameTo first, Files.move
- * REPLACE_EXISTING second, delete only as a last resort) must keep the target
+ * ATOMIC_MOVE second, retain the previous file on failure) must keep the target
  * present at every observable moment.
  *
  * Pure-JVM test (File only, no Android).
@@ -26,6 +28,23 @@ class AtomicFileWriterOverwriteTest {
 
     @get:Rule
     val tmp = TemporaryFolder()
+
+    @Test
+    fun `host JVM supports atomic NIO replacement despite Android stubs`() {
+        assertTrue(AtomicFileWriter.supportsNioMove())
+    }
+
+    @Test
+    fun `failed replacement preserves previous durable content`() {
+        val target = tmp.newFile("target.yaml").apply { writeText("previous durable content") }
+        val missingTemporaryFile = File(tmp.root, "missing.tmp")
+
+        assertThrows(IOException::class.java) {
+            AtomicFileWriter.finalizeMove(missingTemporaryFile, target)
+        }
+
+        assertEquals("previous durable content", target.readText())
+    }
 
     @Test
     fun `overwrite replaces content`() {

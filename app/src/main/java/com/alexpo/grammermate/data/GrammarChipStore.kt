@@ -19,6 +19,8 @@ import java.io.File
 object GrammarChipStore {
     private val cache = mutableMapOf<String, GrammarChip>()            // "packId::chipKey" -> GrammarChip
     private val lessonToChipFile = mutableMapOf<String, Pair<String, String>>() // "packId::lessonId" -> (packId, chipFile)
+    private val chipsByFile = mutableMapOf<String, GrammarChip>()
+    private var loadedPacksPath: String? = null
     private var initialized = false
     private var initializing = false
 
@@ -30,11 +32,13 @@ object GrammarChipStore {
     /**
      * Check if the store has been initialized.
      */
+    @Synchronized
     fun isInitialized(): Boolean = initialized
 
     /**
      * Check if the store is currently initializing.
      */
+    @Synchronized
     fun isInitializing(): Boolean = initializing
 
     /**
@@ -42,24 +46,24 @@ object GrammarChipStore {
      * This should be called after packs are imported/installed.
      */
     suspend fun initialize(@Suppress("UNUSED_PARAMETER") context: Context, packsDir: File) = withContext(Dispatchers.IO) {
-        if (initialized) {
-            Log.d(TAG, "Already initialized, skipping")
-            return@withContext
-        }
+        load(packsDir, force = false)
+    }
 
-        if (initializing) {
-            Log.d(TAG, "Already initializing, waiting...")
-            while (initializing) {
-                kotlinx.coroutines.delay(100)
-            }
-            return@withContext
-        }
+    /** Called by the content owner after a package mutation; startup remains lazy. */
+    @Synchronized
+    internal fun reloadIfInitialized(packsDir: File) {
+        if (initialized && loadedPacksPath == packsDir.canonicalPath) load(packsDir, force = true)
+    }
 
+    @Synchronized
+    private fun load(packsDir: File, force: Boolean) {
+        if (initialized && loadedPacksPath == packsDir.canonicalPath && !force) return
         initializing = true
         Log.d(TAG, "Starting initialization...")
 
         try {
             cache.clear()
+            chipsByFile.clear()
             lessonToChipFile.clear()
 
             // Scan all installed pack directories
@@ -132,6 +136,7 @@ object GrammarChipStore {
                             val chip = parseGrammarChipFromJson(chipFile)
                             val chipKey = chip.key.uppercase() // Normalize to uppercase
                             cache[packChipKey(packId, chipKey)] = chip
+                            chipsByFile[packChipKey(packId, chipFile.relativeTo(packDir).invariantSeparatorsPath)] = chip
                             Log.d(TAG, "Loaded grammar chip: $chipKey (from $packId/${chipFile.name})")
                         } catch (e: Exception) {
                             Log.e(TAG, "Failed to parse grammar chip file: ${chipFile.name}", e)
@@ -143,6 +148,7 @@ object GrammarChipStore {
                 }
             }
 
+            loadedPacksPath = packsDir.canonicalPath
             initialized = true
             initializing = false
             Log.d(TAG, "Initialized with ${cache.size} grammar chips and ${lessonToChipFile.size} lesson mappings")
@@ -152,6 +158,7 @@ object GrammarChipStore {
         }
     }
 
+    @Synchronized
     fun getChipByKey(key: String): GrammarChip? {
         // Search all packs for backwards compatibility
         val upperKey = key.uppercase()
@@ -161,12 +168,14 @@ object GrammarChipStore {
     /**
      * Get grammar chip by key for a specific pack.
      */
+    @Synchronized
     fun getChipByKey(key: String, packId: String): GrammarChip? = cache[packChipKey(packId, key.uppercase())]
 
     /**
      * Get grammar chip for a lesson ID in a specific pack.
      * This looks up the lesson in the manifest mappings and returns the appropriate chip.
      */
+    @Synchronized
     fun getChipForLesson(lessonId: String, packId: String? = null): GrammarChip? {
         if (!initialized) {
             Log.w(TAG, "GrammarChipStore not initialized yet! Cannot get chip for lesson: $lessonId")
@@ -186,9 +195,11 @@ object GrammarChipStore {
         }
 
         val (resolvedPackId, chipFile) = mapping
+        chipsByFile[packChipKey(resolvedPackId, chipFile)]?.let { return it }
+        chipsByFile[packChipKey(resolvedPackId, "grammar_chips/$chipFile")]?.let { return it }
 
         // Extract chip number from filename and get key
-        val chipNumber = chipFile.removePrefix("grammar_chip_").removeSuffix(".json")
+        val chipNumber = chipFile.substringAfterLast('/').removePrefix("grammar_chip_").removeSuffix(".json")
         val chipKey = getChipKeyFromNumber(chipNumber)
 
         // Pack-scoped lookup with case fallbacks
@@ -203,8 +214,10 @@ object GrammarChipStore {
         return chip
     }
 
+    @Synchronized
     fun hasChipForLesson(lessonId: String, packId: String? = null): Boolean = getChipForLesson(lessonId, packId) != null
 
+    @Synchronized
     fun getAllChipKeys(): Set<String> = cache.keys.map { it.substringAfter("::") }.toSet()
 
     /**
@@ -305,8 +318,11 @@ object GrammarChipStore {
         }
     }
 
+    @Synchronized
     fun clearCache() {
         cache.clear()
+        chipsByFile.clear()
+        loadedPacksPath = null
         lessonToChipFile.clear()
         initialized = false
         initializing = false

@@ -320,22 +320,6 @@ internal class DrillFileManager(
         return getVocabDrillFiles(packId, languageId).isNotEmpty()
     }
 
-    /**
-     * Legacy: get verb drill files by language only (pre-pack-scoped).
-     */
-    @Deprecated("Use getVerbDrillFiles(packId, languageId) for pack-scoped drill lookup.")
-    fun getVerbDrillFilesLegacy(languageId: String): List<File> {
-        val verbDrillDir = File(baseDir, "verb_drill")
-        if (!verbDrillDir.exists()) return emptyList()
-        return verbDrillDir.listFiles()
-            ?.filter { it.name.startsWith("${languageId}_") && it.extension == "csv" }
-            ?: emptyList()
-    }
-
-    @Deprecated("Use hasVerbDrill(packId, languageId) for pack-scoped drill check.")
-    fun hasVerbDrillLessons(languageId: String): Boolean {
-        return getVerbDrillFilesLegacy(languageId).isNotEmpty()
-    }
 
     // ── Lazy drill extraction from pack directory ────────────────────────
 

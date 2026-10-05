@@ -1,6 +1,8 @@
 # 8. TrainingViewModel -- Migration Playbook & Complete Inventory
 
-> **Purpose:** This document is the authoritative migration playbook for decomposing the 3625-line TrainingViewModel into 11 modules. Every method, field, private var, and store access is inventoried here. If anything is missed, the migration will introduce bugs. **Completeness is everything.**
+> **Historical migration inventory:** The line counts and ownership table below describe the earlier monolith. Current ownership is in [state/effect ownership](../architecture/state-effect-ownership.md); current behavior and tests are traced in [Spec Harness](../../spec-doc-harness/README.md).
+
+The 2026-10-05 remediation makes context switching clear the separate input flow and session state together, while preserving preferences. Pack/lesson counters and resume position come from the target pack checkpoint. `VerbDrillTrainingBridge` binds completion to the displayed card ID and synchronizes manual navigation without credit. `TrainingStartupLoader` and `ProgressRestorer` hydrate selected lesson/sublesson without recording a new encounter. These changes retain SessionRunner as the training transition owner rather than introducing a second runtime.
 
 ---
 

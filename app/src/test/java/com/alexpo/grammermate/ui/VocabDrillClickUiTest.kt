@@ -102,6 +102,27 @@ class VocabDrillClickUiTest {
         application = RuntimeEnvironment.getApplication()
     }
 
+    @Test
+    fun reportSheetOffersWordActionsWithoutUnsupportedHide() {
+        renderHarness()
+        startSessionThroughUi()
+
+        composeRule.onNodeWithContentDescription(
+            application.getString(R.string.vocab_content_desc_report_word)
+        ).performClick()
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithText(application.getString(R.string.vocab_word_options))
+            .assertIsDisplayed()
+        composeRule.onNodeWithText(application.getString(R.string.report_flag))
+            .assertIsDisplayed()
+        composeRule.onNodeWithText(application.getString(R.string.report_copy_text))
+            .assertIsDisplayed()
+        assertFalse("Vocab reporting must not offer a Hide action with no effect",
+            textExists(application.getString(R.string.report_hide_card)))
+        assertEquals("Reporting must leave the active word unchanged", casaId, session().cards.first().word.id)
+    }
+
     @After
     fun tearDown() {
         // Reset only the scheduling state; the seeded pack stays (see packId

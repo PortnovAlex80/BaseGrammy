@@ -16,7 +16,7 @@ USE ALWAYS SUBAGENTS IF NEED USE TOOLS MORE THAN 1
 
 | Gotcha | Details |
 |--------|---------|
-| **Windows Gradle** | Must use `java -cp "gradle/wrapper/*"` workaround, not `gradlew`. See `java.txt` for complete build commands and setup instructions. |
+| **Windows Gradle** | Use `gradlew.bat` on Windows or `./gradlew` in Git Bash/Linux. Both include all three wrapper JARs. Set `JAVA_HOME` to a full JDK with `jlink`; see `java.txt`. |
 | **WORD_BANK ≠ mastery** | Only VOICE and KEYBOARD grow flowers. WORD_BANK never counts. |
 | **AtomicFileWriter** | All file writes must use temp → fsync → rename pattern |
 | **Single ViewModel** | `TrainingViewModel` is ~2839 lines (god-object; Phase 4 split is partial — see the review doc). Decompose helpers to `feature/` when adding logic. |
@@ -65,13 +65,13 @@ Expected semantics:
 - Continue excludes checked/shown cards, not merely visited cards.
 - Reset hides SessionCard and deletes last session, but keeps VerbDrill progress.
 
-Run the focused test with the Windows wrapper workaround:
+Run the focused test with the stock Windows wrapper:
 
 ```cmd
-java -cp "gradle/wrapper/gradle-wrapper.jar;gradle/wrapper/gradle-wrapper-shared.jar;gradle/wrapper/gradle-cli.jar" org.gradle.wrapper.GradleWrapperMain test --tests "com.alexpo.grammermate.ui.VerbDrillSessionCardRegressionTest"
+gradlew.bat :app:testDebugUnitTest --tests "com.alexpo.grammermate.ui.VerbDrillSessionCardRegressionTest" --no-parallel --max-workers=1
 ```
 
-If Java is only available through IntelliJ JBR, use the same classpath with the full `java.exe` path from `docs/BUILD_INSTRUCTIONS.md` or `java.txt`.
+Use a full JDK with `jlink`; the local IntelliJ JBR is missing `jlink` and cannot build the APK. Set `JAVA_HOME` as shown in `java.txt`.
 
 ---
 
@@ -81,34 +81,34 @@ If Java is only available through IntelliJ JBR, use the same classpath with the 
 
 | Component | Version | Notes |
 |-----------|---------|-------|
-| Java JDK | 21 (Corretto 21.0.8) | `jlink` REQUIRED for AGP — IntelliJ JBR lacks it on this machine. Other JDKs untested. |
+| Java JDK | 17 / 21 | Full JDK with `jlink`; local Corretto 21.0.8 and CI JDK 17. Local IntelliJ JBR lacks `jlink`. |
 | Android SDK | API 34 | Platform, build-tools, platform-tools |
 | Gradle | 8.9 | Auto-downloaded via wrapper |
 
 ### Quick build (one command)
 
 ```cmd
-build.bat assembleDebug
+gradlew.bat assembleDebug
 ```
 
 APK output: `app\build\outputs\apk\debug\grammermate.apk`
 
-### Windows Gradle workaround
+### Stock wrapper and direct Java fallback
 
-Gradle 8.9+ requires all 3 wrapper JARs in classpath (`gradle/wrapper/*` wildcard doesn't work):
+This repository keeps three wrapper JARs. Both stock scripts configure their classpath:
 ```
 gradle/wrapper/gradle-wrapper.jar
 gradle/wrapper/gradle-wrapper-shared.jar
 gradle/wrapper/gradle-cli.jar
 ```
 
-**Corretto JDK 21 via gw.sh (PRIMARY — 2026-09-09):**
+**Corretto JDK 21 via the stock wrapper (2026-10-05):**
 ```bash
-./gw.sh . assembleDebug        # Git Bash; gw.sh sets JAVA_HOME=corretto-21.0.8 + the 3-jar classpath
+JAVA_HOME="C:/Users/user/.jdks/corretto-21.0.8" ./gradlew :app:assembleDebug
 ```
 IntelliJ JBR is NO LONGER USABLE for builds here: its `jbr\bin\jlink.exe` does not exist and AGP fails transforming `core-for-system-modules.jar`.
 
-**Direct java (cmd):**
+**Direct Java fallback (cmd):**
 ```cmd
 "C:\Users\user\.jdks\corretto-21.0.8\bin\java.exe" -cp "gradle/wrapper/gradle-wrapper.jar;gradle/wrapper/gradle-wrapper-shared.jar;gradle/wrapper/gradle-cli.jar" org.gradle.wrapper.GradleWrapperMain assembleDebug
 ```
@@ -116,11 +116,11 @@ IntelliJ JBR is NO LONGER USABLE for builds here: its `jbr\bin\jlink.exe` does n
 ### All build commands
 
 ```cmd
-build.bat assembleDebug          :: Debug APK
-build.bat assembleRelease        :: Release APK
-build.bat test                   :: Run all tests
-build.bat test --tests "...::SomeTest"  :: Run specific test
-build.bat clean                  :: Clean build artifacts
+gradlew.bat assembleDebug          :: Debug APK
+gradlew.bat assembleRelease        :: Release APK
+gradlew.bat :app:testDebugUnitTest --no-parallel --max-workers=1 :: Run all tests
+gradlew.bat :app:testDebugUnitTest --tests "com.alexpo.grammermate.SomeTest" --no-parallel --max-workers=1
+gradlew.bat clean                  :: Clean build artifacts
 ```
 
 ### Android SDK path
@@ -185,7 +185,7 @@ set ADB=C:\Users\user\AppData\Local\Android\Sdk\platform-tools\adb.exe
 
 | Problem | Solution |
 |---------|----------|
-| `java` not found / `jlink does not exist` | Use Corretto 21: `./gw.sh . <task>` (see above) |
+| `java` not found / `jlink does not exist` | Set `JAVA_HOME` to Corretto 21 and use `gradlew.bat <task>` (see above) |
 | `NoClassDefFoundError: IDownload` | Ensure all 3 JARs in classpath |
 | `sdk.dir not found` | Create `local.properties`: `sdk.dir=C\\:\\Users\\user\\AppData\\Local\\Android\\Sdk` |
 | `adb` not found | Use full path: `C:\Users\user\AppData\Local\Android\Sdk\platform-tools\adb.exe` |

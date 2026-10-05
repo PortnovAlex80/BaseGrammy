@@ -85,8 +85,6 @@ internal object Routes {
     const val HOME = "home"
     const val LESSON = "lesson"
     const val CHAPTER_LESSONS = "chapter_lessons"
-    const val ELITE = "elite"        // backward compat redirect
-    const val VOCAB = "vocab"        // backward compat redirect
     const val DAILY_PRACTICE = "daily_practice"
     const val STORY = "story"
     const val TRAINING = "training"

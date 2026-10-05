@@ -131,7 +131,7 @@ class PackDailyCursorStoreImpl(context: Context) : PackDailyCursorStore {
     override fun loadAllPackCursors(): Map<String, PackDailyCursorState> {
         return mutex.withLock {
             // Return all cached cursors if available
-            cursorCache?.let { return@withLock it.toMap() }
+            // A prior single-pack read populates only part of the cache. Scan the inventory.
 
             // Otherwise, scan directory for all cursor files
             val cursors = mutableMapOf<String, PackDailyCursorState>()

@@ -378,7 +378,7 @@ private fun ColumnScope.VocabFlashcardBlock(
             isFlagged = isFlagged,
             onFlag = { onFlagDailyBadSentence(word.id, languageId, word.meaningRu ?: word.word, word.word, "daily_vocab") },
             onUnflag = { onUnflagDailyBadSentence(word.id) },
-            onHideCard = { /* no-op for vocab flashcards */ },
+            onHideCard = null,
             onExportBadSentences = { onExportDailyBadSentences() },
             onCopyText = {
                 val copyText = "Word: ${word.word}\nMeaning: ${word.meaningRu}"

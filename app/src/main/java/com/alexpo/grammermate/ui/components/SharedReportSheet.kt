@@ -32,7 +32,7 @@ import com.alexpo.grammermate.R
 import com.alexpo.grammermate.shared.AuditLogger
 
 /**
- * Shared 4-option report bottom sheet: flag/unflag bad sentence, hide card,
+ * Shared report bottom sheet: flag/unflag bad sentence, optional hide card,
  * export bad sentences, copy text. Used by training and daily practice.
  *
  * @param onDismiss Called when the sheet should be dismissed.
@@ -41,7 +41,7 @@ import com.alexpo.grammermate.shared.AuditLogger
  * @param isFlagged Whether the current card is already flagged as a bad sentence.
  * @param onFlag Called when the user flags the card as a bad sentence.
  * @param onUnflag Called when the user removes the card from bad sentences.
- * @param onHideCard Called when the user hides the card from lessons.
+ * @param onHideCard Called when the user hides the card from lessons; null omits the action.
  * @param onExportBadSentences Called to export bad sentences; returns the file path or null.
  * @param onCopyText Called when the user taps "Copy text".
  * @param exportResult Optional callback invoked with the export path (or null). Callers can
@@ -61,7 +61,7 @@ fun SharedReportSheet(
     isFlagged: Boolean,
     onFlag: () -> Unit,
     onUnflag: () -> Unit,
-    onHideCard: () -> Unit,
+    onHideCard: (() -> Unit)?,
     onExportBadSentences: () -> String?,
     onCopyText: () -> Unit,
     exportResult: ((String?) -> Unit)? = null,
@@ -125,17 +125,19 @@ fun SharedReportSheet(
                     Text(stringResource(R.string.report_flag))
                 }
             }
-            TextButton(
-                onClick = {
-                    AuditLogger.getInstanceOrNull()?.reportSheetAction("hide", cardId ?: "")
-                    onHideCard()
-                    onDismiss()
-                },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Icon(Icons.Default.VisibilityOff, contentDescription = null)
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(stringResource(R.string.report_hide_card))
+            if (onHideCard != null) {
+                TextButton(
+                    onClick = {
+                        AuditLogger.getInstanceOrNull()?.reportSheetAction("hide", cardId ?: "")
+                        onHideCard()
+                        onDismiss()
+                    },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Icon(Icons.Default.VisibilityOff, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(stringResource(R.string.report_hide_card))
+                }
             }
             TextButton(
                 onClick = {

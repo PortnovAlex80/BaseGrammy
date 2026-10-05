@@ -9,10 +9,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotDisplayed
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextClearance
@@ -65,6 +67,112 @@ class VerbDrillSessionCardRegressionTest {
     @After
     fun tearDown() {
         store.clear()
+    }
+
+    @Test
+    fun verb_report_sheet_omits_unsupported_hide_action() {
+        val harness = renderPreparedHarness()
+        startVerbSessionThroughUi(harness)
+        composeRule.onNodeWithContentDescription(application.getString(R.string.tooltip_report_sentence))
+            .performScrollTo().performClick()
+        Shadows.shadowOf(Looper.getMainLooper()).idleFor(java.time.Duration.ofMillis(250))
+        composeRule.waitForIdle()
+        composeRule.onNodeWithText(application.getString(R.string.report_flag)).assertIsDisplayed()
+        composeRule.onNodeWithText(application.getString(R.string.report_hide_card)).assertDoesNotExist()
+    }
+
+    @Test
+    fun retry_after_hint_is_credited_once_and_clears_the_next_input() {
+        val harness = renderPreparedHarness()
+        enableSortByFrequencyThroughUi(harness.verbVm)
+        startVerbSessionThroughUi(harness)
+        composeRule.onNodeWithTag("show_answer_button").performScrollTo().performClick()
+        composeRule.waitForIdle()
+        clickPause() // Play clears the hint and retries this same card.
+        composeRule.waitForIdle()
+        answerCurrentCardCorrectly(harness.trainingVm)
+        composeRule.waitForIdle()
+
+        assertEquals(setOf("test_verb_1"), allTodayShownIds())
+        assertEquals(1, harness.verbVm.uiState.value.session!!.correctCount)
+        assertEquals("test_verb_2", currentTrainingCardId(harness.trainingVm))
+        assertEquals("", harness.trainingVm.inputText.value)
+        composeRule.onNodeWithTag("check_button").assertIsNotEnabled()
+    }
+
+    @Test
+    fun aux_navigation_and_check_do_not_reopen_or_credit_retained_verb_batch() {
+        val harness = renderPreparedHarness()
+        startVerbSessionThroughUi(harness)
+        repeat(5) { answerCurrentCardCorrectly(harness.trainingVm) }
+        val savedVerb = store.loadLastSession()
+        val completedVerb = harness.verbVm.uiState.value.session
+        val shownVerb = allTodayShownIds()
+        val overlappingCards = completedVerb!!.cards
+
+        // Aux hands cards with potentially identical IDs to the same TrainingScreen.
+        composeRule.runOnUiThread {
+            harness.trainingVm.startVerbDrillSession(overlappingCards)
+            harness.trainingVm.setReturnTo("aux_drill")
+        }
+        composeRule.waitForIdle()
+        clickNext()
+        composeRule.waitForIdle()
+        answerCurrentCardCorrectly(harness.trainingVm)
+        composeRule.waitForIdle()
+
+        assertEquals(completedVerb, harness.verbVm.uiState.value.session)
+        assertEquals(savedVerb, store.loadLastSession())
+        assertEquals(shownVerb, allTodayShownIds())
+    }
+
+    @Test
+    fun next_then_check_credits_displayed_card_and_continue_keeps_skipped_card() {
+        val harness = renderPreparedHarness()
+        enableSortByFrequencyThroughUi(harness.verbVm)
+        startVerbSessionThroughUi(harness)
+
+        clickNext()
+        composeRule.waitForIdle()
+        assertEquals("test_verb_2", currentTrainingCardId(harness.trainingVm))
+        assertTrue("Browsing does not complete a card", allTodayShownIds().isEmpty())
+        answerCurrentCardCorrectly(harness.trainingVm)
+        assertEquals(setOf("test_verb_2"), allTodayShownIds())
+
+        // Previous after a checked answer returns to B, then A, with no new credit.
+        repeat(2) {
+            composeRule.onNodeWithTag("prev_button").performScrollTo().performClick()
+            composeRule.waitForIdle()
+        }
+        assertEquals("test_verb_1", currentTrainingCardId(harness.trainingVm))
+        assertEquals(setOf("test_verb_2"), allTodayShownIds())
+
+        exitTrainingThroughUi()
+        composeRule.onNodeWithTag("continue_button").performClick()
+        waitForTrainingRoute(harness)
+        assertEquals(
+            listOf("test_verb_1", "test_verb_3", "test_verb_4", "test_verb_5", "test_verb_6"),
+            verbSessionIds(harness.verbVm)
+        )
+    }
+
+    @Test
+    fun hint_on_final_displayed_card_then_next_completes_only_that_card() {
+        val harness = renderPreparedHarness()
+        enableSortByFrequencyThroughUi(harness.verbVm)
+        startVerbSessionThroughUi(harness)
+        repeat(4) { clickNext(); composeRule.waitForIdle() }
+        assertEquals("test_verb_5", currentTrainingCardId(harness.trainingVm))
+        assertTrue(allTodayShownIds().isEmpty())
+        composeRule.onNodeWithTag("show_answer_button").performScrollTo().performClick()
+        composeRule.waitForIdle()
+        clickNext()
+        composeRule.waitForIdle()
+
+        assertEquals(setOf("test_verb_5"), allTodayShownIds())
+        assertEquals(1, harness.verbVm.uiState.value.session!!.incorrectCount)
+        assertTrue(harness.verbVm.uiState.value.session!!.isComplete)
+        assertNull(harness.trainingVm.uiState.value.cardSession.currentCard)
     }
 
     @Test
@@ -290,6 +398,7 @@ class VerbDrillSessionCardRegressionTest {
         verbVm.setSessionSize(5)
 
         val trainingVm = TrainingViewModel(application)
+        val drillBridge = VerbDrillTrainingBridge(trainingVm, verbVm)
         val route = mutableStateOf(TestRoute.VERB)
         val nextClickCount = AtomicInteger(0)
         val harness = Harness(verbVm, trainingVm, route, nextClickCount)
@@ -312,29 +421,11 @@ class VerbDrillSessionCardRegressionTest {
                         state = trainingVm.uiState.collectAsState().value,
                         inputText = trainingVm.inputText.collectAsState().value,
                         onInputChange = trainingVm.training::onInputChanged,
-                        onSubmit = {
-                            val result = trainingVm.submitAnswer()
-                            val isVerbDrillMode =
-                                trainingVm.uiState.value.cardSession.screenMode == TrainingScreenMode.VERB_DRILL
-                            if (isVerbDrillMode && result.accepted) {
-                                verbVm.submitCorrectAnswer()
-                            }
-                            result
-                        },
-                        onPrev = {
-                            verbVm.prevCard()
-                            trainingVm.navigatePrev()
-                        },
+                        onSubmit = drillBridge::submit,
+                        onPrev = drillBridge::previous,
                         onNext = {
                             nextClickCount.incrementAndGet()
-                            val state = trainingVm.uiState.value.cardSession
-                            if (
-                                state.currentCard is VerbDrillCard &&
-                                (state.lastResult == false || state.answerText != null)
-                            ) {
-                                verbVm.markCardCompleted()
-                            }
-                            trainingVm.navigateNext()
+                            drillBridge.next()
                         },
                         onTogglePause = trainingVm::togglePause,
                         onRequestExit = {

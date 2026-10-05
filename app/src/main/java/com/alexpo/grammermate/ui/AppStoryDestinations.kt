@@ -30,6 +30,8 @@ internal fun StoryReaderDestination(
 ) {
     val chapterTitle = state.storyReaderChapterTitle ?: "Unknown Chapter"
     val content = state.storyReaderContent
+    val storyFile = state.storyReaderStoryFile
+    val storyPackId = state.navigation.activePackId?.value
     val isCurrentlyPlaying = state.audio.isStoryPlaybackActive || state.audio.ttsState == TtsState.Speaking
     val isStoryPaused = state.audio.isStoryPlaybackPaused
 
@@ -37,19 +39,18 @@ internal fun StoryReaderDestination(
         chapterTitle = chapterTitle,
         markdownContent = content,
         textScale = state.audio.ruTextScale,
-        onBack = remember {
+        onBack = remember(vm, navController) {
             {
-                // Stop TTS if playing or paused
-                if (isCurrentlyPlaying || isStoryPaused) {
-                    vm.stopStoryNarration()
-                }
+                // Teardown belongs to the owner; playback may start after this
+                // callback is remembered, and stop is safe when already idle.
+                vm.stopStoryNarration()
                 vm.clearStoryReader()
                 // Pop back to whatever launched STORY_READER
                 // (HOME showing the roadmap).
                 navController.popBackStack()
             }
         },
-        onPlayStory = remember {
+        onPlayStory = remember(vm, content, storyFile, storyPackId) {
             {
                 // Play story narration: prefer the pre-rendered Opus clip for this
                 // chapter (real-voice narration) when present; otherwise fall back to
@@ -58,23 +59,23 @@ internal fun StoryReaderDestination(
                     vm.speakMultilingualStory(
                         content,
                         defaultLanguageId = "ru",
-                        storyFile = state.storyReaderStoryFile,
-                        packId = state.navigation.activePackId?.value
+                        storyFile = storyFile,
+                        packId = storyPackId
                     )
                 }
             }
         },
-        onStopStory = remember {
+        onStopStory = remember(vm) {
             {
                 vm.stopStoryNarration()
             }
         },
-        onPauseStory = remember {
+        onPauseStory = remember(vm) {
             {
                 vm.pauseStoryPlayback()
             }
         },
-        onResumeStory = remember {
+        onResumeStory = remember(vm) {
             {
                 vm.resumeStoryPlayback()
             }

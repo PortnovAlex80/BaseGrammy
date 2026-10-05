@@ -1,5 +1,7 @@
 # Scenario 14: Backup & Restore — Code Trace Analysis
 
+> Historical trace from May 2026. It is not the current storage contract or current test evidence. See [Data Stores](02-data-stores.md), updated UC-43/44/45/47 in [the registry](22-use-case-registry.md), and [Spec Harness regression evidence](../../spec-doc-harness/regression-evidence.md). The original observations below are retained as history.
+
 Date: 2026-05-12
 
 ## Files Traced

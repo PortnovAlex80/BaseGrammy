@@ -5,7 +5,7 @@ Core training session engine for GrammarMate. Manages the card-session lifecycle
 
 ## API Surface
 
-- **SessionRunner** `(stateAccess, appContext, coroutineScope, answerValidator, wordBankGenerator, cardProvider, streakManager, drillProgressStore, getMastery, getSchedule, calculateCompletedSubLessons, onTimerSaveProgress)` -- Session lifecycle: `startSession()`, `finishSession()`, `submitAnswer()` -> `Pair<SubmitResult, List<SessionEvent>>`, `nextCard()`, `prevCard()`, `showAnswer()`, `selectSubLesson(i)`. Also owns drill sub-mode (`startDrill`, `advanceDrillCard`, `finishDrill`), elite sub-mode (`openEliteStep`, `cancelEliteSession`), and timer (`resumeTimer`, `pauseTimer`).
+- **SessionRunner** -- Session lifecycle: `startSession()`, `finishSession()`, `submitAnswer()` -> `Pair<SubmitResult, List<SessionEvent>>`, `nextCard()`, `prevCard()`, `showAnswer()`, `selectSubLesson(i)`. SessionCard transitions and navigation have dedicated helpers. The constructor in `SessionRunner.kt` is authoritative; the removed `DrillProgressStore` is no longer a dependency.
 
 - **AnswerValidator** `(normalizer: Normalizer = Normalizer)` -- Stateless validation: `validate(input, acceptedAnswers, testMode) -> ValidationResult`, `shouldShowHint(incorrectAttempts)`, `getHintText(acceptedAnswers)`. Handles `+`-separated multi-answer CSV format.
 
@@ -31,7 +31,7 @@ Reads/writes `TrainingUiState` via `TrainingStateAccess`. Key fields in `cardSes
 
 ## Dependencies
 
-- **data stores**: `DrillProgressStore`, `LessonStore` (via constructor)
+- **data stores**: `LessonStore` for story content; progress effects are dispatched through the ViewModel and pack-scoped progress owners
 - **data utilities**: `Normalizer`, `MixedReviewScheduler`, `TrainingConfig`
 - **feature/progress**: `ProgressTracker`, `StreakManager`
 - **shared**: `TrainingStateAccess` interface

@@ -2,39 +2,25 @@
 GRAMMARMATE (BASEGRAMMY) - JAVA SETUP AND APK BUILD INSTRUCTIONS
 ================================================================================
 
-This file contains complete instructions for setting up Java 17 and building
-the Android APK on Windows, including workarounds for Gradle wrapper issues.
+This file contains complete instructions for setting up a full JDK and building
+the Android APK with the stock Gradle wrapper.
 
 ================================================================================
-CRITICAL: USE INTELLIJ JBR FULL PATH (PRIMARY SOLUTION)
+STOCK WRAPPER + FULL JDK (2026-10-05)
 ================================================================================
 
-If the `java` command is not found in your PATH, use the full path to IntelliJ
-JBR java.exe. This works even when `java -version` fails or Java is not in PATH.
+Use a full JDK with jlink. Local verified JDK: Corretto 21.0.8; CI uses JDK 17.
+The bytecode target remains Java 17. The installed IntelliJ JBR lacks jlink
+and cannot build this app.
 
-WORKING COMMAND (tested and confirmed):
-  "C:\Program Files\JetBrains\IntelliJ IDEA Community Edition 2025.2.1\jbr\bin\java.exe" -cp "gradle/wrapper/gradle-wrapper.jar;gradle/wrapper/gradle-wrapper-shared.jar;gradle/wrapper/gradle-cli.jar" org.gradle.wrapper.GradleWrapperMain assembleDebug
+Windows cmd:
+  set JAVA_HOME=C:\Users\user\.jdks\corretto-21.0.8
+  gradlew.bat :app:assembleDebug
+  gradlew.bat :app:testDebugUnitTest :app:lintDebug --no-parallel --max-workers=1
 
-Key points:
-- The full path to IntelliJ JBR java.exe works even when `java` command fails
-- This is the PRIMARY solution for Windows environments without Java in PATH
-- Path may differ depending on your IntelliJ version
-- See troubleshooting section below if this path doesn't work
-
-================================================================================
-IMPORTANT: :app JAVAC NEEDS A FULL JDK WITH jlink (2026-08-26)
-================================================================================
-
-IntelliJ JBR has NO jlink.exe, so :app:compileDebugJavaWithJavac fails with
-"jlink executable ... does not exist" (JdkImageTransform on core-for-system-modules.jar).
-For any task that reaches javac (tests, assembleDebug) use a FULL JDK instead.
-Confirmed working on this machine (Gradle 8.9 supports Java 21; compile target
-stays 17 via compileOptions):
-
-  C:\Users\user\.jdks\corretto-21.0.8\bin\java.exe -cp "gradle/wrapper/gradle-wrapper.jar;gradle/wrapper/gradle-wrapper-shared.jar;gradle/wrapper/gradle-cli.jar" org.gradle.wrapper.GradleWrapperMain <tasks> --no-parallel --max-workers=1
-
---no-parallel --max-workers=1 avoids the native JVM OOM when :domain and :app
-test JVMs start together (see REFACTORING_PLAN_2026-08-26.md, Phase 0).
+Git Bash / Linux: ./gradlew (with JAVA_HOME set to your full JDK).
+Both stock scripts load all three checked-in wrapper JARs. Direct Java invocation
+is only a fallback, documented in section 3. Serial workers limit test JVM memory.
 
 ================================================================================
 REQUIREMENTS
@@ -42,22 +28,18 @@ REQUIREMENTS
 
 | Component  | Version | Notes                      |
 |------------|---------|----------------------------|
-| Java JDK   | 17      | Required. Other versions unsupported. |
-| Android SDK| API 34  | Platform, build-tools, platform-tools |
+| Java JDK   | 17 / 21 | Full JDK with jlink; local Corretto 21.0.8, CI 17. |
+| Android SDK| API 35  | Platform, build-tools, platform-tools |
 | Gradle     | 8.9     | Auto-downloaded via wrapper |
 
 ================================================================================
 1. JAVA 17 INSTALLATION
 ================================================================================
 
-OPTION A: Use Java from IntelliJ IDEA (RECOMMENDED)
----------------------------------------------------
-If you have IntelliJ IDEA installed, Java is already included:
-
-Check version:
-  "C:\Program Files\JetBrains\IntelliJ IDEA Community Edition 2025.2.1\jbr\bin\java.exe" -version
-
-Note: Path may differ depending on your IntelliJ version.
+OPTION A: Use the verified local JDK
+-----------------------------------
+  "C:\Users\user\.jdks\corretto-21.0.8\bin\java.exe" -version
+  "C:\Users\user\.jdks\corretto-21.0.8\bin\jlink.exe" --version
 
 OPTION B: Install standalone JDK
 ---------------------------------
@@ -84,7 +66,7 @@ Download from: https://developer.android.com/studio#command-tools
 Extract to a convenient directory, e.g., C:\Users\user\Android\Sdk\cmdline-tools\latest\
 
 Install required components:
-  sdkmanager --install "platforms;android-34" "build-tools;34.0.0" "platform-tools"
+  sdkmanager --install "platforms;android-35" "build-tools;34.0.0" "platform-tools"
 
 Accept licenses:
   sdkmanager --licenses
@@ -101,50 +83,22 @@ Alternative: Set ANDROID_HOME environment variable:
   set ANDROID_HOME=C:\Users\user\Android\Sdk
 
 ================================================================================
-3. GRADLE WRAPPER ISSUE ON WINDOWS
+3. STOCK GRADLE WRAPPER AND DIRECT JAVA FALLBACK
 ================================================================================
 
-PROBLEM:
---------
-Project uses Gradle 8.9 with multi-JAR wrapper format. Standard `gradlew.bat`
-script may fail with:
+Use gradlew.bat on Windows or ./gradlew on Git Bash/Linux. Both scripts include:
+  gradle/wrapper/gradle-wrapper.jar
+  gradle/wrapper/gradle-wrapper-shared.jar
+  gradle/wrapper/gradle-cli.jar
 
-  NoClassDefFoundError: org/gradle/wrapper/IDownload
+An older checkout with an incomplete classpath can fail with
+NoClassDefFoundError: org/gradle/wrapper/IDownload. Update the wrapper scripts.
+For diagnosis the equivalent direct command is:
 
-CAUSE:
-------
-Starting with Gradle 8.9, wrapper consists of multiple JAR files:
+  "C:\Users\user\.jdks\corretto-21.0.8\bin\java.exe" -cp "gradle/wrapper/gradle-wrapper.jar;gradle/wrapper/gradle-wrapper-shared.jar;gradle/wrapper/gradle-cli.jar" org.gradle.wrapper.GradleWrapperMain :app:assembleDebug
 
-  gradle/wrapper/
-    gradle-wrapper.jar
-    gradle-wrapper-shared.jar
-    gradle-cli.jar
-
-The standard `gradlew` script only loads `gradle-wrapper.jar`, causing the error.
-
-SOLUTION:
----------
-Run build directly through Java, specifying all three JARs in classpath.
-
-WITH INTELLIJ JBR (RECOMMENDED):
---------------------------------
-"C:\Program Files\JetBrains\IntelliJ IDEA Community Edition 2025.2.1\jbr\bin\java.exe" -cp "gradle/wrapper/gradle-wrapper.jar;gradle/wrapper/gradle-wrapper-shared.jar;gradle/wrapper/gradle-cli.jar" org.gradle.wrapper.GradleWrapperMain assembleDebug
-
-WITH SYSTEM JAVA:
------------------
-java -cp "gradle/wrapper/gradle-wrapper.jar;gradle/wrapper/gradle-wrapper-shared.jar;gradle/wrapper/gradle-cli.jar" org.gradle.wrapper.GradleWrapperMain assembleDebug
-
-Note: Path to IntelliJ JBR may differ. Check for java.exe in jbr/bin/ directory.
-
-CREATE BUILD.BAT FOR CONVENIENCE:
-----------------------------------
-Create file `build.bat` in project root (adjust JAVA_EXE path):
-
-@echo off
-set JAVA_EXE=C:\Program Files\JetBrains\IntelliJ IDEA Community Edition 2025.2.1\jbr\bin\java.exe
-"%JAVA_EXE%" -cp "gradle/wrapper/gradle-wrapper.jar;gradle/wrapper/gradle-wrapper-shared.jar;gradle/wrapper/gradle-cli.jar" org.gradle.wrapper.GradleWrapperMain %*
-
-Then use: build.bat assembleDebug
+Use semicolons on a Windows JVM and colons on a Unix JVM. No build.bat helper
+is required; set JAVA_HOME once and use the checked-in stock wrapper.
 
 ================================================================================
 4. NON-CYRILLIC PROJECT PATH
@@ -198,15 +152,15 @@ To validate lesson pack ZIP archives:
 QUICK REFERENCE
 ================================================================================
 
-:: 1. Check Java (IntelliJ or system)
-"C:\Program Files\JetBrains\IntelliJ IDEA Community Edition 2025.2.1\jbr\bin\java.exe" -version
+:: 1. Check Java (full JDK)
+"C:\Users\user\.jdks\corretto-21.0.8\bin\java.exe" -version
 :: or simply: java -version
 
 :: 2. Check Android SDK (if local.properties not configured)
 echo %ANDROID_HOME%
 
 :: 3. Build debug APK (one line, no wrap)
-"C:\Program Files\JetBrains\IntelliJ IDEA Community Edition 2025.2.1\jbr\bin\java.exe" -cp "gradle/wrapper/gradle-wrapper.jar;gradle/wrapper/gradle-wrapper-shared.jar;gradle/wrapper/gradle-cli.jar" org.gradle.wrapper.GradleWrapperMain assembleDebug
+"C:\Users\user\.jdks\corretto-21.0.8\bin\java.exe" -cp "gradle/wrapper/gradle-wrapper.jar;gradle/wrapper/gradle-wrapper-shared.jar;gradle/wrapper/gradle-cli.jar" org.gradle.wrapper.GradleWrapperMain assembleDebug
 
 :: 4. Get APK
 :: app\build\outputs\apk\debug\grammermate.apk
@@ -217,11 +171,11 @@ ADDITIONAL CONTEXT FOR PROJECT
 
 PROJECT: GrammarMate (BaseGrammy)
 DESCRIPTION: Android language learning app for RU→Target translation (English/Italian)
-STACK: Kotlin 1.9.22, Jetpack Compose (BOM 2024.02.00), Material 3, Android SDK 24–34
+STACK: Kotlin 2.0.21, Jetpack Compose (BOM 2024.10.00), Material 3, Android SDK 24–34
 
 CRITICAL BUILD NOTES:
-- Windows environment requires the 3-JAR classpath workaround above
-- Java 17 is mandatory (other versions unsupported)
+- Stock gradlew.bat / ./gradlew configure the three-JAR classpath
+- A full JDK with jlink is mandatory; local Corretto21 and CI JDK17 are supported
 - Output APK: grammermate.apk (note spelling)
 - Project uses SnakeYAML 2.2 and Sherpa-ONNX (TTS/ASR)
 
@@ -230,21 +184,18 @@ TROUBLESHOOTING
 ================================================================================
 
 Problem: 'java' command not found or java -version fails
-Solution: Use full IntelliJ JBR path instead of 'java' command
-  "C:\Program Files\JetBrains\IntelliJ IDEA Community Edition 2025.2.1\jbr\bin\java.exe" -cp "gradle/wrapper/gradle-wrapper.jar;gradle/wrapper/gradle-wrapper-shared.jar;gradle/wrapper/gradle-cli.jar" org.gradle.wrapper.GradleWrapperMain assembleDebug
+Solution: Set JAVA_HOME to a full JDK with jlink, or use its full java.exe path
+  "C:\Users\user\.jdks\corretto-21.0.8\bin\java.exe" -cp "gradle/wrapper/gradle-wrapper.jar;gradle/wrapper/gradle-wrapper-shared.jar;gradle/wrapper/gradle-cli.jar" org.gradle.wrapper.GradleWrapperMain assembleDebug
 
-Problem: IntelliJ JBR path differs from documented path
-Solution: Locate your IntelliJ installation and find java.exe in jbr/bin/ directory
-  - Common locations:
-    - C:\Program Files\JetBrains\IntelliJ IDEA Community Edition 2025.2.1\jbr\bin\java.exe
-    - C:\Program Files\JetBrains\IntelliJ IDEA Ultimate\jbr\bin\java.exe
-    - C:\Program Files (x86)\JetBrains\IntelliJ IDEA *\jbr\bin\java.exe
+Problem: jlink executable does not exist
+Solution: Use the full Corretto JDK configured above; the installed IntelliJ JBR
+is insufficient. Confirm that JAVA_HOME/bin/jlink.exe exists.
 
 Problem: NoClassDefFoundError: org/gradle/wrapper/IDownload
 Solution: Ensure all three JARs are in classpath (see section 3 above)
 
 Problem: Build fails despite correct Java setup
-Solution: Check Android SDK path in local.properties and ensure API 34 is installed
+Solution: Check Android SDK path in local.properties and ensure API 35 is installed
 
 ================================================================================
 END OF INSTRUCTIONS

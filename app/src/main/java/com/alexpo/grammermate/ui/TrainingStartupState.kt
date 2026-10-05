@@ -46,11 +46,13 @@ internal data class TrainingStartupState(
                 clickableWordHints = config.clickableWordHints
             ),
             cardSession = current.cardSession.copy(
-                sessionState = lessonProgress?.state ?: SessionState.PAUSED,
+                sessionState = lessonProgress?.state?.takeUnless { it == SessionState.HINT_SHOWN }
+                    ?: SessionState.PAUSED,
                 currentIndex = lessonProgress?.currentIndex ?: 0,
+                activeSubLessonIndex = lessonProgress?.activeSubLessonIndex ?: 0,
                 correctCount = lessonProgress?.correctCount ?: 0,
                 incorrectCount = lessonProgress?.incorrectCount ?: 0,
-                incorrectAttemptsForCard = lessonProgress?.incorrectAttemptsForCard ?: 0,
+                incorrectAttemptsForCard = 0,
                 activeTimeMs = lessonProgress?.activeTimeMs ?: 0L,
                 voiceActiveMs = progress.voiceActiveMs,
                 voiceWordCount = progress.voiceWordCount,

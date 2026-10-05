@@ -1,6 +1,11 @@
 # 1. Models & State -- Specification
 
-This document exhaustively catalogs every data class, enum, sealed class, interface, and object in the data-model layer of GrammarMate. It is intended as a reference for refactoring: all fields, types, defaults, validation rules, relationships, state transitions, invariants, and business rules are captured here.
+> **Card origin — 2026-10-05:** SentenceCard carries runtime source pack/lesson metadata through catalog loading and mixed review. Its persisted card ID remains unchanged. Feedback identity and lesson attribution use the actual source; a selected lesson with the same CSV row ID is not an owner. See [ADR 033](../architecture/decisions/033-review-remediation-boundaries.md) and [harness REQ-17](../../spec-doc-harness/requirements.md).
+
+
+This model inventory includes historical declarations. Current remediation contracts (2026-10-05) are summarized below and traced to current sources in [Spec Harness](../../spec-doc-harness/README.md); older copied declarations are not an exhaustive API reference.
+
+`PackLessonProgressState.LessonProgress.activeSubLessonIndex: Int? = null` is optional for old checkpoints. The selected lesson is persisted as optional `TrainingProgress.lessonId`; lesson counters remain in the pack store. Missing saved sublesson derives the first incomplete sublesson; explicitly selecting a sublesson overrides resume. Context resets preserve hint level, test mode, sprint preference and language-level streak display, while clearing the previous card, draft, attempts and temporary results. Input mode is session state: a new context uses its default; pause/resume of the same card preserves it. Hydration is not grading. Old saved `ELITE`/`VOCAB` values map to HOME; those destinations are retired.
 
 **Учебная единица (Learning Unit)** — одна учебная сессия из `SESSION_SIZE` карточек. Размер настраивается через `AppConfig.sessionSize` (default: 10). Применяется ко всем режимам: training sub-lesson, daily practice blocks, verb drill batch, vocab drill batch.
 

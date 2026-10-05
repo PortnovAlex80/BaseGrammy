@@ -4,6 +4,7 @@ import android.content.Context
 import android.util.Log
 import org.json.JSONObject
 import java.io.File
+import java.lang.ref.WeakReference
 
 /**
  * Per-word mark for the background-vocab deck.
@@ -26,10 +27,13 @@ class BgVocabMarkStore(private val context: Context) {
     private val marks = mutableMapOf<String, BgVocabMark>()
     private val lock = Any()
 
-    init { load() }
+    init {
+        synchronized(instances) { instances.add(WeakReference(this)) }
+        load()
+    }
 
     fun getMark(word: String): BgVocabMark = synchronized(lock) {
-        marks[word] ?: BgVocabMark.NONE
+        marks[word.lowercase()] ?: BgVocabMark.NONE
     }
 
     fun setMark(word: String, mark: BgVocabMark) = synchronized(lock) {
@@ -67,6 +71,7 @@ class BgVocabMarkStore(private val context: Context) {
     }
 
     private fun load() = synchronized(lock) {
+        marks.clear()
         try {
             val f = file
             if (!f.exists() || f.length() == 0L) return@synchronized
@@ -93,18 +98,23 @@ class BgVocabMarkStore(private val context: Context) {
         try {
             val obj = JSONObject()
             for ((w, m) in marks) obj.put(w, m.name)
-            val tmp = File(file.parentFile, "bg_vocab_marks.json.tmp")
-            tmp.writeText(obj.toString())
-            // fsync-ish: rename onto the target (atomic on the same filesystem).
-            if (!tmp.renameTo(file)) {
-                // Fallback: copy bytes if rename failed (cross-device).
-                tmp.copyTo(file, overwrite = true)
-                tmp.delete()
-            }
+            AtomicFileWriter.writeText(file, obj.toString())
         } catch (e: Exception) {
             Log.w(TAG, "Failed to save bg-vocab marks: ${e.message}")
         }
     }
 
-    companion object { private const val TAG = "BgVocabMarkStore" }
+    companion object {
+        private const val TAG = "BgVocabMarkStore"
+        private val instances = mutableListOf<WeakReference<BgVocabMarkStore>>()
+
+        internal fun invalidateAfterRestore(context: Context) {
+            val path = File(context.filesDir, "bg_vocab_marks.json").canonicalPath
+            val live = synchronized(instances) {
+                instances.removeAll { it.get() == null }
+                instances.mapNotNull { it.get() }.filter { it.file.canonicalPath == path }
+            }
+            live.forEach { it.load() }
+        }
+    }
 }

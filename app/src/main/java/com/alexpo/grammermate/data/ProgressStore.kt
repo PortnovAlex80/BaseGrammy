@@ -56,6 +56,7 @@ class ProgressStoreImpl(private val context: Context) : ProgressStore {
         mutex.withLock {
             val payload = linkedMapOf(
                 "languageId" to progress.languageId.value,
+                "lessonId" to progress.lessonId,
                 "mode" to progress.mode.name,
                 "bossLessonRewards" to progress.bossLessonRewards,
                 "bossMegaReward" to progress.bossMegaReward,

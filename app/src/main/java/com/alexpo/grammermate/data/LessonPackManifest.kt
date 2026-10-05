@@ -64,6 +64,8 @@ data class LessonPackManifest(
             if (packId.isBlank() || packVersion.isBlank() || language.isBlank()) {
                 error("Missing packId/packVersion/language")
             }
+            PackPaths.identifier(packId, "packId")
+            PackPaths.identifier(language, "language")
             val lessonsJson = json.optJSONArray("lessons") ?: JSONArray()
             val lessons = mutableListOf<LessonPackLesson>()
             for (i in 0 until lessonsJson.length()) {
@@ -76,6 +78,8 @@ data class LessonPackManifest(
                 if (lessonId.isBlank() || file.isBlank()) {
                     error("Invalid lesson entry at index $i")
                 }
+                PackPaths.identifier(lessonId, "lessonId")
+                PackPaths.relative(file)
                 val tensesArray = entry.optJSONArray("tenses")
                 val tenses = if (tensesArray != null) {
                     (0 until tensesArray.length()).mapNotNull { tensesArray.optString(it)?.trim()?.ifBlank { null } }
@@ -83,6 +87,7 @@ data class LessonPackManifest(
                     emptyList()
                 }
                 val grammarChip = entry.optString("grammarChip").trim().ifBlank { null }
+                grammarChip?.let(PackPaths::relative)
                 lessons.add(LessonPackLesson(lessonId, order, title, file, type, tenses, grammarChip))
 
             }
@@ -97,6 +102,17 @@ data class LessonPackManifest(
                 parseChapters(json.optJSONArray("chapters"))
             } else {
                 emptyList()
+            }
+            chapters.forEach { chapter ->
+                PackPaths.identifier(chapter.chapterId, "chapterId")
+                chapter.lessons.forEach { PackPaths.identifier(it, "lessonId") }
+                chapter.storyFile?.let(PackPaths::relative)
+            }
+            verbDrill?.files?.forEach(PackPaths::relative)
+            vocabDrill?.files?.forEach(PackPaths::relative)
+            backgroundVocab?.let {
+                PackPaths.relative(it.file)
+                it.audioDir?.let(PackPaths::relative)
             }
 
             // Validation: Manifest must have content

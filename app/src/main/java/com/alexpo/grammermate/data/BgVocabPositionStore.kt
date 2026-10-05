@@ -40,12 +40,7 @@ class BgVocabPositionStore(private val context: Context) {
             try {
                 val obj = JSONObject()
                 if (!word.isNullOrBlank()) obj.put("word", word)
-                val tmp = File(file.parentFile, "bg_vocab_position.json.tmp")
-                tmp.writeText(obj.toString())
-                if (!tmp.renameTo(file)) {
-                    tmp.copyTo(file, overwrite = true)
-                    tmp.delete()
-                }
+                AtomicFileWriter.writeText(file, obj.toString())
                 Unit
             } catch (e: Exception) {
                 Log.w(TAG, "save failed: ${e.message}")

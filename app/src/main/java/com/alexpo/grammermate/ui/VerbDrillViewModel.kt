@@ -90,7 +90,7 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
     private var allCards: List<VerbDrillCard> = emptyList()
     private var progressMap: Map<String, VerbDrillComboProgress> = emptyMap()
 
-    /** Active pack ID for pack-scoped drill loading, null for legacy global mode */
+    /** Active pack ID; null means no selected drill catalog. */
     private var currentPackId: String? = null
 
     /** Flag to track if reloadForPack() has been called. Used to defer last session check. */
@@ -118,6 +118,7 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
 
     /** Active loadCards coroutine — cancelled on re-entry to prevent double-loading */
     private var loadJob: kotlinx.coroutines.Job? = null
+    private var catalogRequest = 0L
 
     init {
         sessionSize = container.configStore.load().sessionSize
@@ -126,39 +127,18 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
     }
 
     /**
-     * Reload cards for the given language.
-     * Called when the user navigates to Verb Drill with a potentially changed language.
-     * Uses the current [currentPackId] if set, otherwise falls back to global mode.
+     * Clear drill content when navigation has a language but no selected pack.
+     * Saved pack progress remains available when that pack is selected again.
      */
     fun reloadForLanguage(languageId: String) {
-        sessionSize = container.configStore.load().sessionSize
-        val currentLang = _uiState.value.loadedLanguageId
-        if (currentLang == languageId && allCards.isNotEmpty()) return
-
-        // FIX: Find packId for language that has verb drill files
-        val packForLanguage = lessonStore.getInstalledPacks()
-            .firstOrNull { pack ->
-                pack.languageId.value == languageId &&
-                lessonStore.hasVerbDrill(pack.packId.value, languageId)
-            }
-
-        val newPackId = packForLanguage?.packId?.value
-        if (newPackId != null) {
-            // Found a pack with verb drill - use pack-scoped path
-            Log.d(logTag, "reloadForLanguage: found pack $newPackId for language $languageId")
-            reloadForPack(newPackId)
-            return
-        }
-
-        // Fallback: no pack found for language, use legacy global store
-        if (!usingTestStore) {
-            verbDrillStore = container.verbDrillStore(null)
-            Log.d(logTag, "reloadForLanguage: no pack found, using global store for language $languageId")
-        }
-
-        _uiState.update { it.copy(isLoading = true) }
+        catalogRequest++
         loadJob?.cancel()
-        loadJob = viewModelScope.launch { loadCards(languageId) }
+        currentPackId = null
+        allCards = emptyList()
+        progressMap = emptyMap()
+        tenseInfoMap = emptyMap()
+        badSentences.useCatalog(emptyMap(), emptySet())
+        _uiState.value = VerbDrillUiState(isLoading = false, loadedLanguageId = languageId)
     }
 
     /**
@@ -170,15 +150,9 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
         Log.d(logTag, "reloadForPack: packId=$packId, currentPackId=$currentPackId, reloadForPackCalled=$reloadForPackCalled")
         sessionSize = container.configStore.load().sessionSize
         reloadForPackCalled = true
-        if (currentPackId == packId && allCards.isNotEmpty()) {
-            // Cards already loaded, but progress may be stale — force re-read from disk
-            viewModelScope.launch {
-                progressMap = withContext(Dispatchers.IO) { verbDrillStore.loadProgress() }
-                updateProgressDisplay()
-                // Check for last session even when cards are already loaded
-                checkForLastSessionAndShowDialog()
-            }
-            return
+        val request = ++catalogRequest
+        if (currentPackId != packId) {
+            _uiState.update { it.copy(session = null, lastSessionContext = null) }
         }
         currentPackId = packId
         // Only replace verbDrillStore if not using a test store (injected via constructor)
@@ -189,7 +163,7 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
         }
         _uiState.update { it.copy(isLoading = true) }
         loadJob?.cancel()
-        loadJob = viewModelScope.launch { loadCards() }
+        loadJob = viewModelScope.launch { loadCards(request = request) }
     }
 
     /**
@@ -239,7 +213,7 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
         }
     }
 
-    private suspend fun loadCards(languageId: String? = null) {
+    private suspend fun loadCards(languageId: String? = null, request: Long) {
         // For tests: read straight from the injected fake store — the real
         // store reads drill CSVs from disk, which tests replace wholesale.
         if (usingTestStore) {
@@ -263,8 +237,10 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
         val ioResult = withContext(Dispatchers.IO) {
             cardCatalogLoader.load(languageId, packId, store)
         }
+        if (request != catalogRequest || packId != currentPackId) return
 
         // State updates on main thread (viewModelScope.launch default dispatcher)
+        val contentChanged = allCards != ioResult.cards
         allCards = ioResult.cards
         badSentences.useCatalog(ioResult.cardToPack, ioResult.packIds)
         progressMap = ioResult.progress
@@ -276,6 +252,10 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
                 availableTenses = ioResult.tenses,
                 availableGroups = ioResult.groups,
                 availablePersons = ioResult.persons,
+                selectedTense = it.selectedTense?.takeIf(ioResult.tenses::contains),
+                selectedGroup = it.selectedGroup?.takeIf(ioResult.groups::contains),
+                selectedPerson = it.selectedPerson?.takeIf(ioResult.persons::contains),
+                session = if (contentChanged) null else it.session,
                 isLoading = false,
                 loadedLanguageId = ioResult.lang
             )
@@ -289,6 +269,7 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
     }
 
     private fun loadValidLastSession(): com.alexpo.grammermate.data.VerbDrillLastSessionState? {
+        if (currentPackId == null) return null
         val lastSession = verbDrillStore.loadLastSession() ?: return null
         when (VerbDrillSessionCheckpoint.validity(lastSession, currentPackId, allCards)) {
             VerbDrillSessionCheckpoint.Validity.PACK_MISMATCH -> {
@@ -389,15 +370,14 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
      * Submit a correct answer: advances the card index, increments correct count,
      * persists progress, and marks the next card shown timestamp.
      */
-    fun submitCorrectAnswer() {
+    fun submitCorrectAnswer(cardId: String? = null) {
         val session = _uiState.value.session ?: return
         if (session.isComplete) return
-        if (session.currentIndex >= session.cards.size) return
-
-        val card = session.cards[session.currentIndex]
+        val index = if (cardId == null) session.currentIndex else session.cards.indexOfFirst { it.id == cardId }
+        val card = session.cards.getOrNull(index) ?: return
 
         val updatedCorrect = session.correctCount + 1
-        val nextIndex = session.currentIndex + 1
+        val nextIndex = index + 1
         val isComplete = nextIndex >= session.cards.size
 
         val nextCard = if (!isComplete) session.cards[nextIndex] else null
@@ -431,15 +411,14 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
      * advances the card index, and persists progress.
      * Used when a card is "done" but not answered correctly (hint or skip).
      */
-    fun markCardCompleted() {
+    fun markCardCompleted(cardId: String? = null) {
         val session = _uiState.value.session ?: return
         if (session.isComplete) return
-        if (session.currentIndex >= session.cards.size) return
-
-        val card = session.cards[session.currentIndex]
+        val index = if (cardId == null) session.currentIndex else session.cards.indexOfFirst { it.id == cardId }
+        val card = session.cards.getOrNull(index) ?: return
 
         val updatedIncorrect = session.incorrectCount + 1
-        val nextIndex = session.currentIndex + 1
+        val nextIndex = index + 1
         val isComplete = nextIndex >= session.cards.size
 
         val nextCard = if (!isComplete) session.cards[nextIndex] else null
@@ -532,6 +511,19 @@ class VerbDrillViewModel(application: Application) : AndroidViewModel(applicatio
                 )
             }
         }
+    }
+
+    /** Follow the card displayed by the shared training runner without awarding progress. */
+    fun syncDisplayedCard(cardId: String) {
+        val session = _uiState.value.session ?: return
+        val index = session.cards.indexOfFirst { it.id == cardId }
+        if (index < 0) return
+        val updated = session.copy(currentIndex = index, isComplete = false)
+        _uiState.update {
+            it.copy(session = updated, currentCardIsBad = isCardBad(session.cards[index]))
+        }
+        saveLastSessionState(updated)
+        speedTracker.markCardShown()
     }
 
     fun nextCardManual() {

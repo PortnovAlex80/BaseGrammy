@@ -75,6 +75,7 @@ object TrainingProgressValidator {
 
         // Validate packId
         val activePackId = (data["activePackId"] as? String)?.takeIf { it.isNotBlank() }?.let { PackId(it) }
+        val lessonId = (data["lessonId"] as? String)?.takeIf { it.isNotBlank() }
 
         // Validate daily level
         val dailyLevel = (data["dailyLevel"] as? Number)?.toInt()?.coerceIn(0, 100) ?: 0
@@ -102,6 +103,7 @@ object TrainingProgressValidator {
                     eliteBestSpeeds = eliteBestSpeeds,
                     currentScreen = currentScreen,
                     activePackId = activePackId,
+                    lessonId = lessonId,
                     dailyLevel = dailyLevel,
                     dailyTaskIndex = dailyTaskIndex,
                     dailyCursor = dailyCursor
@@ -123,6 +125,7 @@ object TrainingProgressValidator {
                     eliteBestSpeeds = eliteBestSpeeds,
                     currentScreen = currentScreen,
                     activePackId = activePackId,
+                    lessonId = lessonId,
                     dailyLevel = dailyLevel,
                     dailyTaskIndex = dailyTaskIndex,
                     dailyCursor = dailyCursor

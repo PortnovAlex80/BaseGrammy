@@ -109,5 +109,6 @@ internal class SessionCardSessions(
                 stateMachine.incorrectAttempts, stateMachine.voiceTriggerToken
             ))
         }
+        if (stateAccess.currentState.cardSession.inputMode == InputMode.WORD_BANK) wordBank.update()
     }
 }

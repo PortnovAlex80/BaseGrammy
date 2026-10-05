@@ -12,21 +12,20 @@ gradlew.bat :app:assembleDebug
 
 APK: `app\build\outputs\apk\debug\grammermate.apk`
 
-## ⚠️ ВАЖНО: ИСПОЛЬЗУЙТЕ ПОЛНЫЙ ПУТЬ К INTELLIJ JBR (ОСНОВНОЕ РЕШЕНИЕ)
+## Полный JDK и стандартный wrapper (2026-10-05)
 
-Если команда `java` не найдена в PATH, используйте полный путь к java.exe из IntelliJ JBR.
-Это работает даже когда `java -version` не выполняется или Java отсутствует в PATH.
+Установите `JAVA_HOME` на полный JDK с `jlink`. Локально проверен Corretto 21.0.8,
+в CI используется JDK 17; целевой bytecode остаётся Java 17. Установленный IntelliJ
+JBR не содержит `jlink` и для этой сборки не подходит.
 
-**РАБОЧАЯ КОМАНДА (проверено и подтверждено):**
 ```cmd
-"C:\Program Files\JetBrains\IntelliJ IDEA Community Edition 2025.2.1\jbr\bin\java.exe" -cp "gradle/wrapper/gradle-wrapper.jar;gradle/wrapper/gradle-wrapper-shared.jar;gradle/wrapper/gradle-cli.jar" org.gradle.wrapper.GradleWrapperMain assembleDebug
+set JAVA_HOME=C:\Users\user\.jdks\corretto-21.0.8
+gradlew.bat :app:assembleDebug
+gradlew.bat :app:testDebugUnitTest :app:lintDebug --no-parallel --max-workers=1
 ```
 
-**Ключевые моменты:**
-- Полный путь к java.exe из IntelliJ JBR работает даже когда команда `java` не доступна
-- Это ОСНОВНОЕ решение для окружений Windows без Java в PATH
-- Путь может отличаться в зависимости от версии IntelliJ
-- См. раздел troubleshooting ниже, если этот путь не работает
+В Git Bash и Linux используется `./gradlew`. Оба скрипта подключают три wrapper JAR;
+запуск через полный Java classpath сохранён ниже как диагностический резервный вариант.
 
 ---
 
@@ -34,23 +33,22 @@ APK: `app\build\outputs\apk\debug\grammermate.apk`
 
 | Компонент | Версия | Примечание |
 |-----------|--------|------------|
-| Java JDK | 17 | Обязательно. Другие версии не поддерживаются. |
-| Android SDK | API 34 | Платформа, build-tools и platform-tools. |
+| Java JDK | 17 / 21 | Полный JDK с jlink; локально Corretto 21.0.8, CI 17. |
+| Android SDK | API 35 | Платформа для compileSdk, build-tools и platform-tools. |
 | Gradle | 8.9 | Загружается автоматически через wrapper. |
 
 ---
 
 ## 1. Установка Java 17
 
-### Вариант A: Использовать Java из IntelliJ IDEA (рекомендуется)
-
-Если у вас установлена IntelliJ IDEA, Java уже есть в комплекте:
+### Вариант A: Проверенный локальный JDK
 
 ```cmd
-"C:\Program Files\JetBrains\IntelliJ IDEA Community Edition 2025.2.1\jbr\bin\java.exe" -version
+"C:\Users\user\.jdks\corretto-21.0.8\bin\java.exe" -version
+"C:\Users\user\.jdks\corretto-21.0.8\bin\jlink.exe" --version
 ```
 
-Путь может отличаться в зависимости от версии IntelliJ.
+Путь может отличаться в зависимости от установленного JDK.
 
 ### Вариант B: Установить отдельный JDK
 
@@ -79,7 +77,7 @@ java -version
 Установите необходимые компоненты:
 
 ```cmd
-sdkmanager --install "platforms;android-34" "build-tools;34.0.0" "platform-tools"
+sdkmanager --install "platforms;android-35" "build-tools;34.0.0" "platform-tools"
 ```
 
 Принимите лицензии:
@@ -106,52 +104,20 @@ set ANDROID_HOME=C:\Users\user\AppData\Local\Android\Sdk
 
 ---
 
-## 3. Проблема с Gradle wrapper на Windows
+## 3. Стандартный wrapper и резервный запуск Java
 
-Проект использует Gradle 8.9, поставляемый в формате multi-JAR wrapper. Стандартный скрипт `gradlew.bat` может завершаться с ошибкой:
+Используйте `gradlew.bat` в Windows или `./gradlew` в Git Bash/Linux. Скрипты
+подключают `gradle-wrapper.jar`, `gradle-wrapper-shared.jar` и `gradle-cli.jar` из
+`gradle/wrapper`. Ошибка `NoClassDefFoundError: org/gradle/wrapper/IDownload` в старом
+checkout означает неполный classpath; обновите скрипты wrapper.
 
-```
-NoClassDefFoundError: org/gradle/wrapper/IDownload
-```
-
-### Причина
-
-Начиная с Gradle 8.9, wrapper состоит из нескольких JAR-файлов:
-
-```
-gradle/wrapper/
-  gradle-wrapper.jar
-  gradle-wrapper-shared.jar
-  gradle-cli.jar
-```
-
-Стандартный скрипт `gradlew` загружает только `gradle-wrapper.jar`, что приводит к ошибке.
-
-### Решение
-
-Запускайте сборку напрямую через Java, указав все три JAR в classpath:
-
-**С Java из IntelliJ IDEA (рекомендуется):**
-```cmd
-"C:\Program Files\JetBrains\IntelliJ IDEA Community Edition 2025.2.1\jbr\bin\java.exe" -cp "gradle/wrapper/gradle-wrapper.jar;gradle/wrapper/gradle-wrapper-shared.jar;gradle/wrapper/gradle-cli.jar" org.gradle.wrapper.GradleWrapperMain assembleDebug
-```
-
-**С системным Java:**
+Эквивалентный резервный запуск в Windows с настроенным полным JDK:
 ```cmd
 java -cp "gradle/wrapper/gradle-wrapper.jar;gradle/wrapper/gradle-wrapper-shared.jar;gradle/wrapper/gradle-cli.jar" org.gradle.wrapper.GradleWrapperMain assembleDebug
 ```
 
-> **Примечание:** Путь к IntelliJ JBR может отличаться в зависимости от установленной версии. Проверьте наличие java.exe в каталоге `jbr/bin/` вашей установки IntelliJ.
-
-Для удобства можно создать файл `build.bat` в корне проекта (укажите свой путь к Java):
-
-```bat
-@echo off
-set JAVA_EXE=C:\Program Files\JetBrains\IntelliJ IDEA Community Edition 2025.2.1\jbr\bin\java.exe
-"%JAVA_EXE%" -cp "gradle/wrapper/gradle-wrapper.jar;gradle/wrapper/gradle-wrapper-shared.jar;gradle/wrapper/gradle-cli.jar" org.gradle.wrapper.GradleWrapperMain %*
-```
-
-После этого можно использовать `build.bat assembleDebug` вместо `gradlew assembleDebug`.
+Разделитель classpath — `;` для Windows JVM и `:` для Unix JVM. Создавать отдельный
+`build.bat` не требуется: достаточно `JAVA_HOME` и стандартного wrapper.
 
 ---
 
@@ -172,7 +138,7 @@ android.overridePathCheck=true
 ### Debug APK
 
 ```cmd
-build.bat assembleDebug
+gradlew.bat :app:assembleDebug
 ```
 
 Готовый APK: `app\build\outputs\apk\debug\grammermate.apk`
@@ -180,31 +146,31 @@ build.bat assembleDebug
 ### Release APK
 
 ```cmd
-build.bat assembleRelease
+gradlew.bat :app:assembleRelease
 ```
 
 ### Запуск тестов
 
 ```cmd
-build.bat test
+gradlew.bat :app:testDebugUnitTest --no-parallel --max-workers=1
 ```
 
 Запуск конкретного тестового класса:
 
 ```cmd
-build.bat test --tests "com.alexpo.grammermate.data.FlowerCalculatorTest"
+gradlew.bat :app:testDebugUnitTest --tests "com.alexpo.grammermate.data.FlowerCalculatorTest" --no-parallel --max-workers=1
 ```
 
 Запуск конкретного тестового метода:
 
 ```cmd
-build.bat test --tests "com.alexpo.grammermate.data.FlowerCalculatorTest.testBloomState"
+gradlew.bat :app:testDebugUnitTest --tests "com.alexpo.grammermate.data.FlowerCalculatorTest.calculate_nullMastery_returnsSeedState" --no-parallel --max-workers=1
 ```
 
 ### Очистка
 
 ```cmd
-build.bat clean
+gradlew.bat clean
 ```
 
 ---
@@ -222,15 +188,15 @@ python tools/pack_validator/pack_validator.py path/to/pack.zip
 ## Краткая шпаргалка
 
 ```cmd
-:: 1. Проверить Java (из IntelliJ или системная)
-"C:\Program Files\JetBrains\IntelliJ IDEA Community Edition 2025.2.1\jbr\bin\java.exe" -version
+:: 1. Проверить Java (полный JDK)
+"C:\Users\user\.jdks\corretto-21.0.8\bin\java.exe" -version
 :: или просто: java -version
 
 :: 2. Проверить Android SDK (если не настроен local.properties)
 echo %ANDROID_HOME%
 
 :: 3. Собрать debug APK (одна строка, без переноса)
-"C:\Program Files\JetBrains\IntelliJ IDEA Community Edition 2025.2.1\jbr\bin\java.exe" -cp "gradle/wrapper/gradle-wrapper.jar;gradle/wrapper/gradle-wrapper-shared.jar;gradle/wrapper/gradle-cli.jar" org.gradle.wrapper.GradleWrapperMain assembleDebug
+gradlew.bat :app:assembleDebug
 
 :: 4. Забрать APK
 :: app\build\outputs\apk\debug\grammermate.apk
@@ -241,23 +207,21 @@ echo %ANDROID_HOME%
 ## Решение проблем
 
 ### Проблема: команда `java` не найдена или `java -version` не выполняется
-**Решение:** Используйте полный путь к IntelliJ JBR вместо команды `java`
+**Решение:** Укажите полный JDK с `jlink` в `JAVA_HOME`:
 ```cmd
-"C:\Program Files\JetBrains\IntelliJ IDEA Community Edition 2025.2.1\jbr\bin\java.exe" -cp "gradle/wrapper/gradle-wrapper.jar;gradle/wrapper/gradle-wrapper-shared.jar;gradle/wrapper/gradle-cli.jar" org.gradle.wrapper.GradleWrapperMain assembleDebug
+set JAVA_HOME=C:\Users\user\.jdks\corretto-21.0.8
+gradlew.bat :app:assembleDebug
 ```
 
-### Проблема: путь к IntelliJ JBR отличается от документированного
-**Решение:** Найдите установку IntelliJ и locate java.exe в каталоге jbr/bin/
-- Обычные расположения:
-  - `C:\Program Files\JetBrains\IntelliJ IDEA Community Edition 2025.2.1\jbr\bin\java.exe`
-  - `C:\Program Files\JetBrains\IntelliJ IDEA Ultimate\jbr\bin\java.exe`
-  - `C:\Program Files (x86)\JetBrains\IntelliJ IDEA *\jbr\bin\java.exe`
+### Проблема: отсутствует jlink
+**Решение:** Используйте полный Corretto JDK из примера выше. Проверьте наличие
+`JAVA_HOME/bin/jlink.exe`; установленный IntelliJ JBR для этой сборки недостаточен.
 
 ### Проблема: NoClassDefFoundError: org/gradle/wrapper/IDownload
 **Решение:** Убедитесь, что все три JAR указаны в classpath (см. раздел 3 выше)
 
 ### Проблема: Сборка не выполняется несмотря на правильную настройку Java
-**Решение:** Проверьте путь к Android SDK в local.properties и убедитесь, что установлен API 34
+**Решение:** Проверьте путь к Android SDK в local.properties и убедитесь, что установлен API 35
 
 ---
 
@@ -325,7 +289,7 @@ set ADB=C:\Users\user\AppData\Local\Android\Sdk\platform-tools\adb.exe
 |----------|---------|
 | `adb` не найден | Используйте полный путь: `C:\Users\user\AppData\Local\Android\Sdk\platform-tools\adb.exe` |
 | Устройство не отображается в `adb devices` | Включите USB Debugging; проверьте драйверы; попробуйте другой USB-кабель |
-| `INSTALL_FAILED_UPDATE_INCOMPATIBLE` | Используйте `adb install -r` или сначала `adb uninstall com.alexpo.grammermate` |
+| `INSTALL_FAILED_UPDATE_INCOMPATIBLE` | Установите APK с той же подписью. Удаление приложения позволит сменить подпись, но удалит его данные и внутренний backup; предварительно сохраните нужные данные вне приложения. |
 
 ### Проблема: FileAlreadyExistsException при пересборке
 
@@ -337,5 +301,5 @@ kotlin.io.FileAlreadyExistsException: app-debug.apk -> grammermate.apk: Tried to
 **Решение:** Удалите старый APK перед сборкой:
 ```cmd
 del app\build\outputs\apk\debug\grammermate.apk
-build.bat assembleDebug
+gradlew.bat :app:assembleDebug
 ```

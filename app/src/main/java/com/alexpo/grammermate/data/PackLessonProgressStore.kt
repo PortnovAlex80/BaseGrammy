@@ -103,6 +103,7 @@ class PackLessonProgressStoreImpl(context: Context) : PackLessonProgressStore {
                     "lessonProgress" to progress.lessonProgress.mapValues { (_, lessonProgress) ->
                         mapOf(
                             "currentIndex" to lessonProgress.currentIndex,
+                            "activeSubLessonIndex" to lessonProgress.activeSubLessonIndex,
                             "correctCount" to lessonProgress.correctCount,
                             "incorrectCount" to lessonProgress.incorrectCount,
                             "incorrectAttemptsForCard" to lessonProgress.incorrectAttemptsForCard,
@@ -146,7 +147,7 @@ class PackLessonProgressStoreImpl(context: Context) : PackLessonProgressStore {
     override fun loadAllPackProgress(): Map<String, PackLessonProgressState> {
         return mutex.withLock {
             // Return all cached progress if available
-            progressCache?.let { return@withLock it.toMap() }
+            // A prior single-pack read populates only part of the cache. Scan the inventory.
 
             // Otherwise, scan directory for all progress files
             val progressMap = mutableMapOf<String, PackLessonProgressState>()
@@ -186,6 +187,7 @@ class PackLessonProgressStoreImpl(context: Context) : PackLessonProgressStore {
             val lessonIdStr = lessonId as? String ?: return@mapNotNull null
             lessonIdStr to PackLessonProgressState.LessonProgress(
                 currentIndex = (progressMap["currentIndex"] as? Number)?.toInt() ?: 0,
+                activeSubLessonIndex = (progressMap["activeSubLessonIndex"] as? Number)?.toInt()?.coerceAtLeast(0),
                 correctCount = (progressMap["correctCount"] as? Number)?.toInt() ?: 0,
                 incorrectCount = (progressMap["incorrectCount"] as? Number)?.toInt() ?: 0,
                 incorrectAttemptsForCard = (progressMap["incorrectAttemptsForCard"] as? Number)?.toInt() ?: 0,

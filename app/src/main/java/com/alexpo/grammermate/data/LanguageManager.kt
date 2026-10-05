@@ -101,17 +101,15 @@ internal class LanguageManager(
     }
 
     fun forceReloadDefaultPacks(
-        removeInstalledPackData: (String) -> Boolean,
         importFromAssets: (String) -> Boolean
     ): Boolean {
         Log.i(TAG, "forceReloadDefaultPacks: ENTER, packs=${defaultPacks.map { it.packId }}")
         ensureSeedData()
         var reloadedAny = false
         defaultPacks.forEach { pack ->
-            val removed = removeInstalledPackData(pack.packId)
             val reloaded = runCatching { importFromAssets(pack.assetPath) }.isSuccess
-            Log.i(TAG, "forceReloadDefaultPacks: pack=${pack.packId} removed=$removed reloaded=$reloaded")
-            if (removed || reloaded) reloadedAny = true
+            Log.i(TAG, "forceReloadDefaultPacks: pack=${pack.packId} reloaded=$reloaded")
+            if (reloaded) reloadedAny = true
         }
         Log.i(TAG, "forceReloadDefaultPacks: EXIT reloadedAny=$reloadedAny")
         return reloadedAny

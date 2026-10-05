@@ -14,6 +14,9 @@ interface HiddenCardStore {
     fun isHidden(cardId: String): Boolean
     fun getHiddenCardIds(): Set<String>
     fun clearAll()
+    fun clearPack(packId: String) {
+        getHiddenCardIds().filter { it.startsWith(HiddenCardKeys.packPrefix(packId)) }.forEach(::unhideCard)
+    }
 }
 
 class HiddenCardStoreImpl(private val context: Context) : HiddenCardStore {
@@ -74,6 +77,12 @@ class HiddenCardStoreImpl(private val context: Context) : HiddenCardStore {
 
     override fun clearAll() = mutex.withLock {
         hiddenIds.clear()
+        persist()
+    }
+
+    override fun clearPack(packId: String) = mutex.withLock {
+        ensureLoaded()
+        hiddenIds.removeAll { it.startsWith(HiddenCardKeys.packPrefix(packId)) }
         persist()
     }
 

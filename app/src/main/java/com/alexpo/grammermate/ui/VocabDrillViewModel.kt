@@ -26,6 +26,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.withContext
 
 class VocabDrillViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -46,8 +49,10 @@ class VocabDrillViewModel(application: Application) : AndroidViewModel(applicati
     private var allWords: List<VocabWord> = emptyList()
     private var masteryMap: Map<String, WordMasteryState> = emptyMap()
 
-    /** Currently active pack ID, null means no pack scoping (legacy mode). */
+    /** Currently selected pack; null has no drill content. */
     private var activePackId: String? = null
+    private var loadJob: Job? = null
+    private var catalogRequest = 0L
 
     /** Session size from config, replaces hardcoded take(10). */
     private var sessionSize: Int = 10
@@ -64,106 +69,94 @@ class VocabDrillViewModel(application: Application) : AndroidViewModel(applicati
      */
     fun reloadForPack(packId: String, languageId: String) {
         sessionSize = container.configStore.load().sessionSize
-        val currentLang = _uiState.value.loadedLanguageId
-        val currentPack = activePackId
-        if (currentPack == packId && currentLang == languageId && allWords.isNotEmpty()) {
-            // Same pack and language — just refresh mastery from disk and update counts.
-            masteryMap = masteryStore.loadAll()
-            updateCounts()
-            return
-        }
+        val request = ++catalogRequest
+        if (activePackId != packId) _uiState.update { it.copy(session = null) }
         activePackId = packId
         // Re-scope mastery store to the pack via shared container
         masteryStore = container.wordMasteryStore(packId)
         _uiState.update { it.copy(isLoading = true) }
-        viewModelScope.launch { loadWords(languageId) }
+        loadJob?.cancel()
+        loadJob = viewModelScope.launch { loadWords(languageId, request) }
     }
 
     /**
-     * Reload words for the given language (called on navigation).
-     * If a pack is active, loads from that pack. Otherwise scans all packs.
-     * Always refreshes mastery from disk to reflect any external changes.
+     * Clear the visible catalog when navigation has no selected pack.
+     * This does not alter saved mastery for any pack.
      */
     fun reloadForLanguage(languageId: String) {
-        sessionSize = container.configStore.load().sessionSize
-        val currentLang = _uiState.value.loadedLanguageId
-        if (currentLang == languageId && allWords.isNotEmpty()) {
-            // Same language — just refresh mastery from disk and update counts.
-            masteryMap = masteryStore.loadAll()
-            updateCounts()
-            return
-        }
-        val pack = activePackId
-        if (pack != null) {
-            masteryStore = container.wordMasteryStore(pack)
-        }
-        _uiState.update { it.copy(isLoading = true) }
-        viewModelScope.launch { loadWords(languageId) }
+        catalogRequest++
+        loadJob?.cancel()
+        activePackId = null
+        allWords = emptyList()
+        masteryMap = emptyMap()
+        _uiState.value = VocabDrillUiState(isLoading = false, loadedLanguageId = languageId)
     }
 
-    private fun loadWords(languageId: String? = null) {
-        val lang = languageId ?: "it"
+    private suspend fun loadWords(lang: String, request: Long) {
         val pack = activePackId
-        val words = mutableListOf<VocabWord>()
+        val store = masteryStore
+        val (loadedWords, loadedMastery) = withContext(Dispatchers.IO) {
+            val words = mutableListOf<VocabWord>()
 
-        val files = if (pack != null) {
-            // Pack-scoped: load from the pack's vocab drill directory
-            lessonStore.getVocabDrillFiles(pack, lang)
-        } else {
-            // No active pack: scan all installed packs for vocab drill files
-            lessonStore.getInstalledPacks().flatMap { installedPack ->
-                lessonStore.getVocabDrillFiles(installedPack.packId.value, lang)
-            }
-        }
+            val files = if (pack != null) {
+                // Pack-scoped: load from the pack's vocab drill directory
+                lessonStore.getVocabDrillFiles(pack, lang)
+            } else emptyList()
 
-        Log.d(logTag, "Found ${files.size} vocab drill files for pack=$pack, lang=$lang")
-        for (file in files) {
-            try {
-                val stream = file.inputStream()
-                val fileName = file.name
-                val rows = ItalianDrillVocabParser.parse(stream, fileName)
-                stream.close()
-                Log.d(logTag, "Parsed $fileName: ${rows.size} rows")
+            Log.d(logTag, "Found ${files.size} vocab drill files for pack=$pack, lang=$lang")
+            for (file in files) {
+                try {
+                    val stream = file.inputStream()
+                    val fileName = file.name
+                    val rows = ItalianDrillVocabParser.parse(stream, fileName)
+                    stream.close()
+                    Log.d(logTag, "Parsed $fileName: ${rows.size} rows")
 
-                // Derive POS from filename: drill_nouns.csv -> "nouns", it_drill_nouns.csv -> "nouns"
-                val pos = fileName
-                    .removePrefix("${lang}_")
-                    .removePrefix("drill_")
-                    .removeSuffix(".csv")
+                    // Derive POS from filename: drill_nouns.csv -> "nouns", it_drill_nouns.csv -> "nouns"
+                    val pos = fileName
+                        .removePrefix("${lang}_")
+                        .removePrefix("drill_")
+                        .removeSuffix(".csv")
 
-                for (row in rows) {
-                    words.add(VocabWord(
-                        id = "${pos}_${row.rank}_${row.word}",
-                        word = row.word,
-                        pos = pos,
-                        rank = row.rank,
-                        meaningRu = row.meaningRu,
-                        collocations = row.collocations,
-                        forms = row.forms
-                    ))
+                    for (row in rows) {
+                        words.add(VocabWord(
+                            id = "${pos}_${row.rank}_${row.word}",
+                            word = row.word,
+                            pos = pos,
+                            rank = row.rank,
+                            meaningRu = row.meaningRu,
+                            collocations = row.collocations,
+                            forms = row.forms
+                        ))
+                    }
+                    Log.d(logTag, "Added ${words.size} words from $fileName with pos='$pos'")
+                } catch (e: Exception) {
+                    Log.w(logTag, "Failed to load ${file.name}", e)
                 }
-                Log.d(logTag, "Added ${words.size} words from $fileName with pos='$pos'")
-            } catch (e: Exception) {
-                Log.w(logTag, "Failed to load ${file.name}", e)
             }
+
+            words.sortedBy { it.rank } to store.loadAll()
         }
+        if (request != catalogRequest || pack != activePackId) return
+        val contentChanged = allWords != loadedWords
+        allWords = loadedWords
+        masteryMap = loadedMastery
 
-        allWords = words.sortedBy { it.rank }
-        masteryMap = masteryStore.loadAll()
-
-        val availablePos = words.map { it.pos }.distinct().sorted()
+        val availablePos = loadedWords.map { it.pos }.distinct().sorted()
         Log.d(logTag, "Available POS: $availablePos")
 
         _uiState.update {
             it.copy(
                 availablePos = availablePos,
+                selectedPos = it.selectedPos?.takeIf(availablePos::contains),
+                session = if (contentChanged) null else it.session,
                 isLoading = false,
                 loadedLanguageId = lang
             )
         }
 
         updateCounts()
-        Log.d(logTag, "Loaded ${words.size} vocab words for language $lang, pack=${pack ?: "all"}")
+        Log.d(logTag, "Loaded ${loadedWords.size} vocab words for language $lang, pack=$pack")
     }
 
     /**

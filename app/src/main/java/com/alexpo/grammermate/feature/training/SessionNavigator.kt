@@ -104,6 +104,7 @@ internal class SessionNavigator(
         updateStateAndClearInput {
             it.copy(cardSession = SessionNavigationTransitions.previous(it.cardSession, prevIndex, prevCard))
         }
+        if (stateAccess.currentState.cardSession.inputMode == InputMode.WORD_BANK) wordBank.update()
         // Audit: card navigation prev
         audit?.cardNav("prev", fromIdx, prevIndex, "manual")
         val events = mutableListOf<SessionEvent>()
@@ -140,9 +141,7 @@ internal class SessionNavigator(
             it.copy(cardSession = SessionNavigationTransitions.browse(it.cardSession, targetIndex, targetCard))
         }
         audit?.cardNav(if (forward) "next" else "prev", fromIdx, targetIndex, "manual")
-        if (forward && stateAccess.currentState.cardSession.inputMode == InputMode.WORD_BANK) {
-            wordBank.update()
-        }
+        if (stateAccess.currentState.cardSession.inputMode == InputMode.WORD_BANK) wordBank.update()
         events.add(SessionEvent.SaveProgress)
         return events
     }
@@ -176,6 +175,7 @@ internal class SessionNavigator(
             updateStateAndClearInput {
                 it.copy(cardSession = SessionNavigationTransitions.skipTo(it.cardSession, nextIndex, sessionCards()[nextIndex]))
             }
+            if (stateAccess.currentState.cardSession.inputMode == InputMode.WORD_BANK) wordBank.update()
             // Audit: skip to next card
             audit?.cardNav("skip", fromIdx, nextIndex, "manual")
         } else {

@@ -32,10 +32,7 @@ internal class VerbDrillCardCatalogLoader(
         val lang = languageId ?: progressStore.load().languageId.value
         val files = if (packId != null) {
             lessonStore.getVerbDrillFiles(packId, lang)
-        } else {
-            @Suppress("DEPRECATION")
-            lessonStore.getVerbDrillFiles(lang)
-        }
+        } else emptyList()
         val cards = mutableListOf<VerbDrillCard>()
         val cardToPack = mutableMapOf<String, String>()
         val packIds = mutableSetOf<String>()
@@ -45,10 +42,7 @@ internal class VerbDrillCardCatalogLoader(
                 VerbDrillCsvParser.parse(reader)
             }
             val parsed = parseResult.data ?: continue
-            val sourcePack = packId ?: run {
-                val lessonId = file.nameWithoutExtension.removePrefix("${lang}_")
-                lessonStore.getPackIdForLesson(lessonId) ?: lessonId
-            }
+            val sourcePack = packId ?: continue
             packIds.add(sourcePack)
             for (card in parsed) cardToPack[card.id] = sourcePack
             cards.addAll(parsed)

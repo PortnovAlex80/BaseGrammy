@@ -26,7 +26,6 @@ class StoreFactory private constructor(private val appContext: Application) {
     private val hiddenCardCache: HiddenCardStoreImpl by lazy { HiddenCardStoreImpl(appContext) }
     private val vocabProgressCache = mutableMapOf<String?, VocabProgressStoreImpl>()
     private val profileCache: ProfileStoreImpl by lazy { ProfileStoreImpl(appContext) }
-    private val drillProgressCache: DrillProgressStoreImpl by lazy { DrillProgressStoreImpl(appContext) }
 
     // ── Pack-scoped accessors ────────────────────────────────────────────
 
@@ -79,7 +78,6 @@ class StoreFactory private constructor(private val appContext: Application) {
 
     fun getProfileStore(): ProfileStore = profileCache
 
-    fun getDrillProgressStore(): DrillProgressStore = drillProgressCache
 
     // ── Cache management ─────────────────────────────────────────────────
 
@@ -89,9 +87,10 @@ class StoreFactory private constructor(private val appContext: Application) {
      */
     @Synchronized
     fun evict(packId: String?) {
-        wordMasteryCache.remove(packId)
-        verbDrillCache.remove(packId)
-        vocabProgressCache.remove(packId)
+        auxDrillCache.remove(packId)?.invalidateCache()
+        wordMasteryCache.remove(packId)?.invalidateCache()
+        verbDrillCache.remove(packId)?.invalidateCache()
+        vocabProgressCache.remove(packId)?.invalidateCache()
     }
 
     /**
@@ -99,8 +98,13 @@ class StoreFactory private constructor(private val appContext: Application) {
      */
     @Synchronized
     fun clearCache() {
+        auxDrillCache.values.forEach(AuxDrillStoreImpl::invalidateCache)
+        auxDrillCache.clear()
+        wordMasteryCache.values.forEach(WordMasteryStoreImpl::invalidateCache)
         wordMasteryCache.clear()
+        verbDrillCache.values.forEach(VerbDrillStoreImpl::invalidateCache)
         verbDrillCache.clear()
+        vocabProgressCache.values.forEach(VocabProgressStoreImpl::invalidateCache)
         vocabProgressCache.clear()
     }
 
