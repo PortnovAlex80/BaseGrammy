@@ -35,7 +35,6 @@ import com.alexpo.grammermate.data.DailyBlockType
 import com.alexpo.grammermate.data.HintLevel
 import com.alexpo.grammermate.data.DailyTask
 import com.alexpo.grammermate.data.BackupManager
-import com.alexpo.grammermate.data.CefrCalculator
 import com.alexpo.grammermate.data.CompletionNextAction
 import com.alexpo.grammermate.data.PracticeType
 import kotlinx.coroutines.Dispatchers
@@ -68,6 +67,8 @@ import com.alexpo.grammermate.feature.progress.ProgressTracker
 import com.alexpo.grammermate.feature.progress.StreakManager
 import com.alexpo.grammermate.feature.training.AnswerValidator
 import com.alexpo.grammermate.feature.training.CardProvider
+import com.alexpo.grammermate.feature.training.ProfileStats
+import com.alexpo.grammermate.feature.training.ProfileStatsSource
 import com.alexpo.grammermate.feature.training.SessionEvent
 import com.alexpo.grammermate.feature.training.SessionRunner
 import com.alexpo.grammermate.feature.training.StoryResult
@@ -194,7 +195,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     private val packTileSource = PackTileSource(lessonStore, masteryStore)
     private val contextResolver = TrainingContextResolver(lessonStore)
 
-    fun getPackTiles(): List<PackTileUi> = packTileSource.getTiles(_coreState.value.navigation)
+    private fun getPackTiles(): List<PackTileUi> = packTileSource.getTiles(_coreState.value.navigation)
 
     // ── Derived data as state (Phase 1: no disk I/O during composition) ───
     // These were imperative per-composition calls; they are now StateFlows
@@ -212,8 +213,13 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     )
     val chapterCards: StateFlow<List<ChapterCardUi>> = chapterRoadmap.chapterCards
 
-    private val _profileStats = MutableStateFlow(ProfileStats(0, 0, ""))
-    val profileStats: StateFlow<ProfileStats> = _profileStats.asStateFlow()
+    private val profileStatsSource = ProfileStatsSource(
+        scope = viewModelScope,
+        lessonStore = lessonStore,
+        masteryStore = masteryStore,
+        wordMasteryStoreProvider = { wordMasteryStore }
+    )
+    val profileStats: StateFlow<ProfileStats> get() = profileStatsSource.profileStats
 
     val pomodoroHistory get() = pomodoroRecords.history
     val pomodoroLastDuration get() = pomodoroRecords.lastDuration
@@ -223,14 +229,12 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         if (_packTiles.value != tiles) _packTiles.value = tiles
     }
 
-    /** profileStats' CEFR scan parses vocab CSVs from disk — refresh only on
-     *  pack/language changes, not on every mastery update. The scan runs on
-     *  Dispatchers.IO (the DrillFileManager cache makes repeat calls cheap);
-     *  only the resulting StateFlow value touches the UI. */
     private fun refreshProfileStats() {
-        viewModelScope.launch(Dispatchers.IO) {
-            _profileStats.value = getProfileStats()
-        }
+        val navigation = _coreState.value.navigation
+        profileStatsSource.refresh(
+            languageId = navigation.selectedLanguageId?.value,
+            packId = navigation.activePackId?.value
+        )
     }
 
     private fun refreshPomodoroHistory() {
@@ -494,8 +498,6 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     val reports: BadSentenceHelper get() = badSentenceHelper
     /** Public accessor for settings operations. */
     val settings: SettingsActionHandler get() = settingsActionHandler
-    /** Current UI language setting for the settings screen selector. */
-    val currentUiLanguage: String get() = _coreState.value.navigation.uiLanguage
     /** Current session size for the settings screen. */
     val currentSessionSize: Int get() = sessionSize
 
@@ -530,7 +532,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         _pomodoroRemainingSeconds.value = 0
     }
 
-    fun onTrainingSessionCompleted() {
+    private fun onTrainingSessionCompleted() {
         pomodoroHelper.onTrainingSessionCompleted()
         val pomo = _coreState.value.pomodoro
         val cs = _coreState.value.cardSession
@@ -569,18 +571,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         pomodoroHelper.onLifecycleStart()
     }
 
-    fun getPomodoroLastDuration(): Int {
-        return pomodoroRecords.lastDuration.value
-    }
-
-    fun getPomodoroHistoryForSelectedLanguage() =
-        pomodoroRecords.loadHistory(_coreState.value.navigation.selectedLanguageId?.value)
-
     // ── TTS playback for story narration ───────────────────────────────────────
-
-    fun speakStoryText(text: String, languageId: String = "en") {
-        storyReader.speakText(text, languageId)
-    }
 
     /**
      * Manually download TTS voice models for the background-vocab languages
@@ -886,11 +877,14 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         } else {
             completedCount
         }
-        val checkpoint = resolvedPackId?.let {
-            packLessonProgressStore.loadPackProgress(it)?.lessonProgress?.get(lessonId)
-        }
-        val nextActiveIndex = (checkpoint?.activeSubLessonIndex ?: effectiveCompletedCount)
-            .coerceIn(0, (subLessons.size - 1).coerceAtLeast(0))
+        val resume = progressTracker.resolveLessonCheckpointResume(
+            packId = resolvedPackId,
+            lessonId = typedLessonId,
+            subLessons = subLessons,
+            completedSubLessons = effectiveCompletedCount
+        )
+        val checkpoint = resume.checkpoint
+        val nextActiveIndex = resume.activeSubLessonIndex
 
         _coreState.update {
             val reset = it.resetSessionState()
@@ -1000,13 +994,6 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     }
 
     /**
-     * Check if a pack has chapters (Grammar Story Roadmap support).
-     */
-    fun hasPackChapters(packId: String): Boolean {
-        return lessonStore.hasChapters(packId)
-    }
-
-    /**
      * Clear the active pack to return to pack selection screen.
      */
     fun clearActivePack() {
@@ -1066,7 +1053,18 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             progressWriter.requestBackup()
         }
 
-        recordSelfProducedIfEarned(result.accepted, beforeState, beforeCard, beforeInputMode)
+        // The self-produced ladder rule lives in ProgressTracker; the ViewModel
+        // gathers only the cross-feature facts (boss flow, daily session flag)
+        // and the session-local reveal fact.
+        progressTracker.recordSelfProducedIfEarned(
+            accepted = result.accepted,
+            card = beforeCard,
+            inputMode = beforeInputMode,
+            answerWasRevealed = beforeState.sessionState == SessionState.HINT_SHOWN ||
+                beforeState.answerText != null,
+            bossActive = bossOrchestrator.stateFlow.value.bossActive,
+            dailySessionActive = isDailySession()
+        )
 
         // Track daily card practice for cursor advancement.
         // Only VOICE and KEYBOARD answers count — WORD_BANK does NOT
@@ -1098,53 +1096,10 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         return SubmitResult(result.accepted, result.hintShown)
     }
 
-    /**
-     * Двигает лестницу интервалов урока, которому принадлежит карточка — но только
-     * если человек **воспроизвёл её сам**.
-     *
-     * Правильность ответа сигналом быть не может: голос идёт через ASR с высокой
-     * долей ошибок, и непринятый ответ чаще означает промах распознавания, а не
-     * забывание. Доступен только бинарный сигнал «ввёл / не ввёл», поэтому здесь
-     * проверяется ровно он: ответ принят, режим ввода считается для мастери
-     * (не WORD_BANK) и ответ не был раскрыт через «показать ответ».
-     *
-     * Урок, пройденный целиком через подсказки, копит экспозицию, но не
-     * зарабатывает более длинный интервал. Это не откат — лестница монотонна.
-     */
-    private fun recordSelfProducedIfEarned(
-        accepted: Boolean,
-        beforeState: com.alexpo.grammermate.data.CardSessionState,
-        beforeCard: com.alexpo.grammermate.data.SessionCard?,
-        beforeInputMode: InputMode
-    ) {
-        if (!accepted) return
-        if (beforeCard == null) return
-        if (!beforeInputMode.countsTowardMastery) return
-        // Ответ был раскрыт подсказкой — воспроизведения не было.
-        if (beforeState.sessionState == SessionState.HINT_SHOWN || beforeState.answerText != null) return
-        // Босс и ежедневная практика ведут свой учёт и в лестницу уроков не пишут.
-        if (bossOrchestrator.stateFlow.value.bossActive) return
-        if (isDailySession()) return
-
-        val packId = _coreState.value.navigation.activePackId?.value ?: return
-        val lessonId = progressTracker.resolveCardLessonId(
-            beforeCard,
-            _coreState.value.navigation.selectedLessonId,
-            _coreState.value.navigation.lessons
-        ) ?: return
-        masteryStore.recordSelfProducedForPack(
-            packId = packId,
-            lessonId = lessonId.value,
-            totalEffortCards = masteryStore.totalEffortCardsForPack(packId)
-        )
-    }
-
     fun nextCard(triggerVoice: Boolean = false) {
         val events = sessionRunner.nextCard(triggerVoice)
         handleSessionEvents(events)
     }
-
-    fun prevCard() = handleSessionEvents(sessionRunner.prevCard())
 
     /** Navigate forward via arrow button: pause-first, then advance. Leaves PAUSED. */
     fun navigateNext() = handleSessionEvents(sessionRunner.navigateNext())
@@ -1414,11 +1369,6 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     }
 
     /**
-     * Reset ALL progress: mastery, daily practice, verb drill, vocab mastery, training progress.
-     */
-    fun resetAllProgress() = handleSettingsResults(settingsActionHandler.resetAllProgress(getApplication()))
-
-    /**
      * Reset progress for the current language/pack only.
      * Other language packs are NOT affected.
      */
@@ -1475,7 +1425,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
      * 4. If no chapters, find next lesson in pack lesson list → NEXT_LESSON
      * 5. Otherwise → NONE
      */
-    fun computeCompletionNextAction(): CompletionNextAction {
+    private fun computeCompletionNextAction(): CompletionNextAction {
         val state = _coreState.value
         val returnTo = state.cardSession.returnTo
 
@@ -1610,29 +1560,11 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
     }
 
     /**
-     * Advance to the next block in the daily practice session.
-     * Called when TRANSLATE/VERBS block finishes in TrainingScreen (via GrammarMateApp token detection)
-     * or when VOCAB block completes in DailyPracticeScreen.
-     *
-     * @return the next block to render, or null if all blocks are done.
-     */
-    fun onDailyBlockComplete(): com.alexpo.grammermate.data.DailyBlock? {
-        // Snapshot current block info before it's marked complete
-        val ds = _coreState.value.daily.dailySession
-        val currentBlock = ds.currentBlock
-        val blockType = currentBlock?.type?.name?.lowercase() ?: ""
-        val cardCount = currentBlock?.tasks?.size ?: 0
-        val nextBlock = dailyPracticeCoordinator.onBlockComplete()
-        AuditLogger.getInstanceOrNull()?.dailyBlockComplete(blockType, cardCount)
-        return nextBlock
-    }
-
-    /**
      * Record that a card in the current daily practice block was practiced via VOICE or KEYBOARD.
-     * Called from DailyPracticeScreen's onCardAdvanced callback (which the provider only fires
-     * for non-WORD_BANK modes). Used to track per-block completion for cursor advancement.
+     * Called from submitAnswer's daily hook (which only runs for non-WORD_BANK modes).
+     * Used to track per-block completion for cursor advancement.
      */
-    fun recordDailyCardPracticed(blockType: DailyBlockType, sentenceCard: SentenceCard? = null) {
+    private fun recordDailyCardPracticed(blockType: DailyBlockType, sentenceCard: SentenceCard? = null) {
         // Caller already guards on result.accepted, so accepted=true here.
         dailyPracticeCoordinator.recordDailyCardPracticed(
             blockType = blockType,
@@ -1640,10 +1572,6 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             resolveCardLessonId = { card -> resolveCardLessonId(card) },
             accepted = true
         )
-    }
-
-    fun repeatDailyBlock(): Boolean {
-        return dailyPracticeCoordinator.repeatDailyBlock()
     }
 
     fun cancelDailySession() {
@@ -1659,35 +1587,6 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             _coreState.update { it.copy(navigation = it.navigation.copy(selectedLessonId = savedLessonId)) }
             preDailySelectedLessonId = null
         }
-    }
-
-    fun submitDailySentenceAnswer(input: String): Boolean {
-        val correct = dailyPracticeCoordinator.submitDailySentenceAnswer(input)
-        // Orchestrator: play sound via AudioCoordinator (cross-module call)
-        if (correct) {
-            audioCoordinator.playSuccessSound()
-        } else {
-            audioCoordinator.playErrorSound()
-        }
-        return correct
-    }
-
-    fun submitDailyVerbAnswer(input: String): Boolean {
-        val correct = dailyPracticeCoordinator.submitDailyVerbAnswer(input)
-        // Orchestrator: play sound via AudioCoordinator (cross-module call)
-        if (correct) {
-            audioCoordinator.playSuccessSound()
-        } else {
-            audioCoordinator.playErrorSound()
-        }
-        return correct
-    }
-
-    fun hasVocabProgress(): Boolean {
-        val lessonId = _coreState.value.navigation.selectedLessonId ?: return false
-        val languageId = _coreState.value.navigation.selectedLanguageId ?: return false
-        val progress = vocabProgressStore.get(lessonId.value, languageId.value)
-        return progress.completedIndices.isNotEmpty()
     }
 
     fun openVocabSprint(resume: Boolean = false) {
@@ -1740,14 +1639,6 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             lessonId = _coreState.value.navigation.selectedLessonId?.value ?: ""
         )
         handleBossCommands(bossOrchestrator.startBossMega())
-    }
-
-    fun startBossElite() {
-        AuditLogger.getInstanceOrNull()?.bossStart(
-            type = "ELITE",
-            lessonId = _coreState.value.navigation.selectedLessonId?.value ?: ""
-        )
-        handleBossCommands(bossOrchestrator.startBossElite())
     }
 
     fun finishBoss() {
@@ -2091,9 +1982,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
             s.navigation.lessons.find { it.id == lid }?.cards
         }.orEmpty()
         val hiddenIds = hiddenCardStore.getHiddenCardIds()
-        val hiddenCardCount = lessonCards.count {
-            com.alexpo.grammermate.data.HiddenCardKeys.contains(hiddenIds, it, packId, lessonId?.value)
-        }
+        val hiddenCardCount = progressTracker.hiddenCardCountInLesson(lessonCards, lessonId?.value, hiddenIds, packId)
         val totalCardsInLesson = lessonCards.size
         progressTracker.checkAndMarkLessonCompleted(
             completedSubLessonCount = s.cardSession.completedSubLessonCount,
@@ -2128,7 +2017,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         if (!isSessionCompleted()) return
 
         val languageId = _coreState.value.navigation.selectedLanguageId ?: return
-        val practiceType = forcedPracticeType ?: determinePracticeType()
+        val practiceType = forcedPracticeType ?: PracticeType.TRANSLATION
         val (updatedStreak, isNewFire) = streakManager.recordPracticeTypeCompletion(languageId.value, practiceType)
         val fireCount = updatedStreak.todayFireCount
         if (isNewFire && updatedStreak.currentStreak > 0) {
@@ -2174,17 +2063,6 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         return state.correctCount >= totalRequired
     }
 
-    /**
-     * Determine the PracticeType for the current session mode.
-     */
-    private fun determinePracticeType(): PracticeType {
-        val state = _coreState.value
-        return when {
-            state.boss.bossActive -> PracticeType.TRANSLATION
-            false -> PracticeType.TRANSLATION
-            else -> PracticeType.TRANSLATION
-        }
-    }
     private fun saveProgress(): Unit = progressWriter.save()
 
     private fun saveProgressFromTimer(): Unit = progressWriter.saveFromTimer()
@@ -2195,13 +2073,12 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         val lessonId = state.navigation.selectedLessonId ?: return
         val packId = state.navigation.activePackId?.value ?: return
         val subLessons = lessonSchedules[lessonId]?.subLessons.orEmpty()
-        val checkpoint = packLessonProgressStore.loadPackProgress(packId)?.lessonProgress?.get(lessonId.value)
         val mastery = masteryStore.getForPack(packId, lessonId.value)
         val completed = progressTracker.calculateCompletedSubLessons(
             subLessons, mastery, lessonId, state.navigation.lessons, hiddenCardStore.getHiddenCardIds()
         )
-        val index = (checkpoint?.activeSubLessonIndex ?: completed)
-            .coerceIn(0, (subLessons.size - 1).coerceAtLeast(0))
+        val index = progressTracker.resolveLessonCheckpointResume(packId, lessonId, subLessons, completed)
+            .activeSubLessonIndex
         _coreState.update { it.copy(cardSession = it.cardSession.copy(activeSubLessonIndex = index)) }
         _sessionTimerMs.value = state.cardSession.activeTimeMs
     }
@@ -2424,43 +2301,6 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
-    // -- Profile stats --
-    data class ProfileStats(
-        val cardsCompleted: Int,
-        val wordsLearned: Int,
-        val cefrLevel: String
-    )
-
-    fun getProfileStats(): ProfileStats {
-        val languageId = _coreState.value.navigation.selectedLanguageId?.value ?: return ProfileStats(0, 0, "")
-        val packId = _coreState.value.navigation.activePackId?.value
-
-        // Cards completed: sum uniqueCardShows across all lessons for current pack
-        val cardsCompleted = if (packId != null) {
-            masteryStore.loadAll()["pack:$packId"]
-                ?.values
-                ?.sumOf { it.uniqueCardShows }
-                ?: 0
-        } else {
-            0
-        }
-
-        // Words learned: count of mastered words in current pack
-        val wordsLearned = wordMasteryStore.getMasteredCount()
-
-        // CEFR level: based on rank of learned vocab words
-        val cefrLevel = if (packId != null) {
-            val allWords = lessonStore.getVocabWordsByRankRange(packId, languageId, 0, Int.MAX_VALUE)
-            val learnedIds = wordMasteryStore.loadAll().filter { (_, state) -> state.isLearned }.keys
-            val learnedRanks = allWords.filter { it.id in learnedIds }.map { it.rank }
-            CefrCalculator.calculate(learnedRanks)
-        } else {
-            CefrCalculator.calculate(emptyList())
-        }
-
-        return ProfileStats(cardsCompleted, wordsLearned, cefrLevel)
-    }
-
     // -- ProgressResult handler --
     private fun handleProgressResults(results: List<ProgressResult>) {
         for (result in results) {
@@ -2502,7 +2342,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
      * Get chapter cards for the current pack with progress and status.
      * Returns an empty list if the pack has no chapters.
      */
-    fun getChapterCards(): List<ChapterCardUi> {
+    private fun getChapterCards(): List<ChapterCardUi> {
         return chapterRoadmap.getChapterCards()
     }
 
@@ -2529,7 +2369,7 @@ class TrainingViewModel(application: Application) : AndroidViewModel(application
      * Get the first incomplete lesson ID in a chapter.
      * Returns null if all lessons are completed or chapter is empty.
      */
-    fun getFirstIncompleteLesson(chapter: com.alexpo.grammermate.data.Chapter): String? {
+    private fun getFirstIncompleteLesson(chapter: com.alexpo.grammermate.data.Chapter): String? {
         return chapterRoadmap.getFirstIncompleteLesson(chapter)
     }
 

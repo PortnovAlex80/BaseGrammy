@@ -90,6 +90,54 @@ class ProgressTracker(
     }
 
     /**
+     * Self-produced-answer ladder rule: only an answer the learner produced
+     * themselves advances a lesson's interval ladder. Conditions: the answer
+     * was accepted, the input mode counts toward mastery (not WORD_BANK), the
+     * answer was not revealed through a hint/"show answer", and neither a boss
+     * battle nor daily practice owns the answer (both keep their own ledgers
+     * and never write the lesson ladder).
+     *
+     * Correct/incorrect cannot be the signal: voice runs through ASR with a
+     * high error rate, so a rejected answer more often means a recognition
+     * miss than forgetting. Only the binary "produced it themselves" signal
+     * exists, and exactly that is checked here. A lesson walked entirely
+     * through hints still accrues exposure but earns no longer interval; the
+     * ladder is monotonic, this is never a rollback.
+     *
+     * [bossActive] and [dailySessionActive] are cross-feature facts the
+     * ViewModel gathers; the rule and the ladder write live here.
+     */
+    fun recordSelfProducedIfEarned(
+        accepted: Boolean,
+        card: com.alexpo.grammermate.data.SessionCard?,
+        inputMode: InputMode,
+        answerWasRevealed: Boolean,
+        bossActive: Boolean,
+        dailySessionActive: Boolean
+    ) {
+        if (!accepted) return
+        if (card == null) return
+        if (!inputMode.countsTowardMastery) return
+        // Ответ был раскрыт подсказкой — воспроизведения не было.
+        if (answerWasRevealed) return
+        if (bossActive) return
+        if (dailySessionActive) return
+
+        val state = stateAccess.currentState
+        val packId = state.navigation.activePackId?.value ?: return
+        val lessonId = resolveCardLessonId(
+            card,
+            state.navigation.selectedLessonId,
+            state.navigation.lessons
+        ) ?: return
+        masteryStore.recordSelfProducedForPack(
+            packId = packId,
+            lessonId = lessonId.value,
+            totalEffortCards = masteryStore.totalEffortCardsForPack(packId)
+        )
+    }
+
+    /**
      * Mark sub-lesson cards as shown for progress tracking.
      * Only operates when inputMode == WORD_BANK (batch marking for
      * word-bank sessions that don't count for mastery but need tracking).
@@ -118,6 +166,19 @@ class ProgressTracker(
     }
 
     // ── Lesson completion ────────────────────────────────────────────
+
+    /**
+     * Pack-scoped hidden-card count for one lesson: cards that are never
+     * delivered again (reported bad/hidden) and are therefore excluded from the
+     * completion threshold. The one scoping rule shared by the live completion
+     * check and the pack-wide recalculation below.
+     */
+    fun hiddenCardCountInLesson(
+        lessonCards: List<com.alexpo.grammermate.data.SessionCard>,
+        lessonId: String?,
+        hiddenCardIds: Set<String>,
+        packId: String?
+    ): Int = lessonCards.count { HiddenCardKeys.contains(hiddenCardIds, it, packId, lessonId) }
 
     /**
      * Check and mark a lesson as completed when uniqueCardShows >= min(totalCardsInLesson, 150).
@@ -164,7 +225,7 @@ class ProgressTracker(
             val mastery = masteryStore.getForPack(pid, lesson.id.value)
             if (mastery == null || mastery.completedAtMs != null) continue  // Skip already completed or no data
 
-            val hiddenInLesson = lesson.cards.count { HiddenCardKeys.contains(hiddenCardIds, it, pid, lesson.id.value) }
+            val hiddenInLesson = hiddenCardCountInLesson(lesson.cards, lesson.id.value, hiddenCardIds, pid)
             val effectiveCardCount = lesson.cards.size - hiddenInLesson
             val threshold = minOf(effectiveCardCount.coerceAtLeast(0), TrainingConfig.LESSON_COMPLETION_CARD_THRESHOLD)
 
@@ -236,6 +297,30 @@ class ProgressTracker(
         // guessing ownership from the repeated card_N row IDs used by ordinary pack CSVs.
         val matches = lessons.filter { lesson -> lesson.cards.any { it == sentence } }
         return matches.firstOrNull { it.id == selectedLessonId }?.id ?: matches.singleOrNull()?.id
+    }
+
+    // ── Lesson checkpoint resume ─────────────────────────────────────
+
+    /**
+     * The single lesson-checkpoint resume rule shared by lesson selection and
+     * checkpoint restore: a stored checkpoint decides which sub-lesson to
+     * resume and carries the session counters/timer; without one the first
+     * not-yet-completed sub-lesson is used. The index is always clamped into
+     * the current schedule, which may have shrunk since the checkpoint was
+     * written.
+     */
+    fun resolveLessonCheckpointResume(
+        packId: String?,
+        lessonId: LessonId,
+        subLessons: List<ScheduledSubLesson>,
+        completedSubLessons: Int
+    ): LessonCheckpointResume {
+        val checkpoint = packId?.let {
+            packLessonProgressStore.loadPackProgress(it)?.lessonProgress?.get(lessonId.value)
+        }
+        val index = (checkpoint?.activeSubLessonIndex ?: completedSubLessons)
+            .coerceIn(0, (subLessons.size - 1).coerceAtLeast(0))
+        return LessonCheckpointResume(checkpoint, index)
     }
 
     // ── Progress-based lesson info ───────────────────────────────────
@@ -599,3 +684,9 @@ class ProgressTracker(
         if (vocabProgressFile.exists()) vocabProgressFile.delete()
     }
 }
+
+/** A persisted lesson checkpoint plus the resume sub-lesson index derived from it. */
+data class LessonCheckpointResume(
+    val checkpoint: PackLessonProgressState.LessonProgress?,
+    val activeSubLessonIndex: Int
+)
