@@ -92,15 +92,17 @@ data class DeckState(
  *                             [WordScript] `afterSentence` so the listener can slow down
  *                             (or speed up) the example-sentence cadence globally.
  *                             Word/translation/collocation pauses are NOT affected.
- * @param audioResolver        optional resolver for pre-rendered `.wav` clips. When set
- *                             together with [packId], [defaultPlayWord] emits a
+ * @param audioResolver        optional resolver for pre-rendered clips. When set,
+ *                             [defaultPlayWord] emits a
  *                             [MultilingualStoryParser.Segment.Audio] for each speak item
- *                             whose clip exists on disk, and falls back to
+ *                             whose clip exists on disk (active pack's bank first, then
+ *                             sibling packs' banks — ADR-034), and falls back to
  *                             [MultilingualStoryParser.Segment.Text] (TTS) otherwise. Null
- *                             by default — the no-pack / pre-Wave-3 path stays all-TTS.
- * @param packId               the active pack id used to scope [audioResolver] lookups.
- *                             Null disables audio resolution entirely (all TTS), which is
- *                             correct when no pack is active.
+ *                             by default — the no-resolver path stays all-TTS.
+ * @param packId               the active pack id, or null when no pack is active (the
+ *                             bundled deck is playing). The resolver prefers this
+ *                             pack's audio bank but resolves installed sibling banks
+ *                             either way, so audio works in pack-less contexts too.
  */
 class DeckPlayer(
     private val ttsEngine: TtsEngine,
@@ -126,12 +128,13 @@ class DeckPlayer(
     /** Default per-word playback: build segments from the word's speak plan, feed to
      *  [SegmentPlayer], and track the currently-spoken [SpeakSlot] (for in-sync UI).
      *
-     *  When [audioResolver] and [packId] are both set, each speak item is resolved to a
-     *  pre-rendered `.wav` clip and emitted as [MultilingualStoryParser.Segment.Audio] if
-     *  the clip exists on disk; otherwise it falls back to
+     *  When [audioResolver] is set, each speak item is resolved against the installed
+     *  audio banks (active pack's bank first, sibling packs' banks as fallback —
+     *  ADR-034) and emitted as [MultilingualStoryParser.Segment.Audio] if the clip
+     *  exists on disk; otherwise it falls back to
      *  [MultilingualStoryParser.Segment.Text] (TTS synthesis). This realizes the
-     *  wav→TTS fallback for background vocab: a partial clip set degrades gracefully to
-     *  TTS for whatever was not pre-rendered. */
+     *  opus/wav→TTS fallback for background vocab: a partial clip set degrades
+     *  gracefully to TTS for whatever was not pre-rendered. */
     private suspend fun defaultPlayWord(word: WordScript) {
         val plan = word.speakPlan()
         // Resolve the user-tunable sentence pause once per word so a slider change takes
@@ -141,14 +144,14 @@ class DeckPlayer(
         val slots = ArrayList<SpeakSlot?>(plan.size * 2)
         for (item in plan) {
             val audioFile = audioResolver?.let { resolver ->
-                packId?.let { pid ->
-                    // Audio chain: rank-indexed Opus bank (clips named by the word's
-                    // frequency rank) → legacy rank-indexed .wav clips → null (caller
-                    // falls back to TTS via Segment.Text). Keying by rank matches the
-                    // pre-rendered bank; word.rank comes straight from the deck CSV.
-                    resolver.fileForRank(pid, word.rank, item.slot)
-                        ?: resolver.fileFor(pid, word.rank, item.slot)
-                }
+                // Audio chain: rank-indexed Opus bank (clips named by the word's
+                // frequency rank) → legacy rank-indexed .wav clips → null (caller
+                // falls back to TTS via Segment.Text). Banks are corpus-scoped, not
+                // pack-scoped (ADR-034): the resolver checks the active pack's bank
+                // first and falls back to sibling packs' banks, so a null packId
+                // (bundled deck, no pack context) still resolves installed clips.
+                resolver.fileForRank(packId, word.rank, item.slot)
+                    ?: resolver.fileFor(packId, word.rank, item.slot)
             }
             val seg = if (audioFile != null) {
                 MultilingualStoryParser.Segment.Audio(audioFile, item.lang)

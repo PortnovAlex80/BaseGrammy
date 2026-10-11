@@ -128,13 +128,127 @@ class BgVocabAudioResolverTest {
 
     /**
      * Create the expected clip file (and its parent dirs) under [baseDir] for [name]
-     * matching the resolver's path convention. Content is irrelevant — the resolver
-     * only checks existence.
+     * matching the resolver's path convention, inside the [pack]'s audio bank (the
+     * test pack by default). Content is irrelevant — the resolver only checks existence.
      */
-    private fun createClip(baseDir: File, name: String): File {
-        val file = File(baseDir, "drills/$packId/bg_vocab/audio/$name")
+    private fun createClip(baseDir: File, name: String, pack: String = packId): File {
+        val file = File(baseDir, "drills/$pack/bg_vocab/audio/$name")
         file.parentFile?.mkdirs()
         file.writeText("dummy")
         return file
+    }
+
+    // ── Corpus-scoped bank fallback (ADR-034) ─────────────────────────────────
+
+    @Test
+    fun fileForRank_fallsBackToSiblingPackBank_whenActivePackHasNoClips() {
+        val baseDir = createTempDirectory().toFile()
+        try {
+            // Bank installed for ITALIAN_SHORT; the listener is active on ITALIAN_IMPERIAL
+            // (whose manifest declares no backgroundVocab at all — the bundled deck plays).
+            createClip(baseDir, "it_r7_f0.opus", pack = "ITALIAN_SHORT")
+            val resolver = BgVocabAudioResolver(baseDir)
+
+            val file = resolver.fileForRank("ITALIAN_IMPERIAL", rank = 7, slot = SpeakSlot.WordIt)
+
+            assertEquals(
+                File(baseDir, "drills/ITALIAN_SHORT/bg_vocab/audio/it_r7_f0.opus").absolutePath,
+                file?.absolutePath
+            )
+        } finally {
+            baseDir.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun fileForRank_resolvesFromSiblingBanks_whenPackIdNull() {
+        val baseDir = createTempDirectory().toFile()
+        try {
+            // No active pack (user on Home, bundled deck) — sibling banks still resolve.
+            createClip(baseDir, "ru_r7_f0.opus", pack = "ITALIAN_SHORT")
+            val resolver = BgVocabAudioResolver(baseDir)
+
+            val file = resolver.fileForRank(null, rank = 7, slot = SpeakSlot.WordRu)
+
+            assertEquals(
+                File(baseDir, "drills/ITALIAN_SHORT/bg_vocab/audio/ru_r7_f0.opus").absolutePath,
+                file?.absolutePath
+            )
+        } finally {
+            baseDir.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun fileForRank_activePackBankWinsOverSiblingBanks() {
+        val baseDir = createTempDirectory().toFile()
+        try {
+            createClip(baseDir, "it_r7_f0.opus", pack = "TEST_PACK")
+            createClip(baseDir, "it_r7_f0.opus", pack = "ITALIAN_SHORT")
+            val resolver = BgVocabAudioResolver(baseDir)
+
+            val file = resolver.fileForRank(packId, rank = 7, slot = SpeakSlot.WordIt)
+
+            assertEquals(
+                File(baseDir, "drills/$packId/bg_vocab/audio/it_r7_f0.opus").absolutePath,
+                file?.absolutePath
+            )
+        } finally {
+            baseDir.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun fileForRank_siblingOrderDeterministic_lowestPackIdWins() {
+        val baseDir = createTempDirectory().toFile()
+        try {
+            createClip(baseDir, "it_r7_f0.opus", pack = "ZETA_PACK")
+            createClip(baseDir, "it_r7_f0.opus", pack = "ALPHA_PACK")
+            val resolver = BgVocabAudioResolver(baseDir)
+
+            val file = resolver.fileForRank(null, rank = 7, slot = SpeakSlot.WordIt)
+
+            assertEquals(
+                "Sibling banks resolve in ascending pack-id order",
+                File(baseDir, "drills/ALPHA_PACK/bg_vocab/audio/it_r7_f0.opus").absolutePath,
+                file?.absolutePath
+            )
+        } finally {
+            baseDir.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun fileFor_wavLookupUsesSameSiblingFallback() {
+        val baseDir = createTempDirectory().toFile()
+        try {
+            createClip(baseDir, "it_000002_word.wav", pack = "ITALIAN_SHORT")
+            val resolver = BgVocabAudioResolver(baseDir)
+
+            val file = resolver.fileFor(null, rank = 2, slot = SpeakSlot.WordIt)
+
+            assertEquals(
+                File(baseDir, "drills/ITALIAN_SHORT/bg_vocab/audio/it_000002_word.wav").absolutePath,
+                file?.absolutePath
+            )
+        } finally {
+            baseDir.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun fileForRank_returnsNullWhenNoBankAnywhere() {
+        val baseDir = createTempDirectory().toFile()
+        try {
+            // Pack dirs exist but no bg_vocab/audio bank is installed for anyone.
+            File(baseDir, "drills/ITALIAN_SHORT").mkdirs()
+            File(baseDir, "drills/ITALIAN_IMPERIAL").mkdirs()
+            val resolver = BgVocabAudioResolver(baseDir)
+
+            assertNull(resolver.fileForRank(null, rank = 7, slot = SpeakSlot.WordIt))
+            assertNull(resolver.fileForRank("ITALIAN_IMPERIAL", rank = 7, slot = SpeakSlot.WordIt))
+        } finally {
+            baseDir.deleteRecursively()
+        }
     }
 }

@@ -634,11 +634,12 @@ private fun DeckReadyContent(
 
 /**
  * `true` if a pre-rendered Opus clip exists on disk for the word slot (field index f0)
- * of [rank] under [packId]. Mirrors [DeckPlayer.defaultPlayWord], which tries the Opus
- * word clip first and falls back to TTS when this returns false.
+ * of [rank] — in [packId]'s own bank or any installed sibling bank (ADR-034). Mirrors
+ * [DeckPlayer.defaultPlayWord], which tries the Opus word clip first and falls back to
+ * TTS when this returns false.
  */
 fun hasOpusClip(resolver: BgVocabAudioResolver?, packId: String?, rank: Int): Boolean {
-    if (resolver == null || packId == null || rank <= 0) return false
+    if (resolver == null || rank <= 0) return false
     return resolver.fileForRank(packId, rank, SpeakSlot.WordIt) != null
 }
 

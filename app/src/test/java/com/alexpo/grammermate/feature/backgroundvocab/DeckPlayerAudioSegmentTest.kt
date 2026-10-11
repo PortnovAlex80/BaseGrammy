@@ -5,7 +5,6 @@ import com.alexpo.grammermate.data.PhrasePair
 import com.alexpo.grammermate.data.SpeakSlot
 import com.alexpo.grammermate.data.WordScript
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -28,11 +27,12 @@ import kotlin.io.path.createTempDirectory
  *  1. The resolver contract — `fileFor(packId, rank, slot)` returns the expected file
  *     when the `.wav` exists and `null` when it does not (covers both directions of the
  *     branch in `defaultPlayWord`).
- *  2. The exact expression `audioResolver?.let { packId?.let { pid ->
- *     resolver.fileFor(pid, word.rank, slot) } }` — replicated here against the same
- *     resolver to prove the Audio/Text decision matches what `defaultPlayWord` will make.
- *     This is the load-bearing logic: `defaultPlayWord` is a thin wrapper that turns this
- *     non-null-vs-null result into `Segment.Audio` vs `Segment.Text`, with no other inputs.
+ *  2. The exact expression `audioResolver?.let { r ->
+ *     r.fileForRank(pid, word.rank, slot) ?: r.fileFor(pid, word.rank, slot) }` —
+ *     replicated here against the same resolver to prove the Audio/Text decision
+ *     matches what `defaultPlayWord` will make. This is the load-bearing logic:
+ *     `defaultPlayWord` is a thin wrapper that turns this non-null-vs-null result into
+ *     `Segment.Audio` vs `Segment.Text`, with no other inputs.
  *
  * This pins the wav→TTS fallback behavior without pulling in Robolectric or the native TTS
  * engine, and will break loudly if either the resolver path convention or the
@@ -117,7 +117,7 @@ class DeckPlayerAudioSegmentTest {
             // Decision helper identical to the one in DeckPlayer.defaultPlayWord.
             fun decide(slot: SpeakSlot, text: String, lang: String): MultilingualStoryParser.Segment {
                 val audioFile = resolver?.let { r ->
-                    pid?.let { p -> r.fileForRank(p, w.rank, slot) ?: r.fileFor(p, w.rank, slot) }
+                    r.fileForRank(pid, w.rank, slot) ?: r.fileFor(pid, w.rank, slot)
                 }
                 return if (audioFile != null) {
                     MultilingualStoryParser.Segment.Audio(audioFile, lang)
@@ -189,11 +189,13 @@ class DeckPlayerAudioSegmentTest {
     }
 
     /**
-     * When packId is null (no active pack), the resolver branch must short-circuit to
-     * null and every segment is Text — the all-TTS path used by the asset-only fallback.
+     * When packId is null (no active pack; the bundled deck plays), the corpus-scoped
+     * resolver (ADR-034) must still resolve clips from any installed sibling bank —
+     * this is the Home-screen regression the fallback exists for. With no bank
+     * installed at all, the decision stays all-Text (TTS).
      */
     @Test
-    fun nullPackId_forcesAllText() {
+    fun nullPackId_resolvesFromSiblingBanks() {
         val baseDir = createTempDirectory().toFile()
         try {
             createClip(baseDir, "it_000002_word.wav")
@@ -201,14 +203,29 @@ class DeckPlayerAudioSegmentTest {
             val pid: String? = null // no active pack
             val w = word(rank = 2)
 
-            val audioFile = resolver?.let { r -> pid?.let { p -> r.fileFor(p, w.rank, SpeakSlot.WordIt) } }
-            assertNull("Null packId must yield null audio even when clip exists", audioFile)
-            // Therefore defaultPlayWord would emit Text for every slot. Documented by the
-            // assertFalse: no Audio can be selected when pid is null.
-            assertFalse(
-                "Audio segment impossible with null packId",
-                audioFile != null
+            // Expression identical to the one in DeckPlayer.defaultPlayWord.
+            val audioFile = resolver?.let { r -> r.fileFor(pid, w.rank, SpeakSlot.WordIt) }
+            assertNotNull("Null packId must still resolve an installed sibling bank", audioFile)
+            assertEquals(
+                File(baseDir, "drills/$packId/bg_vocab/audio/it_000002_word.wav").absolutePath,
+                audioFile!!.absolutePath
             )
+        } finally {
+            baseDir.deleteRecursively()
+        }
+    }
+
+    /** With no bank installed anywhere, a null packId stays all-Text (TTS fallback). */
+    @Test
+    fun nullPackId_noBankInstalled_forcesAllText() {
+        val baseDir = createTempDirectory().toFile()
+        try {
+            val resolver: BgVocabAudioResolver? = BgVocabAudioResolver(baseDir)
+            val pid: String? = null // no active pack
+            val w = word(rank = 2)
+
+            val audioFile = resolver?.let { r -> r.fileFor(pid, w.rank, SpeakSlot.WordIt) }
+            assertNull("No installed bank must yield null audio", audioFile)
         } finally {
             baseDir.deleteRecursively()
         }
